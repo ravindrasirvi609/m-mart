@@ -28,7 +28,7 @@ export function ProfileForm({
 
   return (
     <form
-      className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+      className="premium-card space-y-4 p-5"
       onSubmit={(event) => {
         event.preventDefault();
 
@@ -50,24 +50,24 @@ export function ProfileForm({
       }}
     >
       <div className="space-y-1">
-        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Email</p>
-        <p className="rounded-xl bg-zinc-100 px-3 py-2 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+        <p className="text-xs font-bold uppercase tracking-[0.1em] text-zinc-500">Email</p>
+        <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
           {email}
         </p>
       </div>
 
       <label className="block space-y-2">
-        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Full Name</span>
+        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Full Name</span>
         <Input required value={name} onChange={(event) => setName(event.target.value)} />
       </label>
 
       <label className="block space-y-2">
-        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Phone</span>
+        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Phone</span>
         <Input required value={phone} onChange={(event) => setPhone(event.target.value)} />
       </label>
 
       <label className="block space-y-2">
-        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Address</span>
+        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Address</span>
         <Textarea
           required
           rows={4}

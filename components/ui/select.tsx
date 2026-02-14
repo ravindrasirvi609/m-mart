@@ -6,7 +6,7 @@ export function Select({ className, ...props }: SelectHTMLAttributes<HTMLSelectE
   return (
     <select
       className={cn(
-        "w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm transition outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100",
+        "w-full rounded-xl border border-red-100 bg-white px-3.5 py-2.5 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-[#e10600] focus:ring-4 focus:ring-[#e10600]/12 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100",
         className,
       )}
       {...props}

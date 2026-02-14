@@ -4,6 +4,12 @@ import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
+const nav = [
+  { href: "/admin", label: "Dashboard" },
+  { href: "/admin/products", label: "Products" },
+  { href: "/admin/orders", label: "Orders" },
+];
+
 export default async function AdminLayout({
   children,
 }: {
@@ -12,29 +18,25 @@ export default async function AdminLayout({
   await requireAdmin();
 
   return (
-    <div className="space-y-4">
-      <header className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Admin Panel</h1>
-        <nav className="mt-3 flex flex-wrap gap-2 text-sm">
-          <Link href="/admin" className="rounded-full bg-zinc-100 px-3 py-1.5 dark:bg-zinc-800">
-            Dashboard
-          </Link>
-          <Link
-            href="/admin/products"
-            className="rounded-full bg-zinc-100 px-3 py-1.5 dark:bg-zinc-800"
-          >
-            Products
-          </Link>
-          <Link
-            href="/admin/orders"
-            className="rounded-full bg-zinc-100 px-3 py-1.5 dark:bg-zinc-800"
-          >
-            Orders
-          </Link>
-        </nav>
-      </header>
+    <div className="grid min-h-screen bg-[#0f1016] text-zinc-100 lg:grid-cols-[240px_1fr]">
+      <aside className="border-r border-white/10 bg-gradient-to-b from-[#14151e] to-[#0d0e14] p-5">
+        <p className="font-display text-2xl font-black text-white">Mmart Admin</p>
+        <p className="mt-1 text-xs uppercase tracking-[0.16em] text-red-300">Operations Panel</p>
 
-      {children}
+        <nav className="mt-6 grid gap-2">
+          {nav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-zinc-200 transition hover:border-[#e10600]/40 hover:bg-[#e10600]/15"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      </aside>
+
+      <main className="p-4 sm:p-6">{children}</main>
     </div>
   );
 }

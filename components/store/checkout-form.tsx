@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { Lock, ShieldCheck } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -33,20 +34,18 @@ export function CheckoutForm({
 
   if (items.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-zinc-300 p-8 text-center dark:border-zinc-700">
+      <div className="premium-card border-dashed p-10 text-center">
         <p className="text-sm text-zinc-600 dark:text-zinc-300">
           Add items to cart before checkout.
         </p>
-        <Button className="mt-4" onClick={() => router.push("/products")}>
-          Browse Products
-        </Button>
+        <Button className="mt-4" onClick={() => router.push("/products")}>Browse Products</Button>
       </div>
     );
   }
 
   return (
     <form
-      className="grid gap-6 lg:grid-cols-[1fr_340px]"
+      className="grid gap-6 lg:grid-cols-[1fr_360px]"
       onSubmit={(event) => {
         event.preventDefault();
 
@@ -81,10 +80,8 @@ export function CheckoutForm({
         });
       }}
     >
-      <section className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-          Delivery Details
-        </h2>
+      <section className="premium-card space-y-4 p-5">
+        <h2 className="font-heading text-xl font-bold">Delivery Address</h2>
 
         <Input
           required
@@ -105,18 +102,16 @@ export function CheckoutForm({
           rows={4}
           value={address}
           onChange={(event) => setAddress(event.target.value)}
-          placeholder="Full delivery address"
+          placeholder="Complete delivery address"
         />
 
-        <div className="space-y-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
-          <p className="font-semibold">Payment Instructions</p>
-          <p>Pay using the UPI QR and upload the screenshot for manual verification.</p>
+        <div className="rounded-xl bg-red-50 p-4 text-sm text-zinc-700">
+          <p className="font-bold text-[#e10600]">Payment Instructions</p>
+          <p className="mt-1">Pay via UPI QR and upload screenshot for manual admin verification.</p>
         </div>
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Payment Screenshot
-          </span>
+          <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Upload Payment Screenshot</span>
           <Input
             type="file"
             accept="image/png,image/jpeg,image/webp"
@@ -127,15 +122,20 @@ export function CheckoutForm({
             }}
           />
         </label>
+
+        <div className="grid gap-2 rounded-xl border border-red-100 bg-white p-3 text-xs font-semibold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
+          <p className="inline-flex items-center gap-2"><ShieldCheck size={14} className="text-emerald-600" /> Secure checkout flow</p>
+          <p className="inline-flex items-center gap-2"><Lock size={14} className="text-emerald-600" /> Manual payment verification</p>
+        </div>
       </section>
 
-      <aside className="h-fit space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-          Payment & Total
-        </h2>
+      <aside className="premium-card h-fit space-y-4 p-5">
+        <h2 className="font-heading text-xl font-bold">Order Summary</h2>
 
-        <div className="relative mx-auto h-52 w-52 overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-          <Image src="/upi-qr.svg" alt="UPI QR Code" fill className="object-contain p-3" />
+        <div className="mx-auto w-fit rounded-2xl border border-red-200 bg-white p-2 shadow-[0_0_0_4px_rgba(225,6,0,0.08)]">
+          <div className="relative h-52 w-52 overflow-hidden rounded-xl border border-red-100 bg-white">
+            <Image src="/upi-qr.svg" alt="UPI QR Code" fill className="object-contain p-3" />
+          </div>
         </div>
 
         <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
@@ -144,17 +144,17 @@ export function CheckoutForm({
             <span>{formatCurrency(subtotal)}</span>
           </div>
           <div className="flex justify-between">
-            <span>Delivery Charge</span>
+            <span>Delivery</span>
             <span>{deliveryCharge === 0 ? "Free" : formatCurrency(deliveryCharge)}</span>
           </div>
-          <div className="flex justify-between border-t border-zinc-200 pt-2 text-base font-semibold text-zinc-900 dark:border-zinc-700 dark:text-zinc-100">
+          <div className="flex justify-between border-t border-red-100 pt-3 text-lg font-black text-[#e10600]">
             <span>Total</span>
             <span>{formatCurrency(total)}</span>
           </div>
         </div>
 
-        <p className="rounded-xl bg-zinc-100 p-3 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-          Order status after placement: <strong>Payment Pending Verification</strong>
+        <p className="rounded-xl bg-zinc-100 p-3 text-xs font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+          Initial status: <strong>Payment Pending Verification</strong>
         </p>
 
         <Button type="submit" className="w-full" disabled={isPending}>

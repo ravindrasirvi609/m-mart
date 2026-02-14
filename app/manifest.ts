@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Order groceries online from Mmart.",
     start_url: "/",
     display: "standalone",
-    background_color: "#f9fafb",
-    theme_color: "#10b981",
+    background_color: "#ffffff",
+    theme_color: "#e10600",
     icons: [
       {
         src: "/icon.svg",

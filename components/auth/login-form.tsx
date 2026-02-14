@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { CheckCircle2, Mail } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -9,13 +9,11 @@ import { Input } from "@/components/ui/input";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
+  const [linkSent, setLinkSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const sendOtp = async () => {
+  const sendMagicLink = async () => {
     setLoading(true);
     const supabase = createBrowserSupabaseClient();
     const { error } = await supabase.auth.signInWithOtp({
@@ -32,38 +30,36 @@ export function LoginForm() {
       return;
     }
 
-    setOtpSent(true);
-    toast.success("OTP sent. Check your email.");
+    setLinkSent(true);
+    toast.success("Magic link sent. Check your email.");
   };
 
-  const verifyOtp = async () => {
-    setLoading(true);
-    const supabase = createBrowserSupabaseClient();
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: otp,
-      type: "email",
-    });
-    setLoading(false);
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    toast.success("Logged in successfully.");
-    router.replace("/");
-  };
+  if (linkSent) {
+    return (
+      <div className="premium-card mx-auto w-full max-w-md space-y-4 p-6 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+          <CheckCircle2 size={24} />
+        </div>
+        <h1 className="font-heading text-2xl font-bold">Check your email</h1>
+        <p className="text-sm text-zinc-600 dark:text-zinc-300">
+          We sent a magic link to <span className="font-semibold text-zinc-900 dark:text-zinc-100">{email}</span>.
+        </p>
+        <Button variant="outline" className="w-full" onClick={() => setLinkSent(false)}>
+          Try another email
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div className="mx-auto w-full max-w-md space-y-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Login to Mmart</h1>
+    <div className="premium-card mx-auto w-full max-w-md space-y-4 p-6">
+      <h1 className="font-heading text-2xl font-bold">Login to Mmart</h1>
       <p className="text-sm text-zinc-600 dark:text-zinc-300">
-        Use Email OTP to sign in. You can also use the magic link from the same email.
+        Secure one-tap login with email magic link.
       </p>
 
       <label className="block space-y-2">
-        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Email</span>
+        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Email</span>
         <Input
           type="email"
           value={email}
@@ -72,30 +68,10 @@ export function LoginForm() {
         />
       </label>
 
-      {!otpSent ? (
-        <Button disabled={loading || !email} className="w-full" onClick={sendOtp}>
-          {loading ? "Sending..." : "Send OTP"}
-        </Button>
-      ) : (
-        <>
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">OTP</span>
-            <Input
-              value={otp}
-              onChange={(event) => setOtp(event.target.value)}
-              placeholder="Enter OTP"
-            />
-          </label>
-
-          <Button disabled={loading || !otp} className="w-full" onClick={verifyOtp}>
-            {loading ? "Verifying..." : "Verify OTP"}
-          </Button>
-
-          <Button variant="ghost" disabled={loading} className="w-full" onClick={sendOtp}>
-            Resend OTP
-          </Button>
-        </>
-      )}
+      <Button disabled={loading || !email} className="w-full" onClick={sendMagicLink}>
+        <Mail size={14} />
+        {loading ? "Sending..." : "Send Magic Link"}
+      </Button>
     </div>
   );
 }

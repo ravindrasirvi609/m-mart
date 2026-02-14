@@ -23,25 +23,25 @@ export function PaginationControls({
   nextQuery.set("page", String(page + 1));
 
   return (
-    <div className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="premium-card flex items-center justify-between gap-3 p-4">
       {page > 1 ? (
         <Link href={`/products?${prevQuery.toString()}`}>
-          <Button variant="secondary">Previous</Button>
+          <Button variant="outline">Previous</Button>
         </Link>
       ) : (
-        <span className="text-sm text-zinc-400">Previous</span>
+        <span className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-400">Previous</span>
       )}
 
-      <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+      <p className="text-xs font-bold uppercase tracking-[0.1em] text-zinc-600 dark:text-zinc-300">
         Page {page} of {totalPages}
       </p>
 
       {page < totalPages ? (
         <Link href={`/products?${nextQuery.toString()}`}>
-          <Button variant="secondary">Next</Button>
+          <Button variant="outline">Next</Button>
         </Link>
       ) : (
-        <span className="text-sm text-zinc-400">Next</span>
+        <span className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-400">Next</span>
       )}
     </div>
   );

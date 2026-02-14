@@ -7,23 +7,41 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://mmart.example"),
   title: {
-    default: "Mmart | Grocery Delivery in Hinjewadi",
+    default: "Mmart | Fresh Groceries Delivered Fast",
     template: "%s | Mmart",
   },
   description:
-    "Order fresh groceries online from Mmart, Mukai Nagar, Hinjewadi Phase 1, Pune.",
+    "Mmart delivers fresh groceries across Mukai Nagar, Hinjewadi Phase 1, Pune with secure UPI payment verification.",
   keywords: [
     "Mmart",
-    "grocery delivery",
-    "Hinjewadi",
-    "Pune",
-    "UPI grocery order",
+    "grocery delivery Pune",
+    "Hinjewadi groceries",
+    "UPI grocery checkout",
+    "fresh vegetables online",
   ],
   openGraph: {
-    title: "Mmart Grocery Store",
-    description: `Shop groceries from ${STORE.location}`,
+    title: "Mmart Grocery Delivery",
+    description: `Order groceries online from ${STORE.location}`,
     type: "website",
     siteName: STORE.name,
+    images: [
+      {
+        url: "/icon.svg",
+        width: 512,
+        height: 512,
+        alt: "Mmart",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Mmart Grocery Delivery",
+    description: `Fast delivery in ${STORE.location}`,
+    images: ["/icon.svg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

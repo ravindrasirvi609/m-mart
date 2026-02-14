@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -44,12 +45,16 @@ export function ProductFilters({
   }, [searchValue, baseParams, pathname, router]);
 
   return (
-    <div className="grid gap-3 rounded-2xl border border-zinc-200 bg-white p-4 sm:grid-cols-2 dark:border-zinc-800 dark:bg-zinc-900">
-      <Input
-        placeholder="Search products"
-        value={searchValue}
-        onChange={(event) => setSearchValue(event.target.value)}
-      />
+    <div className="premium-card grid gap-3 p-4 sm:grid-cols-2">
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-3 text-zinc-400" size={16} />
+        <Input
+          placeholder="Search products"
+          value={searchValue}
+          className="pl-9"
+          onChange={(event) => setSearchValue(event.target.value)}
+        />
+      </div>
 
       <Select
         value={categoryValue}

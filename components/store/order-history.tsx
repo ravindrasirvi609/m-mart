@@ -74,7 +74,7 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
 
   if (orders.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-zinc-300 p-8 text-center dark:border-zinc-700">
+      <div className="premium-card border-dashed p-10 text-center">
         <p className="text-sm text-zinc-600 dark:text-zinc-300">No orders yet.</p>
       </div>
     );
@@ -82,14 +82,15 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
 
   return (
     <div className="space-y-4">
-      {orders.map((order) => (
+      {orders.map((order, index) => (
         <article
           key={order.id}
-          className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+          className="animate-slide-in premium-card space-y-4 p-4"
+          style={{ animationDelay: `${index * 70}ms` }}
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              <p className="text-sm font-bold uppercase tracking-[0.08em] text-zinc-900 dark:text-zinc-100">
                 Order #{order.id.slice(0, 8)}
               </p>
               <p className="text-xs text-zinc-500">
@@ -105,7 +106,7 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
 
           <div className="grid gap-3 sm:grid-cols-2">
             {order.order_items.map((item) => (
-              <div key={item.id} className="flex items-center gap-3 rounded-xl bg-zinc-50 p-2 dark:bg-zinc-800">
+              <div key={item.id} className="flex items-center gap-3 rounded-xl bg-red-50/70 p-2 dark:bg-zinc-800">
                 <div className="relative h-14 w-14 overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-700">
                   <Image
                     src={item.products?.image_url || "/placeholder-product.svg"}
@@ -116,7 +117,7 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
                   />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                     {item.products?.name || "Unknown Product"}
                   </p>
                   <p className="text-xs text-zinc-500">
@@ -127,9 +128,9 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
             ))}
           </div>
 
-          <div className="flex justify-between border-t border-zinc-200 pt-3 text-sm font-semibold text-zinc-800 dark:border-zinc-700 dark:text-zinc-200">
+          <div className="flex justify-between border-t border-red-100 pt-3 text-sm font-bold text-zinc-700 dark:text-zinc-200">
             <span>Status: {formatOrderStatus(order.order_status)}</span>
-            <span>Total: {formatCurrency(order.total_amount)}</span>
+            <span className="text-[#e10600]">Total: {formatCurrency(order.total_amount)}</span>
           </div>
         </article>
       ))}
