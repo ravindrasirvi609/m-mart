@@ -4,6 +4,8 @@ const publicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
   NEXT_PUBLIC_BASE_URL: z.string().url().optional().default("https://mmart4u.com"),
+  NEXT_PUBLIC_UPI_ID: z.string().min(3).optional(),
+  NEXT_PUBLIC_DEEP_LINK_SCHEME: z.string().min(2).optional().default("mmart"),
 });
 
 const serverEnvSchema = publicEnvSchema.extend({
@@ -18,6 +20,8 @@ export function getPublicEnv() {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
+    NEXT_PUBLIC_UPI_ID: process.env.NEXT_PUBLIC_UPI_ID,
+    NEXT_PUBLIC_DEEP_LINK_SCHEME: process.env.NEXT_PUBLIC_DEEP_LINK_SCHEME,
   });
 }
 
@@ -26,6 +30,8 @@ export function getServerEnv() {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
+    NEXT_PUBLIC_UPI_ID: process.env.NEXT_PUBLIC_UPI_ID,
+    NEXT_PUBLIC_DEEP_LINK_SCHEME: process.env.NEXT_PUBLIC_DEEP_LINK_SCHEME,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,

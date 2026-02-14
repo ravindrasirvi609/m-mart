@@ -6,38 +6,39 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getServerEnv } from "@/lib/env";
 
 export async function sendMagicLinkAction(email: string) {
-    try {
-        const env = getServerEnv();
-        if (!env.RESEND_API_KEY || !env.RESEND_FROM_EMAIL) {
-            return { ok: false, error: "Resend is not configured." };
-        }
+  try {
+    const env = getServerEnv();
+    if (!env.RESEND_API_KEY || !env.RESEND_FROM_EMAIL) {
+      return { ok: false, error: "Resend is not configured." };
+    }
 
-        const supabase = createAdminSupabaseClient();
-        const resend = new Resend(env.RESEND_API_KEY);
-        const host = (await headers()).get("host");
-        const protocol = host?.includes("localhost") ? "http" : "https";
-        const origin = `${protocol}://${host}`;
+    const supabase = createAdminSupabaseClient();
+    const resend = new Resend(env.RESEND_API_KEY);
+    const host = (await headers()).get("host");
+    const protocol = host?.includes("localhost") ? "http" : "https";
+    const fallbackOrigin = host ? `${protocol}://${host}` : "https://mmart4u.com";
+    const origin = env.NEXT_PUBLIC_BASE_URL ?? fallbackOrigin;
 
-        const { data, error } = await supabase.auth.admin.generateLink({
-            type: "magiclink",
-            email,
-        });
+    const { data, error } = await supabase.auth.admin.generateLink({
+      type: "magiclink",
+      email,
+    });
 
-        if (error) {
-            console.error("Supabase generateLink error:", error.message);
-            return { ok: false, error: error.message };
-        }
+    if (error) {
+      console.error("Supabase generateLink error:", error.message);
+      return { ok: false, error: error.message };
+    }
 
-        const callbackUrl = new URL(`${origin}/auth/callback`);
-        callbackUrl.searchParams.set("token_hash", data.properties.hashed_token);
-        callbackUrl.searchParams.set("type", "magiclink");
-        callbackUrl.searchParams.set("next", "/");
+    const callbackUrl = new URL(`${origin}/auth/callback`);
+    callbackUrl.searchParams.set("token_hash", data.properties.hashed_token);
+    callbackUrl.searchParams.set("type", "magiclink");
+    callbackUrl.searchParams.set("next", "/");
 
-        const { error: resendError } = await resend.emails.send({
-            from: env.RESEND_FROM_EMAIL,
-            to: email,
-            subject: "Your Mmart Magic Link",
-            html: `
+    const { error: resendError } = await resend.emails.send({
+      from: env.RESEND_FROM_EMAIL,
+      to: email,
+      subject: "Your Mmart Magic Link",
+      html: `
         <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #f7f8fa;">
           <div style="background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05); border: 1px solid rgba(225, 6, 0, 0.1);">
             <div style="margin-bottom: 30px; text-align: center;">
@@ -73,17 +74,17 @@ export async function sendMagicLinkAction(email: string) {
           </div>
         </div>
       `,
-        });
+    });
 
-        if (resendError) {
-            console.error("Resend error:", resendError);
-            return { ok: false, error: "Failed to send email. Please try again later." };
-        }
-
-        console.log(`Magic link successfully sent to ${email}`);
-        return { ok: true };
-    } catch (err) {
-        console.error("Magic link action error:", err);
-        return { ok: false, error: "An unexpected error occurred." };
+    if (resendError) {
+      console.error("Resend error:", resendError);
+      return { ok: false, error: "Failed to send email. Please try again later." };
     }
+
+    console.log(`Magic link successfully sent to ${email}`);
+    return { ok: true };
+  } catch (err) {
+    console.error("Magic link action error:", err);
+    return { ok: false, error: "An unexpected error occurred." };
+  }
 }

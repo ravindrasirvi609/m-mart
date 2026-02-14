@@ -26,6 +26,8 @@ export function MainFooter() {
             <Link href="/products" className="hover:underline">Shop</Link>
             <Link href="/orders" className="hover:underline">Orders</Link>
             <Link href="/profile" className="hover:underline">Profile</Link>
+            <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link>
+            <Link href="/terms-and-conditions" className="hover:underline">Terms & Conditions</Link>
           </div>
         </section>
 

@@ -36,6 +36,7 @@
 
 html {
   scroll-behavior: smooth;
+  background: var(--surface-muted);
 }
 
 body {
@@ -45,6 +46,7 @@ body {
     var(--surface-muted);
   color: var(--text-main);
   font-family: var(--font-sans), sans-serif;
+  overscroll-behavior-y: none;
 }
 
 h1,
@@ -202,6 +204,30 @@ h6 {
 
 @media (max-width: 768px) {
   .mobile-safe-padding {
-    padding-bottom: 6rem;
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
   }
+}
+
+.mobile-refresh-indicator {
+  position: fixed;
+  left: 50%;
+  top: 0;
+  z-index: 80;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(225, 6, 0, 0.2);
+  border-radius: 999px;
+  padding: 0.38rem 0.7rem;
+  background: rgba(255, 255, 255, 0.95);
+  color: #e10600;
+  font-size: 0.72rem;
+  font-weight: 700;
+  pointer-events: none;
+  transition: transform 0.16s ease, opacity 0.2s ease;
+  box-shadow: 0 6px 20px rgba(225, 6, 0, 0.15);
+}
+
+.dark .mobile-refresh-indicator {
+  background: rgba(21, 21, 24, 0.96);
 }

@@ -2,16 +2,19 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Lock, ShieldCheck } from "lucide-react";
+import { ExternalLink, Lock, ShieldCheck } from "lucide-react";
 import { useState, useTransition } from "react";
-import { toast } from "sonner";
 
 import { placeOrderAction } from "@/actions/order-actions";
 import { useCart } from "@/components/providers/cart-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { getPublicEnv } from "@/lib/env";
+import { showAppToast, triggerHaptic } from "@/lib/mobile/feedback";
+import { buildUpiPaymentUrl, openUpiPayment } from "@/lib/mobile/payments";
 import { formatCurrency } from "@/lib/utils";
+import { STORE } from "@/lib/constants";
 
 type CheckoutFormProps = {
   defaultName: string;
@@ -27,6 +30,12 @@ export function CheckoutForm({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { items, subtotal, deliveryCharge, total, clearCart } = useCart();
+  const upiPaymentUrl = buildUpiPaymentUrl({
+    upiId: getPublicEnv().NEXT_PUBLIC_UPI_ID,
+    payeeName: STORE.name,
+    amount: total,
+    note: "Mmart grocery order",
+  });
   const [name, setName] = useState(defaultName);
   const [phone, setPhone] = useState(defaultPhone);
   const [address, setAddress] = useState(defaultAddress);
@@ -50,7 +59,10 @@ export function CheckoutForm({
         event.preventDefault();
 
         if (!screenshot) {
-          toast.error("Upload payment screenshot before placing the order.");
+          showAppToast("Upload payment screenshot before placing the order.", "error").catch(
+            () => undefined,
+          );
+          triggerHaptic("warning").catch(() => undefined);
           return;
         }
 
@@ -70,12 +82,14 @@ export function CheckoutForm({
           const result = await placeOrderAction(formData);
 
           if (!result.ok) {
-            toast.error(result.error);
+            await showAppToast(result.error, "error");
+            await triggerHaptic("error");
             return;
           }
 
           clearCart();
-          toast.success(`Order ${result.orderId.slice(0, 8)} placed successfully`);
+          await showAppToast(`Order ${result.orderId.slice(0, 8)} placed successfully`, "success");
+          await triggerHaptic("success");
           router.push("/orders");
         });
       }}
@@ -108,6 +122,26 @@ export function CheckoutForm({
         <div className="rounded-xl bg-red-50 p-4 text-sm text-zinc-700">
           <p className="font-bold text-[#e10600]">Payment Instructions</p>
           <p className="mt-1">Pay via UPI QR and upload screenshot for manual admin verification.</p>
+          <div className="mt-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => {
+                if (!upiPaymentUrl) {
+                  showAppToast("UPI deep link is not configured yet.", "error").catch(
+                    () => undefined,
+                  );
+                  return;
+                }
+
+                openUpiPayment(upiPaymentUrl);
+              }}
+            >
+              <ExternalLink size={14} />
+              Open UPI App
+            </Button>
+          </div>
         </div>
 
         <label className="block space-y-2">
@@ -115,6 +149,7 @@ export function CheckoutForm({
           <Input
             type="file"
             accept="image/png,image/jpeg,image/webp"
+            capture="environment"
             required
             onChange={(event) => {
               const file = event.target.files?.[0] ?? null;

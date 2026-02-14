@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, List, ShoppingCart, User } from "lucide-react";
+import { Home, LayoutGrid, ReceiptText, ShoppingCart, User } from "lucide-react";
 
 import { useCart } from "@/components/providers/cart-provider";
 import { cn } from "@/lib/utils";
 
 const nav = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/products", label: "Shop", icon: List },
+  { href: "/products", label: "Categories", icon: LayoutGrid },
   { href: "/cart", label: "Cart", icon: ShoppingCart },
+  { href: "/orders", label: "Orders", icon: ReceiptText },
   { href: "/profile", label: "Profile", icon: User },
 ];
 
@@ -23,7 +24,9 @@ export function MobileBottomNav() {
       <div className="mx-auto flex max-w-xl items-center justify-around">
         {nav.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.href;
+          const active =
+            pathname === item.href ||
+            (item.href !== "/" && pathname.startsWith(`${item.href}/`));
 
           return (
             <Link

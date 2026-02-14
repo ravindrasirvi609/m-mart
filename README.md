@@ -1,127 +1,178 @@
-# Mmart - Full Stack Grocery Store (Next.js + Supabase)
+# Mmart Mobile + Web (Next.js + Capacitor)
 
-Production-ready grocery e-commerce application for **Mmart** with:
-- User-side store, cart, checkout with UPI screenshot upload.
-- Manual payment verification workflow.
-- Admin dashboard for products, categories, and orders.
-- Supabase Auth (Email OTP), PostgreSQL, and Realtime status updates.
-- Resend email notifications for customer and admin.
+Mmart is now configured to run as:
+- Progressive Web App (PWA)
+- Android app via Capacitor (APK/AAB ready flow)
+- iOS app via Capacitor (App Store build flow)
 
-## Store Details
-
-- Store: **Mmart**
-- Owner: **Naveen Sirvi**
-- Location: **Mukai Nagar, Hinjewadi Phase 1, Pune, Maharashtra**
-- Contact: **8955872627**
-- Payment: **UPI QR + Manual Verification**
-
-## Tech Stack
+## Stack
 
 - Next.js 16 (App Router)
 - Tailwind CSS
-- Supabase (Auth + Postgres + Storage + Realtime)
-- Resend (email)
+- Supabase (Auth + DB + Storage)
+- Resend (Email)
+- Capacitor 8 (Android + iOS)
+- PWA with custom service worker
 
-## Folder Structure
+## Implemented Mobile Conversion
 
-- `app/(auth)` - login and auth callback
-- `app/(store)` - storefront, products, cart, checkout, profile, orders
-- `app/(admin)` - protected admin panel
-- `app/api` - API routes (health check)
-- `components` - reusable UI and feature components
-- `lib` - shared helpers, Supabase clients, auth/query utilities
-- `actions` - server actions for writes
-- `supabase/schema.sql` - database schema, RLS, function, and bucket setup
+### PWA
+- `app/manifest.ts` with standalone + portrait config
+- `public/sw.js` custom service worker
+- Offline fallback route: `/offline`
+- Install prompt support (`beforeinstallprompt`)
+- Multi-size app icons in `public/icons/`
+- Apple touch icon (`public/apple-touch-icon.png`)
 
-## Setup
+### Capacitor
+- `capacitor.config.ts`
+- App ID: `com.mmart.store`
+- App name: `Mmart`
+- Web dir: `.next`
+- Native red splash/status bar theme
+- Deep-link helpers and universal link placeholders
 
-1. Install dependencies:
+### Native-ready runtime hooks
+- Connectivity checks with Capacitor Network plugin fallback
+- No-internet full-screen state
+- Native splash hide + status bar styling
+- Pull-to-refresh for standalone/native shell
+- Push notification listener bootstrap (future-ready)
+- Native toast + haptic utility wrappers
+- UPI deep-link launcher + QR fallback
+
+### Auth and session for mobile
+- Supabase browser client now uses a Capacitor Preferences-backed storage adapter when available
+- Deep-link URL handling for app-open auth callbacks
+- Universal link files added under `public/.well-known/`
+
+### Store compliance pages
+- Privacy Policy: `/privacy-policy`
+- Terms & Conditions: `/terms-and-conditions`
+
+## Project Setup
+
+1. Install dependencies
 
 ```bash
 npm install
 ```
 
-2. Copy environment variables:
+2. Environment variables (`.env.local`)
 
-```bash
-cp .env.example .env.local
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_BASE_URL=https://your-domain.com
+NEXT_PUBLIC_UPI_ID=your-upi-id@bank
+NEXT_PUBLIC_DEEP_LINK_SCHEME=mmart
+SUPABASE_SERVICE_ROLE_KEY=
+ADMIN_EMAIL=
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=
 ```
 
-3. Fill `.env.local` values:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `ADMIN_EMAIL`
-- `RESEND_API_KEY` (optional but recommended)
-- `RESEND_FROM_EMAIL` (optional)
-
-4. Apply SQL in Supabase SQL Editor:
-- Open `supabase/schema.sql`
-- Run the full script
-- Add your admin email to `public.admin_users`
-
-5. Configure Supabase Auth:
-- Enable Email OTP login
-- Set site URL and redirect URL: `http://localhost:3000/auth/callback`
-
-6. Run development server:
+3. Start web app
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
-## Payment Flow
-
-1. User checks out and pays through static UPI QR.
-2. User uploads screenshot.
-3. Order is created with:
-- `payment_status = pending_verification`
-- `order_status = pending`
-4. Admin reviews screenshot and updates payment/order status.
-
-## Features Implemented
-
-### User Side
-- Email OTP login
-- Homepage with banner, categories, featured products, location, call CTA
-- Product listing with search debounce, category filter, pagination
-- Product detail page
-- Cart with quantity controls and delivery charge logic
-- Checkout with UPI QR, screenshot upload, and place order
-- Profile management (name/phone/address)
-- Order history with realtime status updates
-- Dark mode toggle
-
-### Admin Side
-- Protected admin routes (admin email only)
-- Dashboard metrics (orders, pending payments, revenue, low-stock)
-- Category and product management
-- Product image upload support
-- Order management and status updates
-- Payment screenshot viewing
-
-### Security and Performance
-- DB writes through Server Actions
-- Role checks for admin actions
-- Screenshot and image upload validation
-- RLS policies and transactional order function in Supabase
-- Optimized images with Next/Image
-- Loading skeletons and error boundaries
-
-## Deployment Notes
-
-- Deploy on Vercel or any Node-compatible platform.
-- Ensure all env vars are set in deployment settings.
-- Add production domain to Supabase auth redirect URLs.
-- Configure Resend verified sender domain for reliable email delivery.
-
-## Scripts
+## Capacitor Commands
 
 ```bash
-npm run dev
 npm run build
-npm run start
-npm run lint
+npx cap sync
+npx cap open android
+npx cap open ios
 ```
+
+Convenience scripts:
+
+```bash
+npm run cap:sync
+npm run cap:android
+npm run cap:ios
+npm run mobile:android:build
+npm run mobile:ios:build
+```
+
+## First-time Native Initialization
+
+After installing dependencies, run once:
+
+```bash
+npx cap add android
+npx cap add ios
+```
+
+Then every time after web changes:
+
+```bash
+npm run build
+npx cap sync
+```
+
+## Android Release (Play Store)
+
+1. Open Android Studio:
+
+```bash
+npx cap open android
+```
+
+2. Set minimum SDK to Android 8+ (API 26+).
+3. Configure signing key (Build > Generate Signed Bundle/APK).
+4. Generate:
+- Signed `APK` (internal testing)
+- Signed `AAB` (Play Store submission)
+5. Ensure app icon/launch icon, versionCode/versionName are updated.
+6. Confirm required permissions in `AndroidManifest.xml`:
+- `INTERNET`
+- Media/files access only if screenshot upload flow requires runtime picker grants on your target SDK.
+
+## iOS Release (App Store)
+
+1. Open Xcode:
+
+```bash
+npx cap open ios
+```
+
+2. Set bundle ID: `com.mmart.store`.
+3. Set deployment target to iOS 14+.
+4. Configure signing/team/profile.
+5. Verify ATS allows only HTTPS endpoints.
+6. Archive and upload via Xcode Organizer.
+
+## Deep Link / Universal Link Setup
+
+Update placeholders before production:
+
+- `public/.well-known/apple-app-site-association`
+  - Replace `TEAM_ID.com.mmart.store` with your Apple Team ID + Bundle ID.
+- `public/.well-known/assetlinks.json`
+  - Replace `REPLACE_WITH_PLAY_SIGNING_CERT_SHA256` with Play signing cert fingerprint.
+
+## Security Notes
+
+- HTTPS-only remote image configuration
+- CSP + security headers in `next.config.ts`
+- Avoid committing real secrets; use `.env.local`
+- Disable WebView debugging in production Capacitor config
+
+## Store Submission Checklist
+
+- [ ] Signed Android AAB generated
+- [ ] Signed iOS archive generated
+- [ ] Privacy policy URL configured in Play Console/App Store Connect
+- [ ] Terms & Conditions accessible in-app
+- [ ] App icons and splash assets verified on device
+- [ ] Deep links validated on real Android + iOS devices
+- [ ] Push permission flow tested (if enabled)
+- [ ] Offline behavior tested (airplane mode)
+- [ ] UPI screenshot upload and deep-link flow tested
+
+## Important
+
+Capacitor native folders (`android/`, `ios/`) are generated locally by `npx cap add ...` after dependencies are installed. This repository now contains all required web/runtime/config scaffolding; run the native add/sync/build steps on a machine with Android Studio and Xcode for final store binaries.

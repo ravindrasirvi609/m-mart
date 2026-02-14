@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAM_ID.com.mmart.store",
+        "paths": ["/auth/callback/*", "/orders/*", "/profile/*"]
+      }
+    ]
+  }
+}

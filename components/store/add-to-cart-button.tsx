@@ -2,10 +2,10 @@
 
 import { ShoppingCart } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 import { useCart } from "@/components/providers/cart-provider";
 import { Button } from "@/components/ui/button";
+import { showAppToast, triggerHaptic } from "@/lib/mobile/feedback";
 import { cn } from "@/lib/utils";
 
 type AddToCartButtonProps = {
@@ -32,7 +32,8 @@ export function AddToCartButton({ product, disabled }: AddToCartButtonProps) {
         addItem(product);
         setBump(true);
         window.setTimeout(() => setBump(false), 450);
-        toast.success(`${product.name} added to cart`);
+        showAppToast(`${product.name} added to cart`, "success").catch(() => undefined);
+        triggerHaptic("light").catch(() => undefined);
       }}
     >
       <ShoppingCart size={14} />
