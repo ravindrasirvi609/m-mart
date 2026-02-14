@@ -19,7 +19,7 @@ const productSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().trim().min(2).max(120),
   description: z.string().trim().min(4).max(1000),
-  price: z.coerce.number().positive(),
+  price: z.coerce.number().min(0),
   discount_price: z.string().optional(),
   stock: z.coerce.number().int().min(0),
   category: z.string().trim().min(2).max(60),
@@ -102,6 +102,7 @@ export async function upsertProductAction(formData: FormData) {
   });
 
   if (!parsed.success) {
+    console.error("Product validation failed:", parsed.error.format());
     throw new Error("Product form is invalid.");
   }
 
