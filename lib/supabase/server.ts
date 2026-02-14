@@ -21,8 +21,8 @@ export async function createServerSupabaseClient() {
             cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, options);
             });
-          } catch {
-            // Called from a Server Component where setting cookies is ignored.
+          } catch (error) {
+            console.error("[Supabase Server] Failed to set cookies:", error);
           }
         },
       },

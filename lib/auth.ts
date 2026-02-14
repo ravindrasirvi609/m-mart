@@ -5,10 +5,17 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export function isAdminEmail(email: string | null | undefined) {
   if (!email) {
+    console.log("[Auth] No email provided for admin check");
     return false;
   }
 
-  return email.toLowerCase() === getServerEnv().ADMIN_EMAIL.toLowerCase();
+  const adminEmail = getServerEnv().ADMIN_EMAIL.toLowerCase().trim();
+  const userEmail = email.toLowerCase().trim();
+  const isAdmin = userEmail === adminEmail;
+
+  console.log(`[Auth] Admin check: ${userEmail} === ${adminEmail} -> ${isAdmin}`);
+
+  return isAdmin;
 }
 
 export async function getCurrentUser() {
@@ -31,12 +38,15 @@ export async function requireUser() {
 }
 
 export async function requireAdmin() {
+  console.log("[Auth] requireAdmin called");
   const user = await requireUser();
 
   if (!isAdminEmail(user.email)) {
+    console.log(`[Auth] Unauthorized admin access attempt by ${user.email}`);
     redirect("/");
   }
 
+  console.log(`[Auth] Admin access granted to ${user.email}`);
   return user;
 }
 
