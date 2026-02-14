@@ -29,8 +29,14 @@ export async function GET(request: NextRequest) {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
+          // In production, ensure cookies are valid for both apex and subdomains
+          const cookieOptions = { ...options };
+          if (request.headers.get("host")?.includes("mmart4u.com")) {
+            cookieOptions.domain = ".mmart4u.com";
+          }
+
           request.cookies.set(name, value);
-          response.cookies.set(name, value, options);
+          response.cookies.set(name, value, cookieOptions);
         });
       },
     },

@@ -18,8 +18,14 @@ export async function updateSession(request: NextRequest) {
             },
             setAll(cookiesToSet) {
                 cookiesToSet.forEach(({ name, value, options }) => {
+                    // In production, ensure cookies are valid for both apex and and subdomains
+                    const cookieOptions = { ...options };
+                    if (request.headers.get("host")?.includes("mmart4u.com")) {
+                        cookieOptions.domain = ".mmart4u.com";
+                    }
+
                     request.cookies.set(name, value);
-                    supabaseResponse.cookies.set(name, value, options);
+                    supabaseResponse.cookies.set(name, value, cookieOptions);
                 });
             },
         },
