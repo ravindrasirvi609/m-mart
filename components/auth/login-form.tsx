@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { sendMagicLinkAction } from "@/actions/auth-actions";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -15,18 +15,11 @@ export function LoginForm() {
 
   const sendMagicLink = async () => {
     setLoading(true);
-    const supabase = createBrowserSupabaseClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    const result = await sendMagicLinkAction(email);
     setLoading(false);
 
-    if (error) {
-      toast.error(error.message);
+    if (!result.ok) {
+      toast.error(result.error);
       return;
     }
 
