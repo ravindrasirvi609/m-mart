@@ -2,6 +2,8 @@ import { type EmailOtpType } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { normalizeSupabaseCookieOptions } from "@/lib/supabase/proxy";
+
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
@@ -20,7 +22,7 @@ export async function GET(request: NextRequest) {
   // written directly onto the NextResponse that we return (the redirect).
   // Using cookies() from next/headers does NOT transfer cookies to a
   // NextResponse.redirect(), which causes session loss in production.
-  let response = NextResponse.redirect(new URL(nextPath, request.url));
+  const response = NextResponse.redirect(new URL(nextPath, request.url));
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -29,12 +31,9 @@ export async function GET(request: NextRequest) {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
-          // In production, ensure cookies are valid for both apex and subdomains
-          const cookieOptions = { ...options };
-          if (request.headers.get("host")?.includes("mmart4u.com")) {
-            cookieOptions.domain = ".mmart4u.com";
-          }
+          const cookieOptions = normalizeSupabaseCookieOptions(request, options);
 
+          // Keep request and redirect response cookies synchronized.
           request.cookies.set(name, value);
           response.cookies.set(name, value, cookieOptions);
         });
