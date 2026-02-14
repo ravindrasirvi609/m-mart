@@ -103,9 +103,11 @@ export function MainHeader({ isAdmin, isLoggedIn }: MainHeaderProps) {
           </button>
 
           {isLoggedIn ? (
-            <Link href="/auth/logout" className="hidden md:block">
-              <Button variant="outline">Logout</Button>
-            </Link>
+            <form action="/auth/logout" method="post" className="hidden md:block">
+              <Button variant="outline" type="submit">
+                Logout
+              </Button>
+            </form>
           ) : (
             <Link href="/login" className="hidden md:block">
               <Button>Login</Button>
@@ -128,11 +130,15 @@ export function MainHeader({ isAdmin, isLoggedIn }: MainHeaderProps) {
               </Link>
             ))}
             {isLoggedIn ? (
-              <Link href="/auth/logout" onClick={() => setOpen(false)}>
-                <Button variant="outline" className="w-full">
+              <form
+                action="/auth/logout"
+                method="post"
+                onSubmit={() => setOpen(false)}
+              >
+                <Button variant="outline" type="submit" className="w-full">
                   Logout
                 </Button>
-              </Link>
+              </form>
             ) : (
               <Link href="/login" onClick={() => setOpen(false)}>
                 <Button className="w-full">Login</Button>
