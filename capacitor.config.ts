@@ -1,10 +1,15 @@
+const appUrl = process.env.CAP_SERVER_URL ?? "https://mmart4u.com";
+
 const config = {
   appId: "com.mmart.store",
   appName: "Mmart",
-  webDir: ".next",
+  webDir: "mobile-web",
   bundledWebRuntime: false,
   server: {
+    url: appUrl,
+    cleartext: false,
     androidScheme: "https",
+    allowNavigation: ["mmart4u.com", "www.mmart4u.com"],
   },
   android: {
     allowMixedContent: false,
