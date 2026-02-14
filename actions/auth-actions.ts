@@ -38,18 +38,39 @@ export async function sendMagicLinkAction(email: string) {
             to: email,
             subject: "Your Mmart Magic Link",
             html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
-          <h2 style="color: #111827;">Login to Mmart</h2>
-          <p style="color: #4b5563; line-height: 1.5;">Click the button below to sign in to your Mmart account. This link will expire in 1 hour.</p>
-          <div style="margin: 30px 0;">
-            <a href="${callbackUrl.toString()}" 
-               style="background-color: #111827; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">
-               Sign In to Mmart
-            </a>
+        <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #f7f8fa;">
+          <div style="background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05); border: 1px solid rgba(225, 6, 0, 0.1);">
+            <div style="margin-bottom: 30px; text-align: center;">
+              <h1 style="color: #e10600; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.02em;">Mmart</h1>
+              <p style="color: #61666d; margin: 5px 0 0; font-size: 14px; font-weight: 500;">Premium Shopping Experience</p>
+            </div>
+            
+            <h2 style="color: #191919; font-size: 20px; font-weight: 700; margin-bottom: 16px;">Sign in to your account</h2>
+            
+            <p style="color: #61666d; line-height: 1.6; font-size: 16px; margin-bottom: 32px;">
+              Hello! Click the button below to securely sign in to Mmart. For your security, this link will expire in 1 hour.
+            </p>
+            
+            <div style="text-align: center; margin-bottom: 32px;">
+              <a href="${callbackUrl.toString()}" 
+                 style="background: linear-gradient(90deg, #ff3b30, #e10600); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; display: inline-block; box-shadow: 0 4px 12px rgba(225, 6, 0, 0.2);">
+                 Sign In to Mmart
+              </a>
+            </div>
+            
+            <p style="color: #61666d; font-size: 14px; line-height: 1.5; margin-bottom: 0;">
+              If you didn't request this email, you can safely ignore it.
+            </p>
           </div>
-          <p style="color: #9ca3af; font-size: 14px;">If you didn't request this email, you can safely ignore it.</p>
-          <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;">
-          <p style="color: #9ca3af; font-size: 12px;">Mmart - Premium Shopping Experience</p>
+          
+          <div style="margin-top: 30px; text-align: center;">
+            <p style="color: #bec4ce; font-size: 12px; margin-bottom: 8px;">
+              &copy; ${new Date().getFullYear()} Mmart. All rights reserved.
+            </p>
+            <p style="color: #bec4ce; font-size: 12px;">
+              Mukai Nagar, Hinjewadi Phase 1, Pune, Maharashtra
+            </p>
+          </div>
         </div>
       `,
         });

@@ -2,7 +2,7 @@ import { MobileBottomNav } from "@/components/site/mobile-bottom-nav";
 import { MainFooter } from "@/components/site/main-footer";
 import { MainHeader } from "@/components/site/main-header";
 import { PageFade } from "@/components/site/page-fade";
-import { getCurrentUser, isAdminEmail } from "@/lib/auth";
+import { getCurrentUser, checkIsAdmin } from "@/lib/auth";
 import { getCurrentUserNotifications } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -13,12 +13,12 @@ export default async function StoreLayout({
   children: React.ReactNode;
 }) {
   const user = await getCurrentUser();
-  const isAdmin = isAdminEmail(user?.email);
+  const isAdmin = await checkIsAdmin(user?.email);
   const notifications = user
     ? await getCurrentUserNotifications({
-        userId: user.id,
-        isAdmin,
-      })
+      userId: user.id,
+      isAdmin,
+    })
     : [];
 
   return (
