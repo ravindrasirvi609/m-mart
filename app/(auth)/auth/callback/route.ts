@@ -28,12 +28,10 @@ export async function GET(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-
-        response = NextResponse.redirect(new URL(nextPath, request.url));
-        cookiesToSet.forEach(({ name, value, options }) =>
-          response.cookies.set(name, value, options),
-        );
+        cookiesToSet.forEach(({ name, value, options }) => {
+          request.cookies.set(name, value);
+          response.cookies.set(name, value, options);
+        });
       },
     },
   });
