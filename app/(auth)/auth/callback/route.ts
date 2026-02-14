@@ -13,19 +13,36 @@ export async function GET(request: Request) {
   const supabase = await createServerSupabaseClient();
 
   if (tokenHash && type) {
-    await supabase.auth.verifyOtp({
+    const { error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
       type,
     });
+    if (error) {
+      console.error("Auth callback OTP error:", error.message);
+      return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error.message)}`, request.url));
+    }
   } else if (code) {
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      console.error("Auth callback code error:", error.message);
+      return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error.message)}`, request.url));
+    }
+  } else {
+    console.error("Auth callback error: No token_hash or code provided");
+    return NextResponse.redirect(new URL("/login?error=Invalid login link", request.url));
   }
 
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
 
-  if (user?.email) {
+  if (userError || !user) {
+    console.error("Auth callback user error:", userError?.message ?? "No user found");
+    return NextResponse.redirect(new URL("/login?error=Session creation failed", request.url));
+  }
+
+  if (user.email) {
     await supabase.from("users").upsert({
       id: user.id,
       email: user.email,
@@ -33,5 +50,6 @@ export async function GET(request: Request) {
     });
   }
 
+  // Ensure internal redirect for better reliability
   return NextResponse.redirect(new URL(nextPath, request.url));
 }

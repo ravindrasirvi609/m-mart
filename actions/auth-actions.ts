@@ -24,8 +24,14 @@ export async function sendMagicLinkAction(email: string) {
         });
 
         if (error) {
+            console.error("Supabase generateLink error:", error.message);
             return { ok: false, error: error.message };
         }
+
+        const callbackUrl = new URL(`${origin}/auth/callback`);
+        callbackUrl.searchParams.set("token_hash", data.properties.hashed_token);
+        callbackUrl.searchParams.set("type", "magiclink");
+        callbackUrl.searchParams.set("next", "/");
 
         const { error: resendError } = await resend.emails.send({
             from: env.RESEND_FROM_EMAIL,
@@ -36,7 +42,7 @@ export async function sendMagicLinkAction(email: string) {
           <h2 style="color: #111827;">Login to Mmart</h2>
           <p style="color: #4b5563; line-height: 1.5;">Click the button below to sign in to your Mmart account. This link will expire in 1 hour.</p>
           <div style="margin: 30px 0;">
-            <a href="${origin}/auth/callback?token_hash=${data.properties.hashed_token}&type=magiclink" 
+            <a href="${callbackUrl.toString()}" 
                style="background-color: #111827; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">
                Sign In to Mmart
             </a>
@@ -53,9 +59,10 @@ export async function sendMagicLinkAction(email: string) {
             return { ok: false, error: "Failed to send email. Please try again later." };
         }
 
+        console.log(`Magic link successfully sent to ${email}`);
         return { ok: true };
     } catch (err) {
-        console.error("Magic link error:", err);
+        console.error("Magic link action error:", err);
         return { ok: false, error: "An unexpected error occurred." };
     }
 }
