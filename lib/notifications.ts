@@ -13,6 +13,19 @@ function shortOrderId(orderId: string) {
   return orderId.slice(0, 8).toUpperCase();
 }
 
+function isMissingNotificationsTableError(error: { code?: string; message?: string } | null) {
+  if (!error) {
+    return false;
+  }
+
+  const message = (error.message ?? "").toLowerCase();
+  return (
+    error.code === "PGRST205" ||
+    message.includes("public.notifications") ||
+    message.includes("relation \"notifications\" does not exist")
+  );
+}
+
 async function insertNotifications(
   payload: NotificationInsert | NotificationInsert[],
   client?: AdminSupabaseClient,
@@ -23,6 +36,11 @@ async function insertNotifications(
     : await admin.from("notifications").insert(payload);
 
   if (error) {
+    if (isMissingNotificationsTableError(error)) {
+      console.warn("[Notifications] notifications table is missing in Supabase.");
+      return;
+    }
+
     throw new Error(error.message);
   }
 }

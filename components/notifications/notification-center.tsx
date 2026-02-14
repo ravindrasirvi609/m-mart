@@ -1,20 +1,22 @@
 "use client";
 
 import { Bell, BellRing, CheckCheck } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
-import { cn } from "@/lib/utils";
+import { cn, formatOrderStatus } from "@/lib/utils";
 
 type NotificationRow = Database["public"]["Tables"]["notifications"]["Row"];
+type OrderRow = Database["public"]["Tables"]["orders"]["Row"];
 
 type NotificationCenterProps = {
   mode: "admin" | "customer";
   userId: string;
   initialNotifications: NotificationRow[];
+  notificationsAvailable: boolean;
   className?: string;
 };
 
@@ -31,21 +33,76 @@ function isPushSupported() {
   return typeof window !== "undefined" && "Notification" in window;
 }
 
+function isMissingNotificationsTableMessage(message: string) {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("public.notifications") ||
+    normalized.includes("relation \"notifications\" does not exist")
+  );
+}
+
+function shortOrderId(orderId: string) {
+  return orderId.slice(0, 8).toUpperCase();
+}
+
 export function NotificationCenter({
   mode,
   userId,
   initialNotifications,
+  notificationsAvailable,
   className,
 }: NotificationCenterProps) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState(initialNotifications);
+  const [useOrdersFallback, setUseOrdersFallback] = useState(!notificationsAvailable);
   const [permission, setPermission] = useState<NotificationPermission | "unsupported">(
     isPushSupported() ? Notification.permission : "unsupported",
   );
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const unreadCount = notifications.reduce((count, entry) => count + (entry.is_read ? 0 : 1), 0);
+  const unreadCount = notifications.reduce((count, entry) => {
+    return count + (entry.is_read ? 0 : 1);
+  }, 0);
+
+  const pushVisualNotification = useCallback((title: string, message: string, tag: string) => {
+    toast(title, { description: message });
+
+    if (
+      isPushSupported() &&
+      Notification.permission === "granted" &&
+      document.visibilityState !== "visible"
+    ) {
+      new Notification(title, { body: message, tag });
+    }
+  }, []);
+
+  const pushRuntimeNotification = useCallback(
+    (title: string, message: string, tag: string) => {
+      const runtimeNotification: NotificationRow = {
+        id: tag,
+        created_at: new Date().toISOString(),
+        is_read: false,
+        kind: "runtime_fallback",
+        message,
+        order_id: null,
+        target_role: mode,
+        title,
+        user_id: mode === "customer" ? userId : null,
+      };
+
+      setNotifications((current) => {
+        if (current.some((entry) => entry.id === runtimeNotification.id)) {
+          return current;
+        }
+
+        return [runtimeNotification, ...current].slice(0, 20);
+      });
+
+      pushVisualNotification(title, message, tag);
+    },
+    [mode, pushVisualNotification, userId],
+  );
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
@@ -61,7 +118,12 @@ export function NotificationCenter({
   }, []);
 
   useEffect(() => {
-    const channelFilter = mode === "admin" ? "target_role=eq.admin" : `user_id=eq.${userId}`;
+    if (useOrdersFallback) {
+      return;
+    }
+
+    const channelFilter =
+      mode === "admin" ? "target_role=eq.admin" : `user_id=eq.${userId}`;
 
     const channel = supabase
       .channel(`notifications-${mode}-${userId}`)
@@ -84,20 +146,7 @@ export function NotificationCenter({
             return [incoming, ...current].slice(0, 20);
           });
 
-          toast(incoming.title, {
-            description: incoming.message,
-          });
-
-          if (
-            isPushSupported() &&
-            Notification.permission === "granted" &&
-            document.visibilityState !== "visible"
-          ) {
-            new Notification(incoming.title, {
-              body: incoming.message,
-              tag: incoming.id,
-            });
-          }
+          pushVisualNotification(incoming.title, incoming.message, incoming.id);
         },
       )
       .on(
@@ -111,8 +160,86 @@ export function NotificationCenter({
         (payload) => {
           const incoming = payload.new as NotificationRow;
 
-          setNotifications((current) =>
-            current.map((entry) => (entry.id === incoming.id ? incoming : entry)),
+          setNotifications((current) => {
+            return current.map((entry) => {
+              return entry.id === incoming.id ? incoming : entry;
+            });
+          });
+        },
+      )
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR") {
+          setUseOrdersFallback(true);
+        }
+      });
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [mode, pushVisualNotification, supabase, useOrdersFallback, userId]);
+
+  useEffect(() => {
+    if (!useOrdersFallback) {
+      return;
+    }
+
+    const customerFilter = mode === "customer" ? `user_id=eq.${userId}` : undefined;
+
+    const channel = supabase
+      .channel(`orders-notification-fallback-${mode}-${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "orders",
+          filter: customerFilter,
+        },
+        (payload) => {
+          const order = payload.new as OrderRow;
+          const code = shortOrderId(order.id);
+
+          if (mode === "admin") {
+            pushRuntimeNotification(
+              "New order received",
+              `Order #${code} needs payment verification and processing.`,
+              `fallback-insert-admin-${order.id}`,
+            );
+            return;
+          }
+
+          pushRuntimeNotification(
+            "Order placed",
+            `Order #${code} has been placed successfully.`,
+            `fallback-insert-customer-${order.id}`,
+          );
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+          filter: customerFilter,
+        },
+        (payload) => {
+          const order = payload.new as OrderRow;
+          const code = shortOrderId(order.id);
+
+          if (mode === "admin") {
+            pushRuntimeNotification(
+              "Order updated",
+              `Order #${code} is now ${formatOrderStatus(order.order_status)}.`,
+              `fallback-update-admin-${order.id}-${order.order_status}-${order.payment_status}`,
+            );
+            return;
+          }
+
+          pushRuntimeNotification(
+            "Order status updated",
+            `Order #${code} is ${formatOrderStatus(order.order_status)}. Payment: ${formatOrderStatus(order.payment_status)}.`,
+            `fallback-update-customer-${order.id}-${order.order_status}-${order.payment_status}`,
           );
         },
       )
@@ -121,16 +248,24 @@ export function NotificationCenter({
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [mode, supabase, userId]);
+  }, [mode, pushRuntimeNotification, supabase, useOrdersFallback, userId]);
 
   const markAllAsRead = async () => {
-    const unreadIds = notifications.filter((entry) => !entry.is_read).map((entry) => entry.id);
+    const unreadIds = notifications
+      .filter((entry) => !entry.is_read)
+      .map((entry) => entry.id);
 
     if (unreadIds.length === 0) {
       return;
     }
 
-    setNotifications((current) => current.map((entry) => ({ ...entry, is_read: true })));
+    setNotifications((current) => {
+      return current.map((entry) => ({ ...entry, is_read: true }));
+    });
+
+    if (useOrdersFallback) {
+      return;
+    }
 
     const { error } = await supabase
       .from("notifications")
@@ -138,14 +273,25 @@ export function NotificationCenter({
       .in("id", unreadIds);
 
     if (error) {
+      if (isMissingNotificationsTableMessage(error.message)) {
+        setUseOrdersFallback(true);
+        return;
+      }
+
       toast.error(error.message);
     }
   };
 
   const markOneAsRead = async (id: string) => {
-    setNotifications((current) =>
-      current.map((entry) => (entry.id === id ? { ...entry, is_read: true } : entry)),
-    );
+    setNotifications((current) => {
+      return current.map((entry) => {
+        return entry.id === id ? { ...entry, is_read: true } : entry;
+      });
+    });
+
+    if (useOrdersFallback) {
+      return;
+    }
 
     const { error } = await supabase
       .from("notifications")
@@ -153,6 +299,11 @@ export function NotificationCenter({
       .eq("id", id);
 
     if (error) {
+      if (isMissingNotificationsTableMessage(error.message)) {
+        setUseOrdersFallback(true);
+        return;
+      }
+
       toast.error(error.message);
     }
   };
@@ -205,7 +356,12 @@ export function NotificationCenter({
           )}
         >
           <div className="mb-3 flex items-center justify-between">
-            <p className={cn("text-sm font-bold", mode === "admin" ? "text-zinc-100" : "text-zinc-900 dark:text-zinc-100")}>
+            <p
+              className={cn(
+                "text-sm font-bold",
+                mode === "admin" ? "text-zinc-100" : "text-zinc-900 dark:text-zinc-100",
+              )}
+            >
               Notifications
             </p>
             <button
@@ -221,21 +377,58 @@ export function NotificationCenter({
             </button>
           </div>
 
-          <div className="mb-3">
+          <div className="mb-3 space-y-2">
             {permission === "granted" ? (
-              <p className={cn("text-xs", mode === "admin" ? "text-zinc-400" : "text-zinc-600 dark:text-zinc-300")}>
+              <p
+                className={cn(
+                  "text-xs",
+                  mode === "admin" ? "text-zinc-400" : "text-zinc-600 dark:text-zinc-300",
+                )}
+              >
                 Browser push notifications are enabled.
               </p>
+            ) : permission === "unsupported" ? (
+              <p
+                className={cn(
+                  "text-xs",
+                  mode === "admin" ? "text-zinc-400" : "text-zinc-600 dark:text-zinc-300",
+                )}
+              >
+                Push notifications are not supported in this browser.
+              </p>
             ) : (
-              <Button type="button" variant="outline" onClick={requestPushPermission} className="w-full text-[10px]">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={requestPushPermission}
+                className="w-full text-[10px]"
+              >
                 Enable Push Notifications
               </Button>
             )}
+
+            {useOrdersFallback ? (
+              <p
+                className={cn(
+                  "text-[11px]",
+                  mode === "admin" ? "text-amber-300" : "text-amber-700 dark:text-amber-300",
+                )}
+              >
+                Realtime fallback mode is active.
+              </p>
+            ) : null}
           </div>
 
           <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
             {notifications.length === 0 ? (
-              <p className={cn("rounded-xl border px-3 py-2 text-xs", mode === "admin" ? "border-white/10 text-zinc-400" : "border-red-100 text-zinc-500 dark:border-zinc-700 dark:text-zinc-300")}>
+              <p
+                className={cn(
+                  "rounded-xl border px-3 py-2 text-xs",
+                  mode === "admin"
+                    ? "border-white/10 text-zinc-400"
+                    : "border-red-100 text-zinc-500 dark:border-zinc-700 dark:text-zinc-300",
+                )}
+              >
                 No notifications yet.
               </p>
             ) : (
@@ -258,10 +451,20 @@ export function NotificationCenter({
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className={cn("text-sm font-semibold", mode === "admin" ? "text-zinc-100" : "text-zinc-900 dark:text-zinc-100")}>
+                      <p
+                        className={cn(
+                          "text-sm font-semibold",
+                          mode === "admin" ? "text-zinc-100" : "text-zinc-900 dark:text-zinc-100",
+                        )}
+                      >
                         {entry.title}
                       </p>
-                      <p className={cn("mt-1 text-xs", mode === "admin" ? "text-zinc-300" : "text-zinc-600 dark:text-zinc-300")}>
+                      <p
+                        className={cn(
+                          "mt-1 text-xs",
+                          mode === "admin" ? "text-zinc-300" : "text-zinc-600 dark:text-zinc-300",
+                        )}
+                      >
                         {entry.message}
                       </p>
                     </div>
@@ -271,7 +474,12 @@ export function NotificationCenter({
                     ) : null}
                   </div>
 
-                  <p className={cn("mt-2 text-[11px]", mode === "admin" ? "text-zinc-400" : "text-zinc-500 dark:text-zinc-400")}>
+                  <p
+                    className={cn(
+                      "mt-2 text-[11px]",
+                      mode === "admin" ? "text-zinc-400" : "text-zinc-500 dark:text-zinc-400",
+                    )}
+                  >
                     {formatTimestamp(entry.created_at)}
                   </p>
                 </button>

@@ -20,6 +20,7 @@ type MainHeaderProps = {
   isLoggedIn: boolean;
   userId: string | null;
   initialNotifications: NotificationRow[];
+  notificationsAvailable: boolean;
 };
 
 const baseLinks = [
@@ -34,6 +35,7 @@ export function MainHeader({
   isLoggedIn,
   userId,
   initialNotifications,
+  notificationsAvailable,
 }: MainHeaderProps) {
   const pathname = usePathname();
   const { totalItems } = useCart();
@@ -110,6 +112,7 @@ export function MainHeader({
               mode={isAdmin ? "admin" : "customer"}
               userId={userId}
               initialNotifications={initialNotifications}
+              notificationsAvailable={notificationsAvailable}
             />
           ) : null}
 

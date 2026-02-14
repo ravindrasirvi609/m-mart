@@ -234,7 +234,7 @@ export async function getCurrentUserNotifications({
   userId: string;
   isAdmin: boolean;
   limit?: number;
-}): Promise<NotificationRow[]> {
+}): Promise<{ items: NotificationRow[]; notificationsAvailable: boolean }> {
   const supabase = await createServerSupabaseClient();
   let query = supabase
     .from("notifications")
@@ -248,8 +248,33 @@ export async function getCurrentUserNotifications({
     query = query.eq("target_role", "customer").eq("user_id", userId);
   }
 
-  const { data } = await query;
-  return data ?? [];
+  const { data, error } = await query;
+
+  if (error) {
+    const message = error.message.toLowerCase();
+    const missingNotificationsTable =
+      error.code === "PGRST205" ||
+      message.includes("public.notifications") ||
+      message.includes("relation \"notifications\" does not exist");
+
+    if (missingNotificationsTable) {
+      return {
+        items: [],
+        notificationsAvailable: false,
+      };
+    }
+
+    console.error("[Queries] Failed to fetch notifications:", error.message);
+    return {
+      items: [],
+      notificationsAvailable: true,
+    };
+  }
+
+  return {
+    items: data ?? [],
+    notificationsAvailable: true,
+  };
 }
 
 export function assertNoQueryError(error: PostgrestError | null) {

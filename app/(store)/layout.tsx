@@ -14,12 +14,12 @@ export default async function StoreLayout({
 }) {
   const user = await getCurrentUser();
   const isAdmin = await checkIsAdmin(user?.email);
-  const notifications = user
+  const notificationState = user
     ? await getCurrentUserNotifications({
-      userId: user.id,
-      isAdmin,
-    })
-    : [];
+        userId: user.id,
+        isAdmin,
+      })
+    : { items: [], notificationsAvailable: false };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -27,7 +27,8 @@ export default async function StoreLayout({
         isAdmin={isAdmin}
         isLoggedIn={Boolean(user)}
         userId={user?.id ?? null}
-        initialNotifications={notifications}
+        initialNotifications={notificationState.items}
+        notificationsAvailable={notificationState.notificationsAvailable}
       />
       <main className="mobile-safe-padding mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
         <PageFade>{children}</PageFade>

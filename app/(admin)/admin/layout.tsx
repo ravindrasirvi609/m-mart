@@ -18,7 +18,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const user = await requireAdmin();
-  const notifications = await getCurrentUserNotifications({
+  const notificationState = await getCurrentUserNotifications({
     userId: user.id,
     isAdmin: true,
   });
@@ -34,7 +34,8 @@ export default async function AdminLayout({
           <NotificationCenter
             mode="admin"
             userId={user.id}
-            initialNotifications={notifications}
+            initialNotifications={notificationState.items}
+            notificationsAvailable={notificationState.notificationsAvailable}
           />
         </div>
 
