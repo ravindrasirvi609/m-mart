@@ -61,11 +61,31 @@ create table if not exists public.order_items (
   price numeric(10, 2) not null check (price >= 0)
 );
 
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references public.users(id) on delete cascade,
+  order_id uuid references public.orders(id) on delete cascade,
+  target_role text not null check (target_role in ('admin', 'customer')),
+  kind text not null,
+  title text not null,
+  message text not null,
+  is_read boolean not null default false,
+  created_at timestamptz not null default now(),
+  constraint customer_notifications_require_user check (
+    (target_role = 'customer' and user_id is not null)
+    or (target_role = 'admin' and user_id is null)
+  )
+);
+
 create index if not exists idx_products_category on public.products(category);
 create index if not exists idx_products_active on public.products(is_active);
 create index if not exists idx_orders_user on public.orders(user_id);
 create index if not exists idx_orders_payment_status on public.orders(payment_status);
 create index if not exists idx_orders_order_status on public.orders(order_status);
+create index if not exists idx_notifications_target_role on public.notifications(target_role);
+create index if not exists idx_notifications_user_id on public.notifications(user_id);
+create index if not exists idx_notifications_is_read on public.notifications(is_read);
+create index if not exists idx_notifications_created_at on public.notifications(created_at desc);
 
 create or replace function public.is_admin()
 returns boolean
@@ -210,6 +230,7 @@ alter table public.categories enable row level security;
 alter table public.products enable row level security;
 alter table public.orders enable row level security;
 alter table public.order_items enable row level security;
+alter table public.notifications enable row level security;
 
 -- admin_users policies
 drop policy if exists "Admin users readable by admins" on public.admin_users;
@@ -306,6 +327,32 @@ with check (
   )
 );
 
+-- notifications policies
+drop policy if exists "Users can read own notifications" on public.notifications;
+create policy "Users can read own notifications"
+on public.notifications for select
+using (
+  (target_role = 'customer' and user_id = auth.uid())
+  or (target_role = 'admin' and public.is_admin())
+);
+
+drop policy if exists "Users can update own notifications" on public.notifications;
+create policy "Users can update own notifications"
+on public.notifications for update
+using (
+  (target_role = 'customer' and user_id = auth.uid())
+  or (target_role = 'admin' and public.is_admin())
+)
+with check (
+  (target_role = 'customer' and user_id = auth.uid())
+  or (target_role = 'admin' and public.is_admin())
+);
+
+drop policy if exists "Admins can insert notifications" on public.notifications;
+create policy "Admins can insert notifications"
+on public.notifications for insert
+with check (public.is_admin());
+
 -- Storage buckets
 insert into storage.buckets (id, name, public)
 values
@@ -324,6 +371,16 @@ begin
       and tablename = 'orders'
   ) then
     alter publication supabase_realtime add table public.orders;
+  end if;
+
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'notifications'
+  ) then
+    alter publication supabase_realtime add table public.notifications;
   end if;
 end;
 $$;

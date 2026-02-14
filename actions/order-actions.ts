@@ -6,6 +6,7 @@ import { z } from "zod";
 import { assertUserForAction } from "@/lib/auth";
 import { LOW_STOCK_THRESHOLD } from "@/lib/constants";
 import { sendLowStockEmail, sendOrderEmails } from "@/lib/email";
+import { createOrderPlacedNotifications } from "@/lib/notifications";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { sanitizeFileName } from "@/lib/utils";
 
@@ -197,6 +198,14 @@ export async function placeOrderAction(formData: FormData): Promise<PlaceOrderRe
         paymentStatus: "Pending Verification",
       }),
       sendLowStockEmail(refreshedProducts ?? []),
+      createOrderPlacedNotifications(
+        {
+          orderId,
+          customerId: user.id,
+          customerName: profilePayload.data.name,
+        },
+        admin,
+      ),
     ]);
 
     revalidatePath("/orders");

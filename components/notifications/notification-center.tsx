@@ -1,0 +1,285 @@
+"use client";
+
+import { Bell, BellRing, CheckCheck } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import type { Database } from "@/lib/supabase/types";
+import { cn } from "@/lib/utils";
+
+type NotificationRow = Database["public"]["Tables"]["notifications"]["Row"];
+
+type NotificationCenterProps = {
+  mode: "admin" | "customer";
+  userId: string;
+  initialNotifications: NotificationRow[];
+  className?: string;
+};
+
+function formatTimestamp(value: string) {
+  return new Date(value).toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function isPushSupported() {
+  return typeof window !== "undefined" && "Notification" in window;
+}
+
+export function NotificationCenter({
+  mode,
+  userId,
+  initialNotifications,
+  className,
+}: NotificationCenterProps) {
+  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+  const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState(initialNotifications);
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">(
+    isPushSupported() ? Notification.permission : "unsupported",
+  );
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const unreadCount = notifications.reduce((count, entry) => count + (entry.is_read ? 0 : 1), 0);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, []);
+
+  useEffect(() => {
+    const channelFilter = mode === "admin" ? "target_role=eq.admin" : `user_id=eq.${userId}`;
+
+    const channel = supabase
+      .channel(`notifications-${mode}-${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: channelFilter,
+        },
+        (payload) => {
+          const incoming = payload.new as NotificationRow;
+
+          setNotifications((current) => {
+            if (current.some((entry) => entry.id === incoming.id)) {
+              return current;
+            }
+
+            return [incoming, ...current].slice(0, 20);
+          });
+
+          toast(incoming.title, {
+            description: incoming.message,
+          });
+
+          if (
+            isPushSupported() &&
+            Notification.permission === "granted" &&
+            document.visibilityState !== "visible"
+          ) {
+            new Notification(incoming.title, {
+              body: incoming.message,
+              tag: incoming.id,
+            });
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "notifications",
+          filter: channelFilter,
+        },
+        (payload) => {
+          const incoming = payload.new as NotificationRow;
+
+          setNotifications((current) =>
+            current.map((entry) => (entry.id === incoming.id ? incoming : entry)),
+          );
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [mode, supabase, userId]);
+
+  const markAllAsRead = async () => {
+    const unreadIds = notifications.filter((entry) => !entry.is_read).map((entry) => entry.id);
+
+    if (unreadIds.length === 0) {
+      return;
+    }
+
+    setNotifications((current) => current.map((entry) => ({ ...entry, is_read: true })));
+
+    const { error } = await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .in("id", unreadIds);
+
+    if (error) {
+      toast.error(error.message);
+    }
+  };
+
+  const markOneAsRead = async (id: string) => {
+    setNotifications((current) =>
+      current.map((entry) => (entry.id === id ? { ...entry, is_read: true } : entry)),
+    );
+
+    const { error } = await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("id", id);
+
+    if (error) {
+      toast.error(error.message);
+    }
+  };
+
+  const requestPushPermission = async () => {
+    if (!isPushSupported()) {
+      setPermission("unsupported");
+      return;
+    }
+
+    const nextPermission = await Notification.requestPermission();
+    setPermission(nextPermission);
+
+    if (nextPermission === "granted") {
+      toast.success("Push notifications enabled");
+      return;
+    }
+
+    toast.error("Push notifications are blocked in this browser.");
+  };
+
+  return (
+    <div className={cn("relative", className)} ref={panelRef}>
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        className={cn(
+          "relative inline-flex h-10 w-10 items-center justify-center rounded-xl border transition",
+          mode === "admin"
+            ? "border-white/20 bg-[#202332] text-zinc-100 hover:bg-[#2a2d3f]"
+            : "border-red-100 text-zinc-700 hover:bg-red-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800",
+        )}
+        aria-label="Notifications"
+      >
+        {unreadCount > 0 ? <BellRing size={17} /> : <Bell size={17} />}
+        {unreadCount > 0 ? (
+          <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#e10600] px-1 text-[10px] font-bold text-white">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        ) : null}
+      </button>
+
+      {open ? (
+        <div
+          className={cn(
+            "absolute right-0 z-50 mt-2 w-[min(92vw,360px)] rounded-2xl border p-3 shadow-2xl",
+            mode === "admin"
+              ? "border-white/15 bg-[#161826]"
+              : "border-red-100 bg-white dark:border-zinc-700 dark:bg-zinc-900",
+          )}
+        >
+          <div className="mb-3 flex items-center justify-between">
+            <p className={cn("text-sm font-bold", mode === "admin" ? "text-zinc-100" : "text-zinc-900 dark:text-zinc-100")}>
+              Notifications
+            </p>
+            <button
+              type="button"
+              onClick={markAllAsRead}
+              className={cn(
+                "inline-flex items-center gap-1 text-xs font-semibold",
+                mode === "admin" ? "text-red-300 hover:text-red-200" : "text-[#e10600]",
+              )}
+            >
+              <CheckCheck size={14} />
+              Mark all read
+            </button>
+          </div>
+
+          <div className="mb-3">
+            {permission === "granted" ? (
+              <p className={cn("text-xs", mode === "admin" ? "text-zinc-400" : "text-zinc-600 dark:text-zinc-300")}>
+                Browser push notifications are enabled.
+              </p>
+            ) : (
+              <Button type="button" variant="outline" onClick={requestPushPermission} className="w-full text-[10px]">
+                Enable Push Notifications
+              </Button>
+            )}
+          </div>
+
+          <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+            {notifications.length === 0 ? (
+              <p className={cn("rounded-xl border px-3 py-2 text-xs", mode === "admin" ? "border-white/10 text-zinc-400" : "border-red-100 text-zinc-500 dark:border-zinc-700 dark:text-zinc-300")}>
+                No notifications yet.
+              </p>
+            ) : (
+              notifications.map((entry) => (
+                <button
+                  type="button"
+                  key={entry.id}
+                  onClick={() => {
+                    if (!entry.is_read) {
+                      void markOneAsRead(entry.id);
+                    }
+                  }}
+                  className={cn(
+                    "w-full rounded-xl border p-3 text-left",
+                    mode === "admin"
+                      ? "border-white/10 bg-[#202332]"
+                      : "border-red-100 bg-red-50/30 dark:border-zinc-700 dark:bg-zinc-800/40",
+                    entry.is_read ? "opacity-80" : "opacity-100",
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className={cn("text-sm font-semibold", mode === "admin" ? "text-zinc-100" : "text-zinc-900 dark:text-zinc-100")}>
+                        {entry.title}
+                      </p>
+                      <p className={cn("mt-1 text-xs", mode === "admin" ? "text-zinc-300" : "text-zinc-600 dark:text-zinc-300")}>
+                        {entry.message}
+                      </p>
+                    </div>
+
+                    {!entry.is_read ? (
+                      <span className="mt-1 inline-flex h-2 w-2 rounded-full bg-[#e10600]" />
+                    ) : null}
+                  </div>
+
+                  <p className={cn("mt-2 text-[11px]", mode === "admin" ? "text-zinc-400" : "text-zinc-500 dark:text-zinc-400")}>
+                    {formatTimestamp(entry.created_at)}
+                  </p>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}

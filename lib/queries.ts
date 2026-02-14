@@ -8,6 +8,7 @@ import type { Database } from "@/lib/supabase/types";
 type ProductRow = Database["public"]["Tables"]["products"]["Row"];
 type CategoryRow = Database["public"]["Tables"]["categories"]["Row"];
 type CategoryLite = Pick<CategoryRow, "id" | "name">;
+type NotificationRow = Database["public"]["Tables"]["notifications"]["Row"];
 
 export async function getHomeData() {
   const supabase = await createServerSupabaseClient();
@@ -222,6 +223,32 @@ export async function getAdminOrders() {
     )
     .order("created_at", { ascending: false });
 
+  return data ?? [];
+}
+
+export async function getCurrentUserNotifications({
+  userId,
+  isAdmin,
+  limit = 12,
+}: {
+  userId: string;
+  isAdmin: boolean;
+  limit?: number;
+}): Promise<NotificationRow[]> {
+  const supabase = await createServerSupabaseClient();
+  let query = supabase
+    .from("notifications")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (isAdmin) {
+    query = query.eq("target_role", "admin");
+  } else {
+    query = query.eq("target_role", "customer").eq("user_id", userId);
+  }
+
+  const { data } = await query;
   return data ?? [];
 }
 

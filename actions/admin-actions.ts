@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { assertAdminForAction } from "@/lib/auth";
+import { createOrderStatusUpdateNotification } from "@/lib/notifications";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import {
   ORDER_STATUS_OPTIONS,
@@ -199,6 +200,20 @@ export async function updateOrderStatusAction(formData: FormData) {
   }
 
   const admin = createAdminSupabaseClient();
+  const { data: order, error: orderError } = await admin
+    .from("orders")
+    .select("id,user_id,payment_status,order_status")
+    .eq("id", parsed.data.orderId)
+    .single();
+
+  if (orderError || !order) {
+    throw new Error(orderError?.message ?? "Order not found.");
+  }
+
+  const hasStatusChange =
+    order.payment_status !== parsed.data.paymentStatus ||
+    order.order_status !== parsed.data.orderStatus;
+
   const { error } = await admin
     .from("orders")
     .update({
@@ -209,6 +224,18 @@ export async function updateOrderStatusAction(formData: FormData) {
 
   if (error) {
     throw new Error(error.message);
+  }
+
+  if (hasStatusChange) {
+    await createOrderStatusUpdateNotification(
+      {
+        orderId: order.id,
+        customerId: order.user_id,
+        paymentStatus: parsed.data.paymentStatus,
+        orderStatus: parsed.data.orderStatus,
+      },
+      admin,
+    );
   }
 
   revalidatePath("/admin/orders");

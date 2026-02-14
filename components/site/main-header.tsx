@@ -6,14 +6,20 @@ import { Menu, Moon, Phone, ShoppingCart, Sun, X } from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "next-themes";
 
+import { NotificationCenter } from "@/components/notifications/notification-center";
 import { useCart } from "@/components/providers/cart-provider";
 import { Button } from "@/components/ui/button";
 import { STORE } from "@/lib/constants";
+import type { Database } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
+
+type NotificationRow = Database["public"]["Tables"]["notifications"]["Row"];
 
 type MainHeaderProps = {
   isAdmin: boolean;
   isLoggedIn: boolean;
+  userId: string | null;
+  initialNotifications: NotificationRow[];
 };
 
 const baseLinks = [
@@ -23,7 +29,12 @@ const baseLinks = [
   { href: "/profile", label: "Profile" },
 ];
 
-export function MainHeader({ isAdmin, isLoggedIn }: MainHeaderProps) {
+export function MainHeader({
+  isAdmin,
+  isLoggedIn,
+  userId,
+  initialNotifications,
+}: MainHeaderProps) {
   const pathname = usePathname();
   const { totalItems } = useCart();
   const [open, setOpen] = useState(false);
@@ -93,6 +104,14 @@ export function MainHeader({ isAdmin, isLoggedIn }: MainHeaderProps) {
               </span>
             ) : null}
           </Link>
+
+          {isLoggedIn && userId ? (
+            <NotificationCenter
+              mode={isAdmin ? "admin" : "customer"}
+              userId={userId}
+              initialNotifications={initialNotifications}
+            />
+          ) : null}
 
           <button
             onClick={() => setOpen((value) => !value)}
