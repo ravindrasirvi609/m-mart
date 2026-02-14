@@ -1,16 +1,42 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
-import { NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
-
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const tokenHash = requestUrl.searchParams.get("token_hash");
   const type = requestUrl.searchParams.get("type") as EmailOtpType | null;
   const nextPath = requestUrl.searchParams.get("next") ?? "/";
 
-  const supabase = await createServerSupabaseClient();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return NextResponse.redirect(new URL("/login?error=Server configuration error", request.url));
+  }
+
+  // Use the same cookie pattern as middleware.ts so auth cookies are
+  // written directly onto the NextResponse that we return (the redirect).
+  // Using cookies() from next/headers does NOT transfer cookies to a
+  // NextResponse.redirect(), which causes session loss in production.
+  let response = NextResponse.redirect(new URL(nextPath, request.url));
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+
+        response = NextResponse.redirect(new URL(nextPath, request.url));
+        cookiesToSet.forEach(({ name, value, options }) =>
+          response.cookies.set(name, value, options),
+        );
+      },
+    },
+  });
 
   if (tokenHash && type) {
     const { error } = await supabase.auth.verifyOtp({
@@ -50,6 +76,5 @@ export async function GET(request: Request) {
     });
   }
 
-  // Ensure internal redirect for better reliability
-  return NextResponse.redirect(new URL(nextPath, request.url));
+  return response;
 }
