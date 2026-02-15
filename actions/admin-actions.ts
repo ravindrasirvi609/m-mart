@@ -186,47 +186,54 @@ const orderStatusSchema = z.object({
   orderStatus: z.enum(ORDER_STATUS_OPTIONS),
 });
 
-export async function updateOrderStatusAction(formData: FormData) {
-  await assertAdminForAction();
+export async function updateOrderStatusAction(
+  _prevState: unknown,
+  formData: FormData,
+) {
+  try {
+    await assertAdminForAction();
 
-  const parsed = orderStatusSchema.safeParse({
-    orderId: formData.get("order_id"),
-    paymentStatus: formData.get("payment_status"),
-    orderStatus: formData.get("order_status"),
-  });
+    const parsed = orderStatusSchema.safeParse({
+      orderId: formData.get("order_id"),
+      paymentStatus: formData.get("payment_status"),
+      orderStatus: formData.get("order_status"),
+    });
 
-  if (!parsed.success) {
-    throw new Error("Invalid order status payload.");
-  }
+    if (!parsed.success) {
+      return { ok: false, error: "Invalid order status payload." };
+    }
 
-  const admin = createAdminSupabaseClient();
-  const { data: order, error: orderError } = await admin
-    .from("orders")
-    .select("id,user_id,payment_status,order_status")
-    .eq("id", parsed.data.orderId)
-    .single();
+    const admin = createAdminSupabaseClient();
+    const { data: order, error: orderError } = await admin
+      .from("orders")
+      .select("id,user_id,payment_status,order_status")
+      .eq("id", parsed.data.orderId)
+      .single();
 
-  if (orderError || !order) {
-    throw new Error(orderError?.message ?? "Order not found.");
-  }
+    if (orderError || !order) {
+      return { ok: false, error: orderError?.message ?? "Order not found." };
+    }
 
-  const hasStatusChange =
-    order.payment_status !== parsed.data.paymentStatus ||
-    order.order_status !== parsed.data.orderStatus;
+    const hasStatusChange =
+      order.payment_status !== parsed.data.paymentStatus ||
+      order.order_status !== parsed.data.orderStatus;
 
-  const { error } = await admin
-    .from("orders")
-    .update({
-      payment_status: parsed.data.paymentStatus,
-      order_status: parsed.data.orderStatus,
-    })
-    .eq("id", parsed.data.orderId);
+    if (!hasStatusChange) {
+      return { ok: true, message: "No changes detected." };
+    }
 
-  if (error) {
-    throw new Error(error.message);
-  }
+    const { error } = await admin
+      .from("orders")
+      .update({
+        payment_status: parsed.data.paymentStatus,
+        order_status: parsed.data.orderStatus,
+      })
+      .eq("id", parsed.data.orderId);
 
-  if (hasStatusChange) {
+    if (error) {
+      return { ok: false, error: error.message };
+    }
+
     await createOrderStatusUpdateNotification(
       {
         orderId: order.id,
@@ -236,9 +243,17 @@ export async function updateOrderStatusAction(formData: FormData) {
       },
       admin,
     );
-  }
 
-  revalidatePath("/admin/orders");
-  revalidatePath("/orders");
-  revalidatePath("/admin");
+    revalidatePath("/admin/orders");
+    revalidatePath("/orders");
+    revalidatePath("/admin");
+
+    return { ok: true, message: "Order status updated successfully." };
+  } catch (error) {
+    console.error("Error updating order status:", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Failed to update status",
+    };
+  }
 }

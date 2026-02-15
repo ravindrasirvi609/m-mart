@@ -1,10 +1,7 @@
 import Image from "next/image";
 
-import { updateOrderStatusAction } from "@/actions/admin-actions";
-import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
+import { UpdateOrderStatusForm } from "@/components/admin/update-order-status-form";
 import { StatusPill } from "@/components/ui/status-pill";
-import { ORDER_STATUS_OPTIONS, PAYMENT_STATUS_OPTIONS } from "@/lib/constants";
 import { getAdminOrders } from "@/lib/queries";
 import { formatCurrency } from "@/lib/utils";
 
@@ -20,8 +17,8 @@ export default async function AdminOrdersPage() {
       {orders.map((order) => {
         const deliveryAddress =
           typeof order.delivery_address === "object" &&
-          order.delivery_address !== null &&
-          "address" in order.delivery_address
+            order.delivery_address !== null &&
+            "address" in order.delivery_address
             ? String(order.delivery_address.address)
             : "-";
 
@@ -89,27 +86,11 @@ export default async function AdminOrdersPage() {
                 <p className="text-xs text-zinc-500">No payment screenshot uploaded.</p>
               )}
 
-              <form action={updateOrderStatusAction} className="grid gap-3 sm:grid-cols-3">
-                <input type="hidden" name="order_id" value={order.id} />
-
-                <Select name="payment_status" defaultValue={order.payment_status} className="!bg-[#202332] !text-zinc-100">
-                  {PAYMENT_STATUS_OPTIONS.map((status) => (
-                    <option key={status} value={status}>
-                      {status.replace(/_/g, " ")}
-                    </option>
-                  ))}
-                </Select>
-
-                <Select name="order_status" defaultValue={order.order_status} className="!bg-[#202332] !text-zinc-100">
-                  {ORDER_STATUS_OPTIONS.map((status) => (
-                    <option key={status} value={status}>
-                      {status.replace(/_/g, " ")}
-                    </option>
-                  ))}
-                </Select>
-
-                <Button type="submit">Update Status</Button>
-              </form>
+              <UpdateOrderStatusForm
+                orderId={order.id}
+                paymentStatus={order.payment_status}
+                orderStatus={order.order_status}
+              />
 
               <p className="text-right text-sm font-bold text-[#ff6d67]">
                 Total: {formatCurrency(order.total_amount)}
