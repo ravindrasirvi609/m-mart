@@ -12,10 +12,12 @@ import {
   resolveDeepLinkPath,
 } from "@/lib/mobile/capacitor";
 import { initializePushNotifications } from "@/lib/mobile/push";
+import { handleSupabaseAuthDeepLink } from "@/lib/mobile/supabase-deep-link";
 
 const PULL_TO_REFRESH_THRESHOLD = 90;
 
 type AppPlugin = {
+  getLaunchUrl?: () => Promise<{ url: string | null }>;
   addListener: (
     eventName: "appUrlOpen",
     listener: (event: { url: string }) => void,
@@ -171,12 +173,39 @@ export function MobileRuntime() {
 
     let removeListener: (() => Promise<void>) | null = null;
 
+    const processOpenedUrl = async (url: string) => {
+      const authResult = await handleSupabaseAuthDeepLink(url);
+      if (authResult.handled) {
+        if (authResult.error) {
+          const encodedError = encodeURIComponent(authResult.error);
+          window.location.assign(`/login?error=${encodedError}`);
+          return;
+        }
+
+        window.location.assign(authResult.nextPath ?? "/");
+        return;
+      }
+
+      const path = resolveDeepLinkPath(url);
+      if (path) {
+        window.location.assign(path);
+      }
+    };
+
+    const launchUrlPromise = appPlugin.getLaunchUrl?.();
+    if (launchUrlPromise) {
+      launchUrlPromise
+        .then((launchUrl) => {
+          if (launchUrl?.url) {
+            void processOpenedUrl(launchUrl.url);
+          }
+        })
+        .catch(() => undefined);
+    }
+
     appPlugin
       .addListener("appUrlOpen", ({ url }) => {
-        const path = resolveDeepLinkPath(url);
-        if (path) {
-          window.location.assign(path);
-        }
+        void processOpenedUrl(url);
       })
       .then((listener) => {
         removeListener = listener.remove;

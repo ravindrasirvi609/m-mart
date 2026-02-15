@@ -7,6 +7,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { sendMagicLinkAction } from "@/actions/auth-actions";
+import { isNativeApp } from "@/lib/mobile/capacitor";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+
+const MOBILE_MAGIC_LINK_REDIRECT_URL = "mmart://auth";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -15,16 +19,33 @@ export function LoginForm() {
 
   const sendMagicLink = async () => {
     setLoading(true);
-    const result = await sendMagicLinkAction(email);
-    setLoading(false);
+    try {
+      if (isNativeApp()) {
+        const supabase = createBrowserSupabaseClient();
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: MOBILE_MAGIC_LINK_REDIRECT_URL,
+          },
+        });
 
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+      } else {
+        const result = await sendMagicLinkAction(email);
+        if (!result.ok) {
+          toast.error(result.error);
+          return;
+        }
+      }
+
+      setLinkSent(true);
+      toast.success("Magic link sent. Check your email.");
+    } finally {
+      setLoading(false);
     }
-
-    setLinkSent(true);
-    toast.success("Magic link sent. Check your email.");
   };
 
   if (linkSent) {
