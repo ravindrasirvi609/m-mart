@@ -20,7 +20,7 @@ export function UsersClient({ users }: UsersClientProps) {
                         <User size={18} />
                     </div>
                     <div>
-                        <p className="font-bold text-white">{user.name || "Guest"}</p>
+                        <p className="font-bold text-text-main">{user.name || "Guest"}</p>
                         <p className="text-[11px] text-text-subtle">{user.email}</p>
                     </div>
                 </div>
@@ -54,7 +54,7 @@ export function UsersClient({ users }: UsersClientProps) {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="font-heading text-2xl font-black text-white">Customers</h1>
+                <h1 className="font-heading text-2xl font-black text-text-main">Customers</h1>
                 <p className="text-sm text-text-subtle">View and manage registered customers.</p>
             </div>
 

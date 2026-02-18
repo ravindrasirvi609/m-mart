@@ -42,11 +42,11 @@ export function DataTable<T>({ data, columns, searchKey, onSearch, onAction, ren
                             setSearchTerm(e.target.value);
                             onSearch?.(e.target.value);
                         }}
-                        className="h-10 w-full rounded-xl border border-admin-border bg-admin-card pl-10 pr-4 text-sm text-white focus:border-brand-red/50 focus:outline-none transition-all"
+                        className="h-10 w-full rounded-xl border border-admin-border bg-admin-card pl-10 pr-4 text-sm text-text-main focus:border-brand-red/50 focus:outline-none transition-all"
                     />
                 </div>
                 <div className="flex items-center gap-2">
-                    <button className="flex items-center gap-2 rounded-xl border border-admin-border bg-admin-card px-3 py-2 text-sm font-medium text-text-subtle hover:text-white transition-all">
+                    <button className="flex items-center gap-2 rounded-xl border border-admin-border bg-admin-card px-3 py-2 text-sm font-medium text-text-subtle hover:text-text-main transition-all">
                         <Filter size={16} />
                         Filter
                     </button>
@@ -59,11 +59,11 @@ export function DataTable<T>({ data, columns, searchKey, onSearch, onAction, ren
                         <thead>
                             <tr className="border-b border-admin-border bg-white/[0.02]">
                                 {columns.map((column, idx) => (
-                                    <th key={idx} className="px-6 py-4 font-bold text-white uppercase tracking-wider text-[11px]">
+                                    <th key={idx} className="px-6 py-4 font-bold text-text-main uppercase tracking-wider text-[11px]">
                                         {column.header}
                                     </th>
                                 ))}
-                                <th className="px-6 py-4 font-bold text-white uppercase tracking-wider text-[11px] text-right">
+                                <th className="px-6 py-4 font-bold text-text-main uppercase tracking-wider text-[11px] text-right">
                                     Actions
                                 </th>
                             </tr>
@@ -92,7 +92,7 @@ export function DataTable<T>({ data, columns, searchKey, onSearch, onAction, ren
                                 filteredData.map((item, rowIdx) => (
                                     <tr key={rowIdx} className="hover:bg-white/[0.02] transition-colors group">
                                         {columns.map((column, colIdx) => (
-                                            <td key={colIdx} className="px-6 py-4 text-text-subtle group-hover:text-zinc-200">
+                                            <td key={colIdx} className="px-6 py-4 text-text-subtle group-hover:text-text-main">
                                                 {column.cell ? column.cell(item) : String(item[column.accessorKey as keyof T])}
                                             </td>
                                         ))}
@@ -102,7 +102,7 @@ export function DataTable<T>({ data, columns, searchKey, onSearch, onAction, ren
                                             ) : (
                                                 <button
                                                     onClick={() => onAction?.(item)}
-                                                    className="rounded-lg p-2 text-text-subtle hover:bg-white/10 hover:text-white transition-colors"
+                                                    className="rounded-lg p-2 text-text-subtle hover:bg-white/10 hover:text-text-main transition-colors"
                                                 >
                                                     <MoreVertical size={18} />
                                                 </button>
@@ -117,13 +117,13 @@ export function DataTable<T>({ data, columns, searchKey, onSearch, onAction, ren
 
                 <div className="flex items-center justify-between border-t border-admin-border bg-white/[0.01] px-6 py-4">
                     <p className="text-xs text-text-subtle">
-                        Showing <span className="font-bold text-white">{filteredData.length}</span> results
+                        Showing <span className="font-bold text-text-main">{filteredData.length}</span> results
                     </p>
                     <div className="flex items-center gap-2">
-                        <button className="rounded-lg border border-admin-border p-1.5 text-text-subtle hover:text-white disabled:opacity-50" disabled>
+                        <button className="rounded-lg border border-admin-border p-1.5 text-text-subtle hover:text-text-main disabled:opacity-50" disabled>
                             <ChevronLeft size={18} />
                         </button>
-                        <button className="rounded-lg border border-admin-border p-1.5 text-text-subtle hover:text-white disabled:opacity-50" disabled>
+                        <button className="rounded-lg border border-admin-border p-1.5 text-text-subtle hover:text-text-main disabled:opacity-50" disabled>
                             <ChevronRight size={18} />
                         </button>
                     </div>

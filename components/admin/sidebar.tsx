@@ -49,7 +49,7 @@ export function Sidebar() {
         <div className="mb-8 flex items-center justify-between px-2">
           {!isCollapsed && (
             <div className="flex flex-col">
-              <span className="font-display text-xl font-black text-white">Mmart</span>
+              <span className="font-display text-xl font-black text-text-main">Mmart</span>
               <span className="text-[10px] uppercase tracking-widest text-brand-red">Admin Panel</span>
             </div>
           )}
@@ -58,7 +58,7 @@ export function Sidebar() {
           )}
           <button 
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden rounded-lg p-1.5 text-text-subtle hover:bg-white/10 lg:block"
+            className="hidden rounded-lg p-1.5 text-text-subtle hover:bg-white/10 hover:text-text-main lg:block"
           >
             {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
@@ -76,15 +76,15 @@ export function Sidebar() {
                 className={cn(
                   "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
                   isActive 
-                    ? "bg-brand-red/10 text-white shadow-[0_0_15px_rgba(225,6,0,0.1)]" 
-                    : "text-text-subtle hover:bg-white/5 hover:text-white"
+                    ? "bg-brand-red/10 text-text-main shadow-[0_0_15px_rgba(225,6,0,0.1)]"
+                    : "text-text-subtle hover:bg-white/5 hover:text-text-main"
                 )}
               >
                 <Icon 
                   size={20} 
                   className={cn(
                     "shrink-0 transition-colors",
-                    isActive ? "text-brand-red" : "group-hover:text-white"
+                    isActive ? "text-brand-red" : "group-hover:text-text-main"
                   )} 
                 />
                 {!isCollapsed && <span className="truncate">{item.label}</span>}

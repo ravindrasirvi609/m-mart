@@ -23,7 +23,7 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-red/10 text-brand-red">
                         <Tag size={16} />
                     </div>
-                    <span className="font-bold text-white">{category.name}</span>
+                    <span className="font-bold text-text-main">{category.name}</span>
                 </div>
             ),
         },
@@ -42,7 +42,7 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="font-heading text-2xl font-black text-white">Categories</h1>
+                    <h1 className="font-heading text-2xl font-black text-text-main">Categories</h1>
                     <p className="text-sm text-text-subtle">Organize your products into categories.</p>
                 </div>
                 <Button

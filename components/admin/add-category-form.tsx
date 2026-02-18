@@ -24,15 +24,15 @@ export function AddCategoryForm() {
         <form
             ref={formRef}
             action={action}
-            className="rounded-2xl border border-white/10 bg-[#181a23] p-4"
+            className="rounded-2xl border border-admin-border bg-admin-card p-4"
         >
-            <h2 className="text-lg font-bold text-white">Add Category</h2>
+            <h2 className="text-lg font-bold text-text-main">Add Category</h2>
             <div className="mt-3 space-y-3">
                 <Input
                     name="name"
                     required
                     placeholder="Category name"
-                    className="!bg-[#202332] !text-zinc-100"
+                    className="!bg-white/5 !text-text-main"
                     disabled={isPending}
                 />
                 <Button type="submit" disabled={isPending}>
