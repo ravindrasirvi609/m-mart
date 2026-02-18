@@ -63,121 +63,159 @@ async function uploadProductImage(file: File) {
   return publicUrl;
 }
 
-export async function upsertCategoryAction(formData: FormData) {
-  await assertAdminForAction();
+export async function upsertCategoryAction(_prevState: unknown, formData: FormData) {
+  try {
+    await assertAdminForAction();
 
-  const parsed = categorySchema.safeParse({
-    name: formData.get("name"),
-  });
+    const parsed = categorySchema.safeParse({
+      name: formData.get("name"),
+    });
 
-  if (!parsed.success) {
-    throw new Error("Category name is invalid.");
-  }
+    if (!parsed.success) {
+      return { ok: false, error: "Category name is invalid." };
+    }
 
-  const admin = createAdminSupabaseClient();
-  const { error } = await admin.from("categories").upsert({
-    name: parsed.data.name,
-    is_active: true,
-  });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  revalidatePath("/admin/products");
-  revalidatePath("/products");
-}
-
-export async function upsertProductAction(formData: FormData) {
-  await assertAdminForAction();
-  const parsed = productSchema.safeParse({
-    id: formData.get("id") || undefined,
-    name: formData.get("name"),
-    description: formData.get("description"),
-    price: formData.get("price"),
-    discount_price: formData.get("discount_price"),
-    stock: formData.get("stock"),
-    category: formData.get("category"),
-    image_url: formData.get("image_url") || "",
-    is_active: formData.get("is_active") === "on" ? "on" : "off",
-  });
-
-  if (!parsed.success) {
-    console.error("Product validation failed:", parsed.error.format());
-    throw new Error("Product form is invalid.");
-  }
-
-  const imageFile = getImageFile(formData.get("image_file"));
-  const admin = createAdminSupabaseClient();
-
-  let imageUrl = parsed.data.image_url;
-  if (imageFile) {
-    imageUrl = await uploadProductImage(imageFile);
-  }
-
-  if (!imageUrl) {
-    throw new Error("Provide an image URL or upload an image file.");
-  }
-
-  const discountRaw = (parsed.data.discount_price || "").trim();
-  const discountValue =
-    discountRaw.length === 0 ? null : Number.parseFloat(discountRaw);
-
-  if (discountValue !== null && (!Number.isFinite(discountValue) || discountValue <= 0)) {
-    throw new Error("Discount price must be a positive number.");
-  }
-
-  const payload = {
-    name: parsed.data.name,
-    description: parsed.data.description,
-    price: parsed.data.price,
-    discount_price: discountValue,
-    stock: parsed.data.stock,
-    category: parsed.data.category,
-    image_url: imageUrl,
-    is_active: parsed.data.is_active === "on",
-  };
-
-  if (parsed.data.id) {
-    const { error } = await admin
-      .from("products")
-      .update(payload)
-      .eq("id", parsed.data.id);
+    const admin = createAdminSupabaseClient();
+    const { error } = await admin.from("categories").upsert({
+      name: parsed.data.name,
+      is_active: true,
+    });
 
     if (error) {
-      throw new Error(error.message);
+      return { ok: false, error: error.message };
     }
-  } else {
-    const { error } = await admin.from("products").insert(payload);
 
-    if (error) {
-      throw new Error(error.message);
-    }
+    revalidatePath("/admin/products");
+    revalidatePath("/products");
+
+    return { ok: true, message: "Category saved successfully." };
+  } catch (error) {
+    console.error("Error upserting category:", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Failed to save category",
+    };
   }
-
-  revalidatePath("/admin/products");
-  revalidatePath("/products");
-  revalidatePath("/");
 }
 
-export async function deleteProductAction(formData: FormData) {
-  await assertAdminForAction();
-  const id = String(formData.get("id") || "");
+export async function upsertProductAction(_prevState: unknown, formData: FormData) {
+  try {
+    await assertAdminForAction();
+    const parsed = productSchema.safeParse({
+      id: formData.get("id") || undefined,
+      name: formData.get("name"),
+      description: formData.get("description"),
+      price: formData.get("price"),
+      discount_price: formData.get("discount_price"),
+      stock: formData.get("stock"),
+      category: formData.get("category"),
+      image_url: formData.get("image_url") || "",
+      is_active: formData.get("is_active") === "on" ? "on" : "off",
+    });
 
-  if (!id) {
-    throw new Error("Missing product id.");
+    if (!parsed.success) {
+      console.error("Product validation failed:", parsed.error.format());
+      return { ok: false, error: "Product form is invalid." };
+    }
+
+    const imageFile = getImageFile(formData.get("image_file"));
+    const admin = createAdminSupabaseClient();
+
+    let imageUrl = parsed.data.image_url;
+    if (imageFile) {
+      imageUrl = await uploadProductImage(imageFile);
+    }
+
+    if (!imageUrl) {
+      return { ok: false, error: "Provide an image URL or upload an image file." };
+    }
+
+    const discountRaw = (parsed.data.discount_price || "").trim();
+    const discountValue =
+      discountRaw.length === 0 ? null : Number.parseFloat(discountRaw);
+
+    if (
+      discountValue !== null &&
+      (!Number.isFinite(discountValue) || discountValue <= 0)
+    ) {
+      return { ok: false, error: "Discount price must be a positive number." };
+    }
+
+    const payload = {
+      name: parsed.data.name,
+      description: parsed.data.description,
+      price: parsed.data.price,
+      discount_price: discountValue,
+      stock: parsed.data.stock,
+      category: parsed.data.category,
+      image_url: imageUrl,
+      is_active: parsed.data.is_active === "on",
+    };
+
+    if (parsed.data.id) {
+      const { error } = await admin
+        .from("products")
+        .update(payload)
+        .eq("id", parsed.data.id);
+
+      if (error) {
+        return { ok: false, error: error.message };
+      }
+    } else {
+      const { error } = await admin.from("products").insert(payload);
+
+      if (error) {
+        return { ok: false, error: error.message };
+      }
+    }
+
+    revalidatePath("/admin/products");
+    revalidatePath("/products");
+    revalidatePath("/");
+
+    return {
+      ok: true,
+      message: parsed.data.id
+        ? "Product updated successfully."
+        : "Product created successfully.",
+    };
+  } catch (error) {
+    console.error("Error upserting product:", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Failed to save product",
+    };
   }
+}
 
-  const admin = createAdminSupabaseClient();
-  const { error } = await admin.from("products").delete().eq("id", id);
+export async function deleteProductAction(_prevState: unknown, formData: FormData) {
+  try {
+    await assertAdminForAction();
+    const id = String(formData.get("id") || "");
 
-  if (error) {
-    throw new Error(error.message);
+    if (!id) {
+      return { ok: false, error: "Missing product id." };
+    }
+
+    const admin = createAdminSupabaseClient();
+    const { error } = await admin.from("products").delete().eq("id", id);
+
+    if (error) {
+      return { ok: false, error: error.message };
+    }
+
+    revalidatePath("/admin/products");
+    revalidatePath("/products");
+    revalidatePath("/");
+
+    return { ok: true, message: "Product deleted successfully." };
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Failed to delete product",
+    };
   }
-
-  revalidatePath("/admin/products");
-  revalidatePath("/products");
-  revalidatePath("/");
 }
 
 const orderStatusSchema = z.object({
