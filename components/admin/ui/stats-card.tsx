@@ -15,10 +15,10 @@ interface StatsCardProps {
 }
 
 const colorMap = {
-    red: "bg-red-500/10 text-red-500 border-red-500/20",
+    red: "bg-brand-red/10 text-brand-red border-brand-red/20",
     blue: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-    green: "bg-green-500/10 text-green-500 border-green-500/20",
-    amber: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+    green: "bg-success/10 text-success border-success/20",
+    amber: "bg-warning/10 text-warning border-warning/20",
     rose: "bg-rose-500/10 text-rose-500 border-rose-500/20",
     emerald: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
 };
@@ -42,9 +42,9 @@ export function StatsCard({ title, value, icon: Icon, description, trend, color 
                 </div>
 
                 <div className="mt-4">
-                    <p className="text-sm font-medium text-text-subtle">{title}</p>
+                    <p className="text-sm font-medium text-text-subtle tracking-tight">{title}</p>
                     <div className="mt-1 flex items-baseline gap-2">
-                        <h4 className="text-2xl font-black text-white">{value}</h4>
+                        <h4 className="text-2xl font-black text-text-main">{value}</h4>
                     </div>
                     {description && (
                         <p className="mt-1 text-xs text-text-subtle">{description}</p>

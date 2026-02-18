@@ -17,8 +17,8 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-heading text-2xl font-black text-white">Dashboard Dashboard</h1>
-        <p className="text-sm text-text-subtle">Welcome back! Here's what's happening today.</p>
+        <h1 className="font-heading text-2xl font-black text-text-main">Dashboard</h1>
+        <p className="text-sm text-text-subtle">Welcome back! Here&apos;s what&apos;s happening today.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -74,10 +74,10 @@ export default async function AdminDashboardPage() {
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-admin-border bg-white/[0.02]">
-                    <th className="px-6 py-4 font-bold text-white uppercase text-[10px]">Order ID</th>
-                    <th className="px-6 py-4 font-bold text-white uppercase text-[10px]">Customer</th>
-                    <th className="px-6 py-4 font-bold text-white uppercase text-[10px]">Status</th>
-                    <th className="px-6 py-4 font-bold text-white uppercase text-[10px] text-right">Amount</th>
+                    <th className="px-6 py-4 font-bold text-text-main uppercase text-[10px]">Order ID</th>
+                    <th className="px-6 py-4 font-bold text-text-main uppercase text-[10px]">Customer</th>
+                    <th className="px-6 py-4 font-bold text-text-main uppercase text-[10px]">Status</th>
+                    <th className="px-6 py-4 font-bold text-text-main uppercase text-[10px] text-right">Amount</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-admin-border">
@@ -92,7 +92,7 @@ export default async function AdminDashboardPage() {
                           #{order.id.split("-")[0]}
                         </td>
                         <td className="px-6 py-4">
-                          <p className="font-bold text-white">{order.user?.name || "Guest"}</p>
+                          <p className="font-bold text-text-main">{order.user?.name || "Guest"}</p>
                           <p className="text-[11px] text-text-subtle">{order.user?.email}</p>
                         </td>
                         <td className="px-6 py-4">
@@ -100,7 +100,7 @@ export default async function AdminDashboardPage() {
                             {order.order_status}
                           </Badge>
                         </td>
-                        <td className="px-6 py-4 text-right font-bold text-white">
+                        <td className="px-6 py-4 text-right font-bold text-text-main">
                           {formatCurrency(order.total_amount)}
                         </td>
                       </tr>
@@ -135,7 +135,7 @@ export default async function AdminDashboardPage() {
                     className="flex items-center justify-between rounded-xl border border-admin-border bg-white/[0.02] p-3 transition-colors hover:bg-white/[0.05]"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold text-white">{product.name}</p>
+                      <p className="truncate text-sm font-bold text-text-main">{product.name}</p>
                       <p className="text-[11px] text-text-subtle">ID: {product.id.split("-")[0]}</p>
                     </div>
                     <div className="ml-4 text-right">

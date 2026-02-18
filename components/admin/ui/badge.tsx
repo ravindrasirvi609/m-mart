@@ -6,8 +6,8 @@ interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const variants = {
     default: "bg-white/10 text-white border-white/20",
-    success: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-    warning: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+    success: "bg-success/10 text-success border-success/20",
+    warning: "bg-warning/10 text-warning border-warning/20",
     error: "bg-rose-500/10 text-rose-500 border-rose-500/20",
     info: "bg-blue-500/10 text-blue-500 border-blue-500/20",
     outline: "bg-transparent text-text-subtle border-admin-border",

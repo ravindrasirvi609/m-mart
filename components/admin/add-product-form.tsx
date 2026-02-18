@@ -27,15 +27,15 @@ export function AddProductForm({ categories }: { categories: Category[] }) {
         <form
             ref={formRef}
             action={action}
-            className="rounded-2xl border border-white/10 bg-[#181a23] p-4"
+            className="rounded-2xl border border-admin-border bg-admin-card p-4"
         >
-            <h2 className="text-lg font-bold text-white">Add Product</h2>
+            <h2 className="text-lg font-bold text-text-main">Add Product</h2>
             <div className="mt-3 space-y-3">
                 <Input
                     name="name"
                     required
                     placeholder="Product name"
-                    className="!bg-[#202332] !text-zinc-100"
+                    className="!bg-white/5 !text-text-main"
                     disabled={isPending}
                 />
                 <Textarea
@@ -43,7 +43,7 @@ export function AddProductForm({ categories }: { categories: Category[] }) {
                     required
                     placeholder="Description"
                     rows={3}
-                    className="!bg-[#202332] !text-zinc-100"
+                    className="!bg-white/5 !text-text-main"
                     disabled={isPending}
                 />
 
@@ -55,7 +55,7 @@ export function AddProductForm({ categories }: { categories: Category[] }) {
                         min="0"
                         required
                         placeholder="Price"
-                        className="!bg-[#202332] !text-zinc-100"
+                        className="!bg-white/5 !text-text-main"
                         disabled={isPending}
                     />
                     <Input
@@ -64,7 +64,7 @@ export function AddProductForm({ categories }: { categories: Category[] }) {
                         step="0.01"
                         min="0"
                         placeholder="Discount price"
-                        className="!bg-[#202332] !text-zinc-100"
+                        className="!bg-white/5 !text-text-main"
                         disabled={isPending}
                     />
                     <Input
@@ -73,14 +73,14 @@ export function AddProductForm({ categories }: { categories: Category[] }) {
                         min="0"
                         required
                         placeholder="Stock"
-                        className="!bg-[#202332] !text-zinc-100"
+                        className="!bg-white/5 !text-text-main"
                         disabled={isPending}
                     />
                     <Select
                         name="category"
                         required
                         defaultValue=""
-                        className="!bg-[#202332] !text-zinc-100"
+                        className="!bg-white/5 !text-text-main"
                         disabled={isPending}
                     >
                         <option value="" disabled>
@@ -98,19 +98,19 @@ export function AddProductForm({ categories }: { categories: Category[] }) {
                     name="image_url"
                     type="url"
                     placeholder="Image URL"
-                    className="!bg-[#202332] !text-zinc-100"
+                    className="!bg-white/5 !text-text-main"
                     disabled={isPending}
                 />
                 <Input
                     name="image_file"
                     type="file"
                     accept="image/png,image/jpeg,image/webp"
-                    className="!bg-[#202332] !text-zinc-100"
+                    className="!bg-white/5 !text-text-main"
                     disabled={isPending}
                 />
 
-                <label className="flex items-center gap-2 text-sm text-zinc-300">
-                    <input type="checkbox" name="is_active" defaultChecked disabled={isPending} /> Active
+                <label className="flex items-center gap-2 text-sm text-text-subtle">
+                    <input type="checkbox" name="is_active" defaultChecked disabled={isPending} className="accent-brand-red" /> Active
                 </label>
 
                 <Button type="submit" disabled={isPending}>

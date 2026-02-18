@@ -44,6 +44,19 @@
   --color-sidebar: var(--sidebar-bg);
   --color-admin-card: var(--card-bg);
   --color-admin-border: var(--border-subtle);
+
+  /* Text colors */
+  --color-text-main: var(--text-main);
+  --color-text-subtle: var(--text-subtle);
+
+  /* Brand colors */
+  --color-brand-red: var(--brand-red);
+  --color-brand-red-light: var(--brand-red-light);
+  --color-brand-red-soft: var(--brand-red-soft);
+
+  /* Status colors */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
 }
 
 * {

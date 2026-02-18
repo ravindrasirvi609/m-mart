@@ -20,7 +20,7 @@ export function DeliveryClient({ orders }: DeliveryClientProps) {
             header: "Order ID",
             accessorKey: "id",
             cell: (order: any) => (
-                <span className="font-mono text-xs font-bold text-white">
+                <span className="font-mono text-xs font-bold text-text-main">
                     #{order.id.split("-")[0]}
                 </span>
             ),
@@ -30,7 +30,7 @@ export function DeliveryClient({ orders }: DeliveryClientProps) {
             accessorKey: "users",
             cell: (order: any) => (
                 <div>
-                    <p className="font-bold text-white">{order.users?.name || "Guest"}</p>
+                    <p className="font-bold text-text-main">{order.users?.name || "Guest"}</p>
                     <p className="text-[10px] text-text-subtle truncate max-w-[150px]">{order.users?.phone}</p>
                 </div>
             ),
@@ -79,14 +79,14 @@ export function DeliveryClient({ orders }: DeliveryClientProps) {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="font-heading text-2xl font-black text-white">Delivery Management</h1>
+                <h1 className="font-heading text-2xl font-black text-text-main">Delivery Management</h1>
                 <p className="text-sm text-text-subtle">Monitor active shipments and delivery performance.</p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
                 <div className="rounded-2xl border border-admin-border bg-admin-card p-4">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">Preparing</p>
-                    <p className="mt-2 text-2xl font-black text-white">
+                    <p className="mt-2 text-2xl font-black text-text-main">
                         {orders.filter(o => o.order_status === 'preparing').length}
                     </p>
                 </div>

@@ -35,7 +35,7 @@ export function ProductsClient({ products, categories }: ProductsClientProps) {
                         />
                     </div>
                     <div className="min-w-0">
-                        <p className="truncate font-bold text-white">{product.name}</p>
+                        <p className="truncate font-bold text-text-main">{product.name}</p>
                         <p className="text-[10px] text-text-subtle uppercase tracking-wider">{product.category}</p>
                     </div>
                 </div>
@@ -46,7 +46,7 @@ export function ProductsClient({ products, categories }: ProductsClientProps) {
             accessorKey: "price",
             cell: (product: any) => (
                 <div className="flex flex-col">
-                    <span className="font-bold text-white">{formatCurrency(product.price)}</span>
+                    <span className="font-bold text-text-main">{formatCurrency(product.price)}</span>
                     {product.discount_price && (
                         <span className="text-[10px] text-brand-red line-through">
                             {formatCurrency(product.discount_price)}
@@ -62,7 +62,7 @@ export function ProductsClient({ products, categories }: ProductsClientProps) {
                 const isLow = product.stock <= 5;
                 return (
                     <div className="flex flex-col gap-1">
-                        <span className={isLow ? "font-bold text-rose-400" : "font-medium text-white"}>
+                        <span className={isLow ? "font-bold text-rose-400" : "font-medium text-text-main"}>
                             {product.stock} units
                         </span>
                         <div className="h-1 w-16 overflow-hidden rounded-full bg-white/10">
@@ -90,7 +90,7 @@ export function ProductsClient({ products, categories }: ProductsClientProps) {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="font-heading text-2xl font-black text-white">Product Inventory</h1>
+                    <h1 className="font-heading text-2xl font-black text-text-main">Product Inventory</h1>
                     <p className="text-sm text-text-subtle">Manage your store products and stock levels.</p>
                 </div>
                 <Button

@@ -29,7 +29,7 @@ export function Navbar({ user, notificationState }: NavbarProps) {
     return (
         <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-admin-border bg-dashboard/80 px-4 backdrop-blur-md lg:px-6">
             <div className="flex items-center gap-4">
-                <button className="lg:hidden p-2 text-text-subtle hover:text-white">
+                <button className="lg:hidden p-2 text-text-subtle hover:text-text-main">
                     <Menu size={20} />
                 </button>
 
@@ -37,7 +37,7 @@ export function Navbar({ user, notificationState }: NavbarProps) {
                     {breadcrumbs.map((crumb, i) => (
                         <div key={crumb.href} className="flex items-center">
                             {i > 0 && <span className="mx-2 text-white/20">/</span>}
-                            <span className={i === breadcrumbs.length - 1 ? "text-white" : ""}>
+                            <span className={i === breadcrumbs.length - 1 ? "text-text-main" : ""}>
                                 {crumb.label}
                             </span>
                         </div>
@@ -51,7 +51,7 @@ export function Navbar({ user, notificationState }: NavbarProps) {
                     <input
                         type="text"
                         placeholder="Search..."
-                        className="h-9 w-64 rounded-xl border border-admin-border bg-white/5 pl-9 pr-4 text-sm text-white placeholder:text-text-subtle focus:border-brand-red/50 focus:outline-none focus:ring-1 focus:ring-brand-red/50 transition-all"
+                        className="h-9 w-64 rounded-xl border border-admin-border bg-white/5 pl-9 pr-4 text-sm text-text-main placeholder:text-text-subtle focus:border-brand-red/50 focus:outline-none focus:ring-1 focus:ring-brand-red/50 transition-all"
                     />
                 </div>
 
@@ -70,7 +70,7 @@ export function Navbar({ user, notificationState }: NavbarProps) {
                             {user.name?.[0] || user.email[0]}
                         </div>
                         <div className="hidden text-left sm:block">
-                            <p className="text-[11px] font-bold text-white line-clamp-1 leading-tight">
+                            <p className="text-[11px] font-bold text-text-main line-clamp-1 leading-tight">
                                 {user.name || "Admin"}
                             </p>
                             <p className="text-[9px] text-text-subtle line-clamp-1 leading-tight">

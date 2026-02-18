@@ -27,7 +27,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
             header: "Order ID",
             accessorKey: "id",
             cell: (order: any) => (
-                <span className="font-mono text-xs font-bold text-white">
+                <span className="font-mono text-xs font-bold text-text-main">
                     #{order.id.split("-")[0]}
                 </span>
             ),
@@ -37,7 +37,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
             accessorKey: "users",
             cell: (order: any) => (
                 <div>
-                    <p className="font-bold text-white">{order.users?.name || "Guest"}</p>
+                    <p className="font-bold text-text-main">{order.users?.name || "Guest"}</p>
                     <p className="text-[11px] text-text-subtle">{order.users?.email}</p>
                 </div>
             ),
@@ -53,7 +53,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
             header: "Total",
             accessorKey: "total_amount",
             cell: (order: any) => (
-                <span className="font-bold text-white">{formatCurrency(order.total_amount)}</span>
+                <span className="font-bold text-text-main">{formatCurrency(order.total_amount)}</span>
             ),
         },
         {
@@ -83,6 +83,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
                 columns={columns}
                 searchKey="id"
                 isLoading={false}
+                onAction={handleViewOrder}
             />
 
             <Modal
@@ -96,13 +97,13 @@ export function OrdersClient({ orders }: OrdersClientProps) {
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div className="space-y-1">
                                 <p className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">Customer Info</p>
-                                <p className="font-bold text-white">{selectedOrder.users?.name || "N/A"}</p>
+                                <p className="font-bold text-text-main">{selectedOrder.users?.name || "N/A"}</p>
                                 <p className="text-xs text-text-subtle">{selectedOrder.users?.email}</p>
                                 <p className="text-xs text-text-subtle">{selectedOrder.users?.phone}</p>
                             </div>
                             <div className="space-y-1">
                                 <p className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">Shipping Address</p>
-                                <p className="text-xs text-white leading-relaxed">
+                                <p className="text-xs text-text-main leading-relaxed">
                                     {typeof selectedOrder.delivery_address === 'object'
                                         ? selectedOrder.delivery_address.address
                                         : selectedOrder.delivery_address}
@@ -124,10 +125,10 @@ export function OrdersClient({ orders }: OrdersClientProps) {
                                             />
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <p className="truncate text-sm font-bold text-white">{item.products?.name}</p>
+                                            <p className="truncate text-sm font-bold text-text-main">{item.products?.name}</p>
                                             <p className="text-[11px] text-text-subtle">Qty: {item.quantity} × {formatCurrency(item.price)}</p>
                                         </div>
-                                        <p className="text-sm font-bold text-white">{formatCurrency(item.quantity * item.price)}</p>
+                                        <p className="text-sm font-bold text-text-main">{formatCurrency(item.quantity * item.price)}</p>
                                     </div>
                                 ))}
                             </div>
@@ -136,14 +137,14 @@ export function OrdersClient({ orders }: OrdersClientProps) {
                         <div className="rounded-2xl border border-admin-border bg-white/[0.02] p-4">
                             <div className="flex justify-between text-sm">
                                 <span className="text-text-subtle">Subtotal</span>
-                                <span className="font-bold text-white">{formatCurrency(selectedOrder.total_amount - (selectedOrder.delivery_charge || 0))}</span>
+                                <span className="font-bold text-text-main">{formatCurrency(selectedOrder.total_amount - (selectedOrder.delivery_charge || 0))}</span>
                             </div>
                             <div className="mt-1 flex justify-between text-sm">
                                 <span className="text-text-subtle">Delivery</span>
-                                <span className="font-bold text-white">{formatCurrency(selectedOrder.delivery_charge || 0)}</span>
+                                <span className="font-bold text-text-main">{formatCurrency(selectedOrder.delivery_charge || 0)}</span>
                             </div>
                             <div className="mt-2 flex justify-between border-t border-admin-border pt-2">
-                                <span className="font-bold text-white">Total</span>
+                                <span className="font-bold text-text-main">Total</span>
                                 <span className="text-lg font-black text-brand-red">{formatCurrency(selectedOrder.total_amount)}</span>
                             </div>
                         </div>
@@ -154,7 +155,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
                                 <a
                                     href={selectedOrder.payment_screenshot_url}
                                     target="_blank"
-                                    className="flex items-center justify-center gap-2 rounded-xl border border-admin-border p-3 text-xs font-bold text-white hover:bg-white/5 transition-colors"
+                                    className="flex items-center justify-center gap-2 rounded-xl border border-admin-border p-3 text-xs font-bold text-text-main hover:bg-white/5 transition-colors"
                                 >
                                     <ExternalLink size={16} />
                                     View Payment Screenshot
