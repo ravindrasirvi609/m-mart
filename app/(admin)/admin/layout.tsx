@@ -26,7 +26,7 @@ export default async function AdminLayout({
   };
 
   return (
-    <div className="flex min-h-screen bg-dashboard text-text-main">
+    <div className="flex min-h-screen bg-dashboard text-text-main dark">
       <Sidebar />
       <div className="flex flex-1 flex-col">
         <Navbar user={adminUser} notificationState={notificationState} />
