@@ -2,9 +2,9 @@
 
 import { useActionState, useEffect } from "react";
 import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 
 import { deleteProductAction } from "@/actions/admin-actions";
-import { Button } from "@/components/ui/button";
 
 export function DeleteProductButton({ productId }: { productId: string }) {
     const [state, action, isPending] = useActionState(deleteProductAction, null);
@@ -20,9 +20,14 @@ export function DeleteProductButton({ productId }: { productId: string }) {
     return (
         <form action={action}>
             <input type="hidden" name="id" value={productId} />
-            <Button variant="danger" type="submit" disabled={isPending}>
-                {isPending ? "Deleting..." : "Delete"}
-            </Button>
+            <button
+                type="submit"
+                disabled={isPending}
+                className="rounded-lg p-2 text-text-subtle hover:bg-rose-500/10 hover:text-rose-500 transition-colors disabled:opacity-50"
+                title="Delete Product"
+            >
+                <Trash2 size={16} />
+            </button>
         </form>
     );
 }

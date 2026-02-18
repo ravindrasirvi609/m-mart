@@ -11,14 +11,26 @@
   --text-subtle: #61666d;
   --success: #16a34a;
   --warning: #f97316;
+  
+  /* Admin specific */
+  --dashboard-bg: #f8fafc;
+  --sidebar-bg: #ffffff;
+  --card-bg: #ffffff;
+  --border-subtle: #e2e8f0;
 }
 
 .dark {
-  --surface: #121216;
-  --surface-muted: #1a1b22;
+  --surface: #0f1016;
+  --surface-muted: #14151e;
   --text-main: #f8f8f8;
-  --text-subtle: #bec4ce;
+  --text-subtle: #94a3b8;
   --brand-red-soft: #261414;
+
+  /* Admin specific dark */
+  --dashboard-bg: #0b0c10;
+  --sidebar-bg: #0f1117;
+  --card-bg: #14161f;
+  --border-subtle: rgba(255, 255, 255, 0.08);
 }
 
 @theme inline {
@@ -27,6 +39,11 @@
   --font-sans: "Inter", "Segoe UI", sans-serif;
   --font-heading: "Poppins", "Montserrat", sans-serif;
   --font-display: "Montserrat", "Poppins", sans-serif;
+  
+  --color-dashboard: var(--dashboard-bg);
+  --color-sidebar: var(--sidebar-bg);
+  --color-admin-card: var(--card-bg);
+  --color-admin-border: var(--border-subtle);
 }
 
 * {

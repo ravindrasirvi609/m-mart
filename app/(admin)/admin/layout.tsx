@@ -1,16 +1,9 @@
-import Link from "next/link";
-
-import { NotificationCenter } from "@/components/notifications/notification-center";
 import { requireAdmin } from "@/lib/auth";
-import { getCurrentUserNotifications } from "@/lib/queries";
+import { getCurrentUserNotifications, getUserProfile } from "@/lib/queries";
+import { Sidebar } from "@/components/admin/sidebar";
+import { Navbar } from "@/components/admin/navbar";
 
 export const dynamic = "force-dynamic";
-
-const nav = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/products", label: "Products" },
-  { href: "/admin/orders", label: "Orders" },
-];
 
 export default async function AdminLayout({
   children,
@@ -18,41 +11,31 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const user = await requireAdmin();
-  const notificationState = await getCurrentUserNotifications({
-    userId: user.id,
-    isAdmin: true,
-  });
+  const [profile, notificationState] = await Promise.all([
+    getUserProfile(user.id),
+    getCurrentUserNotifications({
+      userId: user.id,
+      isAdmin: true,
+    }),
+  ]);
+
+  const adminUser = {
+    id: user.id,
+    email: user.email!,
+    name: profile?.name || user.email?.split("@")[0],
+  };
 
   return (
-    <div className="grid min-h-screen bg-[#0f1016] text-zinc-100 lg:grid-cols-[240px_1fr]">
-      <aside className="border-r border-white/10 bg-gradient-to-b from-[#14151e] to-[#0d0e14] p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="font-display text-2xl font-black text-white">Mmart Admin</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.16em] text-red-300">Operations Panel</p>
+    <div className="flex min-h-screen bg-dashboard text-text-main">
+      <Sidebar />
+      <div className="flex flex-1 flex-col">
+        <Navbar user={adminUser} notificationState={notificationState} />
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          <div className="mx-auto max-w-7xl animate-page-enter">
+            {children}
           </div>
-          <NotificationCenter
-            mode="admin"
-            userId={user.id}
-            initialNotifications={notificationState.items}
-            notificationsAvailable={notificationState.notificationsAvailable}
-          />
-        </div>
-
-        <nav className="mt-6 grid gap-2">
-          {nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-zinc-200 transition hover:border-[#e10600]/40 hover:bg-[#e10600]/15"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-      </aside>
-
-      <main className="p-4 sm:p-6">{children}</main>
+        </main>
+      </div>
     </div>
   );
 }

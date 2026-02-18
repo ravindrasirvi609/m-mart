@@ -37,3 +37,13 @@ export function formatOrderStatus(status: string) {
 export function sanitizeFileName(fileName: string) {
   return fileName.toLowerCase().replace(/[^a-z0-9.-]/g, "-");
 }
+
+export function formatDate(date: string | Date) {
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(date));
+}

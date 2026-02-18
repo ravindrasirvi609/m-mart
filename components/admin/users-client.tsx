@@ -1,0 +1,68 @@
+"use client";
+
+import { User } from "lucide-react";
+import { DataTable } from "@/components/admin/ui/data-table";
+import { Badge } from "@/components/admin/ui/badge";
+import { formatDate } from "@/lib/utils";
+
+interface UsersClientProps {
+    users: any[];
+}
+
+export function UsersClient({ users }: UsersClientProps) {
+    const columns = [
+        {
+            header: "Customer",
+            accessorKey: "name",
+            cell: (user: any) => (
+                <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500/10 text-blue-500">
+                        <User size={18} />
+                    </div>
+                    <div>
+                        <p className="font-bold text-white">{user.name || "Guest"}</p>
+                        <p className="text-[11px] text-text-subtle">{user.email}</p>
+                    </div>
+                </div>
+            ),
+        },
+        {
+            header: "Phone",
+            accessorKey: "phone",
+            cell: (user: any) => (
+                <span className="text-xs text-text-subtle">{user.phone || "N/A"}</span>
+            ),
+        },
+        {
+            header: "Joined",
+            accessorKey: "created_at",
+            cell: (user: any) => (
+                <span className="text-xs">{formatDate(user.created_at)}</span>
+            ),
+        },
+        {
+            header: "Role",
+            accessorKey: "role",
+            cell: (user: any) => (
+                <Badge variant={user.role === "admin" ? "success" : "outline"}>
+                    {user.role}
+                </Badge>
+            ),
+        },
+    ];
+
+    return (
+        <div className="space-y-6">
+            <div>
+                <h1 className="font-heading text-2xl font-black text-white">Customers</h1>
+                <p className="text-sm text-text-subtle">View and manage registered customers.</p>
+            </div>
+
+            <DataTable
+                data={users}
+                columns={columns}
+                searchKey="email"
+            />
+        </div>
+    );
+}

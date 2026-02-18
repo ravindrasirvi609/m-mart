@@ -137,6 +137,8 @@ export async function getAdminDashboardData() {
     { count: pendingPayments },
     { data: paidOrders },
     { data: lowStockProducts },
+    { count: totalCustomers },
+    { data: recentOrders },
   ] = await Promise.all([
     supabase.from("orders").select("id", { head: true, count: "exact" }),
     supabase
@@ -149,6 +151,19 @@ export async function getAdminDashboardData() {
       .select("id,name,stock")
       .lte("stock", LOW_STOCK_THRESHOLD)
       .order("stock", { ascending: true }),
+    supabase.from("users").select("id", { head: true, count: "exact" }),
+    supabase
+      .from("orders")
+      .select(`
+        id,
+        created_at,
+        total_amount,
+        payment_status,
+        order_status,
+        users (name, email)
+      `)
+      .order("created_at", { ascending: false })
+      .limit(5),
   ]);
 
   const totalRevenue = (paidOrders ?? []).reduce(
@@ -160,7 +175,12 @@ export async function getAdminDashboardData() {
     totalOrders: totalOrders ?? 0,
     pendingPayments: pendingPayments ?? 0,
     totalRevenue,
+    totalCustomers: totalCustomers ?? 0,
     lowStockProducts: lowStockProducts ?? [],
+    recentOrders: (recentOrders ?? []).map(o => ({
+      ...o,
+      user: Array.isArray(o.users) ? o.users[0] : o.users
+    })),
   };
 }
 
@@ -277,6 +297,16 @@ export async function getCurrentUserNotifications({
   };
 }
 
+export async function getAdminUsersData() {
+  const supabase = createAdminSupabaseClient();
+  const { data } = await supabase
+    .from("users")
+    .select("id, name, email, phone, role, created_at")
+    .order("created_at", { ascending: false });
+
+  return data ?? [];
+}
+
 export function assertNoQueryError(error: PostgrestError | null) {
   if (error) {
     throw new Error(error.message);
@@ -285,3 +315,4 @@ export function assertNoQueryError(error: PostgrestError | null) {
 
 export type Product = ProductRow;
 export type Category = CategoryLite;
+export type UserRow = Database["public"]["Tables"]["users"]["Row"];
