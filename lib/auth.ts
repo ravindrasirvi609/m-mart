@@ -4,6 +4,18 @@ import { getServerEnv } from "@/lib/env";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
+function getSafeNextPath(nextPath: string | undefined, fallback = "/") {
+  if (!nextPath) {
+    return fallback;
+  }
+
+  if (!nextPath.startsWith("/") || nextPath.startsWith("//")) {
+    return fallback;
+  }
+
+  return nextPath;
+}
+
 export function isAdminEmail(email: string | null | undefined) {
   if (!email) {
     return false;
@@ -53,18 +65,19 @@ export async function getCurrentUser() {
   return user;
 }
 
-export async function requireUser() {
+export async function requireUser(nextPath = "/") {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/login");
+    const safeNextPath = getSafeNextPath(nextPath);
+    redirect(`/login?next=${encodeURIComponent(safeNextPath)}`);
   }
 
   return user;
 }
 
 export async function requireAdmin() {
-  const user = await requireUser();
+  const user = await requireUser("/admin");
 
   const isAdmin = await checkIsAdmin(user.email);
   if (!isAdmin) {

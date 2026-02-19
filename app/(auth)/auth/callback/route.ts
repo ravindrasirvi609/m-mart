@@ -4,12 +4,24 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { normalizeSupabaseCookieOptions } from "@/lib/supabase/proxy";
 
+function getSafeNextPath(nextPath: string | null, fallback = "/") {
+  if (!nextPath) {
+    return fallback;
+  }
+
+  if (!nextPath.startsWith("/") || nextPath.startsWith("//")) {
+    return fallback;
+  }
+
+  return nextPath;
+}
+
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const tokenHash = requestUrl.searchParams.get("token_hash");
   const type = requestUrl.searchParams.get("type") as EmailOtpType | null;
-  const nextPath = requestUrl.searchParams.get("next") ?? "/";
+  const nextPath = getSafeNextPath(requestUrl.searchParams.get("next"));
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -72,11 +84,18 @@ export async function GET(request: NextRequest) {
   }
 
   if (user.email) {
-    await supabase.from("users").upsert({
+    const { error: upsertError } = await supabase.from("users").upsert({
       id: user.id,
       email: user.email,
       name: user.user_metadata?.name ?? null,
+    }, {
+      onConflict: "id",
     });
+
+    if (upsertError) {
+      console.error("Auth callback user upsert error:", upsertError.message);
+      return NextResponse.redirect(new URL("/login?error=Account sync failed", request.url));
+    }
   }
 
   return response;

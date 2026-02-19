@@ -9,6 +9,18 @@ type AuthDeepLinkResult =
   | { handled: false }
   | { handled: true; nextPath?: string; error?: string };
 
+function getSafeNextPath(nextPath: string | null, fallback = "/") {
+  if (!nextPath) {
+    return fallback;
+  }
+
+  if (!nextPath.startsWith("/") || nextPath.startsWith("//")) {
+    return fallback;
+  }
+
+  return nextPath;
+}
+
 function isAppDeepLinkProtocol(protocol: string) {
   return (
     protocol === `${AUTH_DEEP_LINK_SCHEME}:` ||
@@ -62,7 +74,7 @@ export async function handleSupabaseAuthDeepLink(url: string): Promise<AuthDeepL
       return { handled: true, error: "Session could not be restored in app." };
     }
 
-    return { handled: true, nextPath: parsed.searchParams.get("next") ?? "/" };
+    return { handled: true, nextPath: getSafeNextPath(parsed.searchParams.get("next")) };
   } catch {
     return { handled: false };
   }

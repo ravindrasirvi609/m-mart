@@ -10,11 +10,11 @@ export const metadata = {
 };
 
 export default async function CheckoutPage() {
-  const user = await requireUser();
+  const user = await requireUser("/checkout");
   const profile = await getUserProfile(user.id);
 
   if (!user.email) {
-    redirect("/login");
+    redirect("/login?next=%2Fcheckout");
   }
 
   return (

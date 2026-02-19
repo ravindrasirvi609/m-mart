@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, Mail } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -11,21 +11,60 @@ import { isNativeApp } from "@/lib/mobile/capacitor";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 const MOBILE_MAGIC_LINK_REDIRECT_URL = "mmart://auth";
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function LoginForm() {
+function getSafeNextPath(nextPath: string | null | undefined, fallback = "/") {
+  if (!nextPath) {
+    return fallback;
+  }
+
+  if (!nextPath.startsWith("/") || nextPath.startsWith("//")) {
+    return fallback;
+  }
+
+  return nextPath;
+}
+
+type LoginFormProps = {
+  nextPath?: string;
+  initialError?: string;
+};
+
+export function LoginForm({
+  nextPath = "/",
+  initialError,
+}: LoginFormProps) {
+  const safeNextPath = getSafeNextPath(nextPath);
   const [email, setEmail] = useState("");
   const [linkSent, setLinkSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!initialError) {
+      return;
+    }
+
+    toast.error(initialError);
+  }, [initialError]);
+
   const sendMagicLink = async () => {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
     setLoading(true);
     try {
       if (isNativeApp()) {
+        const mobileRedirectUrl = new URL(MOBILE_MAGIC_LINK_REDIRECT_URL);
+        mobileRedirectUrl.searchParams.set("next", safeNextPath);
+
         const supabase = createBrowserSupabaseClient();
         const { error } = await supabase.auth.signInWithOtp({
-          email,
+          email: normalizedEmail,
           options: {
-            emailRedirectTo: MOBILE_MAGIC_LINK_REDIRECT_URL,
+            emailRedirectTo: mobileRedirectUrl.toString(),
           },
         });
 
@@ -34,13 +73,14 @@ export function LoginForm() {
           return;
         }
       } else {
-        const result = await sendMagicLinkAction(email);
+        const result = await sendMagicLinkAction(normalizedEmail, safeNextPath);
         if (!result.ok) {
           toast.error(result.error);
           return;
         }
       }
 
+      setEmail(normalizedEmail);
       setLinkSent(true);
       toast.success("Magic link sent. Check your email.");
     } finally {

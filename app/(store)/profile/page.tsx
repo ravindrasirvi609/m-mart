@@ -8,7 +8,7 @@ export const metadata = {
 };
 
 export default async function ProfilePage() {
-  const user = await requireUser();
+  const user = await requireUser("/profile");
   const profile = await getUserProfile(user.id);
 
   return (

@@ -5,8 +5,27 @@ import { headers } from "next/headers";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getServerEnv } from "@/lib/env";
 
-export async function sendMagicLinkAction(email: string) {
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function getSafeNextPath(nextPath: string | undefined, fallback = "/") {
+  if (!nextPath) {
+    return fallback;
+  }
+
+  if (!nextPath.startsWith("/") || nextPath.startsWith("//")) {
+    return fallback;
+  }
+
+  return nextPath;
+}
+
+export async function sendMagicLinkAction(email: string, nextPath = "/") {
   try {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
+      return { ok: false, error: "Please enter a valid email address." };
+    }
+
     const env = getServerEnv();
     if (!env.RESEND_API_KEY || !env.RESEND_FROM_EMAIL) {
       return { ok: false, error: "Resend is not configured." };
@@ -21,7 +40,7 @@ export async function sendMagicLinkAction(email: string) {
 
     const { data, error } = await supabase.auth.admin.generateLink({
       type: "magiclink",
-      email,
+      email: normalizedEmail,
     });
 
     if (error) {
@@ -29,14 +48,20 @@ export async function sendMagicLinkAction(email: string) {
       return { ok: false, error: error.message };
     }
 
+    const tokenHash = data.properties.hashed_token;
+    if (!tokenHash) {
+      return { ok: false, error: "Could not generate sign-in token." };
+    }
+
+    const safeNextPath = getSafeNextPath(nextPath);
     const callbackUrl = new URL(`${origin}/auth/callback`);
-    callbackUrl.searchParams.set("token_hash", data.properties.hashed_token);
+    callbackUrl.searchParams.set("token_hash", tokenHash);
     callbackUrl.searchParams.set("type", "magiclink");
-    callbackUrl.searchParams.set("next", "/");
+    callbackUrl.searchParams.set("next", safeNextPath);
 
     const { error: resendError } = await resend.emails.send({
       from: env.RESEND_FROM_EMAIL,
-      to: email,
+      to: normalizedEmail,
       subject: "Your Mmart Magic Link",
       html: `
         <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #f7f8fa;">
@@ -81,7 +106,7 @@ export async function sendMagicLinkAction(email: string) {
       return { ok: false, error: "Failed to send email. Please try again later." };
     }
 
-    console.log(`Magic link successfully sent to ${email}`);
+    console.log(`Magic link successfully sent to ${normalizedEmail}`);
     return { ok: true };
   } catch (err) {
     console.error("Magic link action error:", err);

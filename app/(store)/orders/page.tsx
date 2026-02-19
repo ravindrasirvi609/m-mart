@@ -8,7 +8,7 @@ export const metadata = {
 };
 
 export default async function OrdersPage() {
-  const user = await requireUser();
+  const user = await requireUser("/orders");
   const orders = await getUserOrders(user.id);
 
   return (
