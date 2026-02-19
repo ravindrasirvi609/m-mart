@@ -299,12 +299,24 @@ export async function getCurrentUserNotifications({
 
 export async function getAdminUsersData() {
   const supabase = createAdminSupabaseClient();
-  const { data } = await supabase
-    .from("users")
-    .select("id, name, email, phone, role, created_at")
-    .order("created_at", { ascending: false });
+  const [{ data: users }, { data: adminUsers }] = await Promise.all([
+    supabase
+      .from("users")
+      .select("id, name, email, phone, created_at")
+      .order("created_at", { ascending: false }),
+    supabase.from("admin_users").select("email"),
+  ]);
 
-  return data ?? [];
+  const adminEmails = new Set(
+    (adminUsers ?? []).map((entry) => entry.email.toLowerCase().trim()),
+  );
+
+  return (users ?? []).map((user) => ({
+    ...user,
+    role: adminEmails.has(user.email.toLowerCase().trim())
+      ? ("admin" as const)
+      : ("customer" as const),
+  }));
 }
 
 export function assertNoQueryError(error: PostgrestError | null) {

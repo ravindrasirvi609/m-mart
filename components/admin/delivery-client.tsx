@@ -4,16 +4,43 @@ import { Truck, CheckCircle, Clock } from "lucide-react";
 import { DataTable } from "@/components/admin/ui/data-table";
 import { Badge } from "@/components/admin/ui/badge";
 import { formatDate } from "@/lib/utils";
+import type { Database } from "@/lib/supabase/types";
+
+type OrderAddress = Database["public"]["Tables"]["orders"]["Row"]["delivery_address"];
+
+type OrderUser =
+    | {
+          name?: string | null;
+          phone?: string | null;
+      }
+    | Array<{
+          name?: string | null;
+          phone?: string | null;
+      }>
+    | null;
+
+function getOrderUser(users: OrderUser) {
+    if (Array.isArray(users)) {
+        return users[0] ?? null;
+    }
+    return users;
+}
+
+function getAddressLabel(address: OrderAddress) {
+    if (typeof address === "string") return address;
+    if (address && typeof address === "object" && !Array.isArray(address) && "address" in address) {
+        const value = address.address;
+        return typeof value === "string" && value.trim().length > 0 ? value : "N/A";
+    }
+    return "N/A";
+}
 
 interface DeliveryOrder {
     id: string;
     created_at: string;
     order_status: string;
-    users: {
-        name: string | null;
-        phone: string | null;
-    } | null;
-    delivery_address: string | { address?: string } | null;
+    users: OrderUser;
+    delivery_address: OrderAddress;
 }
 
 interface DeliveryClientProps {
@@ -39,19 +66,22 @@ export function DeliveryClient({ orders }: DeliveryClientProps) {
         {
             header: "Customer",
             accessorKey: "users",
-            cell: (order: DeliveryOrder) => (
-                <div>
-                    <p className="font-bold text-text-main">{order.users?.name || "Guest"}</p>
-                    <p className="text-[10px] text-text-subtle truncate max-w-[150px]">{order.users?.phone}</p>
-                </div>
-            ),
+            cell: (order: DeliveryOrder) => {
+                const user = getOrderUser(order.users);
+                return (
+                    <div>
+                        <p className="font-bold text-text-main">{user?.name || "Guest"}</p>
+                        <p className="text-[10px] text-text-subtle truncate max-w-[150px]">{user?.phone}</p>
+                    </div>
+                );
+            },
         },
         {
             header: "Address",
             accessorKey: "delivery_address",
             cell: (order: DeliveryOrder) => (
                 <span className="text-[11px] text-text-subtle truncate max-w-[200px] block">
-                    {typeof order.delivery_address === 'object' ? order.delivery_address.address : order.delivery_address}
+                    {getAddressLabel(order.delivery_address)}
                 </span>
             ),
         },

@@ -8,29 +8,32 @@ import { DataTable } from "@/components/admin/ui/data-table";
 import { Badge } from "@/components/admin/ui/badge";
 import { Modal } from "@/components/admin/ui/modal";
 import { UpdateOrderStatusForm } from "@/components/admin/update-order-status-form";
+import type { Database } from "@/lib/supabase/types";
 
 interface OrdersClientProps {
   orders: AdminOrder[];
 }
 
+type OrderAddress = Database["public"]["Tables"]["orders"]["Row"]["delivery_address"];
+
 interface OrderUser {
-  id: string;
-  name: string | null;
-  email: string | null;
-  phone: string | null;
+  id?: string;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
 }
 
 interface OrderProduct {
-  id: string;
-  name: string;
-  image_url: string | null;
+  id?: string;
+  name?: string | null;
+  image_url?: string | null;
 }
 
 interface OrderItem {
   id: string;
   quantity: number;
   price: number;
-  products: OrderProduct | null;
+  products: OrderProduct | OrderProduct[] | null;
 }
 
 interface AdminOrder {
@@ -41,9 +44,36 @@ interface AdminOrder {
   payment_status: string;
   order_status: string;
   payment_screenshot_url: string | null;
-  delivery_address: string | { address?: string } | null;
-  users: OrderUser | null;
-  order_items: OrderItem[];
+  delivery_address: OrderAddress;
+  users: OrderUser | OrderUser[] | null;
+  order_items: OrderItem[] | null;
+}
+
+function getOrderUser(users: AdminOrder["users"]) {
+  if (Array.isArray(users)) {
+    return users[0] ?? null;
+  }
+  return users;
+}
+
+function getOrderItems(items: AdminOrder["order_items"]) {
+  return Array.isArray(items) ? items : [];
+}
+
+function getOrderProduct(products: OrderItem["products"]) {
+  if (Array.isArray(products)) {
+    return products[0] ?? null;
+  }
+  return products;
+}
+
+function getAddressLabel(address: OrderAddress) {
+  if (typeof address === "string") return address;
+  if (address && typeof address === "object" && !Array.isArray(address) && "address" in address) {
+    const value = address.address;
+    return typeof value === "string" && value.trim().length > 0 ? value : "N/A";
+  }
+  return "N/A";
 }
 
 export function OrdersClient({ orders }: OrdersClientProps) {
@@ -68,12 +98,15 @@ export function OrdersClient({ orders }: OrdersClientProps) {
     {
       header: "Customer",
       accessorKey: "users",
-      cell: (order: AdminOrder) => (
-        <div>
-          <p className="font-bold text-text-main">{order.users?.name || "Guest"}</p>
-          <p className="text-[11px] text-text-subtle">{order.users?.email}</p>
-        </div>
-      ),
+      cell: (order: AdminOrder) => {
+        const user = getOrderUser(order.users);
+        return (
+          <div>
+            <p className="font-bold text-text-main">{user?.name || "Guest"}</p>
+            <p className="text-[11px] text-text-subtle">{user?.email}</p>
+          </div>
+        );
+      },
     },
     {
       header: "Date",
@@ -107,7 +140,8 @@ export function OrdersClient({ orders }: OrdersClientProps) {
     },
   ];
 
-  const orderItems = selectedOrder?.order_items ?? [];
+  const orderItems = selectedOrder ? getOrderItems(selectedOrder.order_items) : [];
+  const selectedOrderUser = selectedOrder ? getOrderUser(selectedOrder.users) : null;
 
   return (
     <>
@@ -141,18 +175,16 @@ export function OrdersClient({ orders }: OrdersClientProps) {
                 <p className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">
                   Customer Info
                 </p>
-                <p className="font-bold text-text-main">{selectedOrder.users?.name || "N/A"}</p>
-                <p className="text-xs text-text-subtle">{selectedOrder.users?.email}</p>
-                <p className="text-xs text-text-subtle">{selectedOrder.users?.phone}</p>
+                <p className="font-bold text-text-main">{selectedOrderUser?.name || "N/A"}</p>
+                <p className="text-xs text-text-subtle">{selectedOrderUser?.email}</p>
+                <p className="text-xs text-text-subtle">{selectedOrderUser?.phone}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">
                   Shipping Address
                 </p>
                 <p className="text-xs leading-relaxed text-text-main">
-                  {typeof selectedOrder.delivery_address === "object"
-                    ? selectedOrder.delivery_address.address
-                    : selectedOrder.delivery_address}
+                  {getAddressLabel(selectedOrder.delivery_address)}
                 </p>
               </div>
             </div>
@@ -162,34 +194,38 @@ export function OrdersClient({ orders }: OrdersClientProps) {
                 Items
               </p>
               <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
-                {orderItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="rounded-xl border border-admin-border bg-white/[0.02] p-3"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg">
-                        <Image
-                          src={item.products?.image_url || "/placeholder.jpg"}
-                          alt={item.products?.name}
-                          fill
-                          className="object-cover"
-                        />
+                {orderItems.map((item) => {
+                  const itemProduct = getOrderProduct(item.products);
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="rounded-xl border border-admin-border bg-white/[0.02] p-3"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg">
+                          <Image
+                            src={itemProduct?.image_url || "/placeholder.jpg"}
+                            alt={itemProduct?.name || "Product"}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-text-main">
+                            {itemProduct?.name || "Unnamed product"}
+                          </p>
+                          <p className="text-[11px] text-text-subtle">
+                            Qty: {item.quantity} x {formatCurrency(item.price)}
+                          </p>
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold text-text-main">
-                          {item.products?.name}
-                        </p>
-                        <p className="text-[11px] text-text-subtle">
-                          Qty: {item.quantity} x {formatCurrency(item.price)}
-                        </p>
-                      </div>
+                      <p className="mt-2 text-right text-sm font-bold text-text-main">
+                        {formatCurrency(item.quantity * item.price)}
+                      </p>
                     </div>
-                    <p className="mt-2 text-right text-sm font-bold text-text-main">
-                      {formatCurrency(item.quantity * item.price)}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
                 {orderItems.length === 0 && (
                   <p className="rounded-xl border border-admin-border bg-white/[0.02] p-3 text-xs text-text-subtle">
                     No order items found for this order.
