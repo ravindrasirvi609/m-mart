@@ -84,11 +84,14 @@ export function OrdersClient({ orders }: OrdersClientProps) {
   const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const refreshTimerRef = useRef<number | null>(null);
+  const liveOrdersRef = useRef<AdminOrder[]>(orders);
   const [statusOverrides, setStatusOverrides] = useState<
     Record<string, { payment_status: string; order_status: string }>
   >({});
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [hasRealtimeSession, setHasRealtimeSession] = useState(false);
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
 
   const liveOrders = useMemo(() => {
     return orders.map((order) => {
@@ -113,6 +116,36 @@ export function OrdersClient({ orders }: OrdersClientProps) {
     return liveOrders.find((entry) => entry.id === selectedOrderId) ?? null;
   }, [liveOrders, selectedOrderId]);
 
+  useEffect(() => {
+    liveOrdersRef.current = liveOrders;
+  }, [liveOrders]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const bootstrapSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!mounted) {
+        return;
+      }
+
+      setHasRealtimeSession(Boolean(data.session));
+    };
+
+    void bootstrapSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setHasRealtimeSession(Boolean(session));
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
+
   const scheduleRefresh = useCallback(
     (delay = 220) => {
       if (refreshTimerRef.current !== null) {
@@ -128,6 +161,10 @@ export function OrdersClient({ orders }: OrdersClientProps) {
   );
 
   useEffect(() => {
+    if (!hasRealtimeSession) {
+      return;
+    }
+
     const channel = supabase
       .channel("admin-orders-realtime")
       .on(
@@ -164,7 +201,20 @@ export function OrdersClient({ orders }: OrdersClientProps) {
           }));
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          setRealtimeConnected(true);
+          return;
+        }
+
+        if (
+          status === "CHANNEL_ERROR" ||
+          status === "TIMED_OUT" ||
+          status === "CLOSED"
+        ) {
+          setRealtimeConnected(false);
+        }
+      });
 
     return () => {
       if (refreshTimerRef.current !== null) {
@@ -173,7 +223,65 @@ export function OrdersClient({ orders }: OrdersClientProps) {
 
       void supabase.removeChannel(channel);
     };
-  }, [scheduleRefresh, supabase]);
+  }, [hasRealtimeSession, scheduleRefresh, supabase]);
+
+  const syncOrdersWithoutSocket = useCallback(async () => {
+    if (!hasRealtimeSession) {
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("orders")
+      .select("id,payment_status,order_status")
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (error) {
+      console.error("[Admin Orders] Polling sync failed:", error.message);
+      return;
+    }
+
+    const latest = data ?? [];
+    const current = liveOrdersRef.current;
+    const currentIds = new Set(current.map((entry) => entry.id));
+    const hasUnknownOrder = latest.some((entry) => !currentIds.has(entry.id));
+
+    if (hasUnknownOrder || latest.length !== current.length) {
+      scheduleRefresh(80);
+      return;
+    }
+
+    setStatusOverrides((currentOverrides) => {
+      const nextOverrides = { ...currentOverrides };
+
+      latest.forEach((entry) => {
+        nextOverrides[entry.id] = {
+          payment_status: entry.payment_status,
+          order_status: entry.order_status,
+        };
+      });
+
+      return nextOverrides;
+    });
+  }, [hasRealtimeSession, scheduleRefresh, supabase]);
+
+  useEffect(() => {
+    if (!hasRealtimeSession || realtimeConnected) {
+      return;
+    }
+
+    const kickoff = window.setTimeout(() => {
+      void syncOrdersWithoutSocket();
+    }, 0);
+    const timer = window.setInterval(() => {
+      void syncOrdersWithoutSocket();
+    }, 4500);
+
+    return () => {
+      window.clearTimeout(kickoff);
+      window.clearInterval(timer);
+    };
+  }, [hasRealtimeSession, realtimeConnected, syncOrdersWithoutSocket]);
 
   const handleViewOrder = (order: AdminOrder) => {
     setSelectedOrderId(order.id);

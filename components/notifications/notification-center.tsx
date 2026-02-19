@@ -4,6 +4,7 @@ import { Bell, BellRing, CheckCheck } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { markNotificationsReadAction } from "@/actions/notification-actions";
 import { Button } from "@/components/ui/button";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
@@ -56,6 +57,8 @@ export function NotificationCenter({
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState(initialNotifications);
   const [useOrdersFallback, setUseOrdersFallback] = useState(!notificationsAvailable);
+  const [hasRealtimeSession, setHasRealtimeSession] = useState(false);
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission | "unsupported">(
     isPushSupported() ? Notification.permission : "unsupported",
   );
@@ -73,14 +76,39 @@ export function NotificationCenter({
     setUseOrdersFallback(!notificationsAvailable);
   }, [notificationsAvailable]);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const bootstrapSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!mounted) {
+        return;
+      }
+
+      setHasRealtimeSession(Boolean(data.session));
+    };
+
+    void bootstrapSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setHasRealtimeSession(Boolean(session));
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
+
   const pushVisualNotification = useCallback(
     (title: string, message: string, tag: string) => {
       toast(title, { description: message });
 
       if (
         !isPushSupported() ||
-        Notification.permission !== "granted" ||
-        document.visibilityState === "visible"
+        Notification.permission !== "granted"
       ) {
         return;
       }
@@ -160,7 +188,8 @@ export function NotificationCenter({
   }, []);
 
   useEffect(() => {
-    if (useOrdersFallback) {
+    if (!hasRealtimeSession || useOrdersFallback) {
+      setRealtimeConnected(false);
       return;
     }
 
@@ -210,18 +239,29 @@ export function NotificationCenter({
         },
       )
       .subscribe((status) => {
-        if (status === "CHANNEL_ERROR") {
+        if (status === "SUBSCRIBED") {
+          setRealtimeConnected(true);
+          return;
+        }
+
+        if (
+          status === "CHANNEL_ERROR" ||
+          status === "TIMED_OUT" ||
+          status === "CLOSED"
+        ) {
+          setRealtimeConnected(false);
           setUseOrdersFallback(true);
         }
       });
 
     return () => {
+      setRealtimeConnected(false);
       void supabase.removeChannel(channel);
     };
-  }, [mode, pushVisualNotification, supabase, useOrdersFallback, userId]);
+  }, [hasRealtimeSession, mode, pushVisualNotification, supabase, useOrdersFallback, userId]);
 
   useEffect(() => {
-    if (!useOrdersFallback) {
+    if (!hasRealtimeSession || !useOrdersFallback) {
       return;
     }
 
@@ -285,12 +325,76 @@ export function NotificationCenter({
           );
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (
+          status === "CHANNEL_ERROR" ||
+          status === "TIMED_OUT" ||
+          status === "CLOSED"
+        ) {
+          setRealtimeConnected(false);
+        }
+      });
 
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [mode, pushRuntimeNotification, supabase, useOrdersFallback, userId]);
+  }, [hasRealtimeSession, mode, pushRuntimeNotification, supabase, useOrdersFallback, userId]);
+
+  const fetchLatestNotifications = useCallback(async () => {
+    if (!hasRealtimeSession) {
+      return;
+    }
+
+    let query = supabase
+      .from("notifications")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    if (mode === "admin") {
+      query = query.eq("target_role", "admin");
+    } else {
+      query = query.eq("target_role", "customer").eq("user_id", userId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      if (isMissingNotificationsTableMessage(error.message)) {
+        setUseOrdersFallback(true);
+        return;
+      }
+
+      console.error("[Notifications] Failed to fetch latest notifications:", error.message);
+      return;
+    }
+
+    setNotifications(data ?? []);
+  }, [hasRealtimeSession, mode, supabase, userId]);
+
+  useEffect(() => {
+    if (!hasRealtimeSession) {
+      return;
+    }
+
+    if (!useOrdersFallback && realtimeConnected) {
+      return;
+    }
+
+    void fetchLatestNotifications();
+    const timer = window.setInterval(() => {
+      void fetchLatestNotifications();
+    }, 4500);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [
+    fetchLatestNotifications,
+    hasRealtimeSession,
+    realtimeConnected,
+    useOrdersFallback,
+  ]);
 
   const markAllAsRead = async () => {
     const unreadIds = notifications
@@ -301,53 +405,43 @@ export function NotificationCenter({
       return;
     }
 
-    setNotifications((current) => {
-      return current.map((entry) => ({ ...entry, is_read: true }));
-    });
+    const previous = notifications;
+    setNotifications((current) => current.map((entry) => ({ ...entry, is_read: true })));
 
     if (useOrdersFallback) {
       return;
     }
 
-    const { error } = await supabase
-      .from("notifications")
-      .update({ is_read: true })
-      .in("id", unreadIds);
-
-    if (error) {
-      if (isMissingNotificationsTableMessage(error.message)) {
-        setUseOrdersFallback(true);
-        return;
-      }
-
-      toast.error(error.message);
+    const result = await markNotificationsReadAction(unreadIds);
+    if (!result.ok) {
+      setNotifications(previous);
+      toast.error(result.error);
+      return;
     }
+
+    void fetchLatestNotifications();
   };
 
   const markOneAsRead = async (id: string) => {
-    setNotifications((current) => {
-      return current.map((entry) => {
+    const previous = notifications;
+    setNotifications((current) =>
+      current.map((entry) => {
         return entry.id === id ? { ...entry, is_read: true } : entry;
-      });
-    });
+      }),
+    );
 
     if (useOrdersFallback) {
       return;
     }
 
-    const { error } = await supabase
-      .from("notifications")
-      .update({ is_read: true })
-      .eq("id", id);
-
-    if (error) {
-      if (isMissingNotificationsTableMessage(error.message)) {
-        setUseOrdersFallback(true);
-        return;
-      }
-
-      toast.error(error.message);
+    const result = await markNotificationsReadAction([id]);
+    if (!result.ok) {
+      setNotifications(previous);
+      toast.error(result.error);
+      return;
     }
+
+    void fetchLatestNotifications();
   };
 
   const requestPushPermission = async () => {
@@ -464,6 +558,16 @@ export function NotificationCenter({
                 )}
               >
                 Realtime fallback mode is active.
+              </p>
+            ) : null}
+            {!hasRealtimeSession ? (
+              <p
+                className={cn(
+                  "text-[11px]",
+                  mode === "admin" ? "text-amber-300" : "text-amber-700 dark:text-amber-300",
+                )}
+              >
+                Connecting realtime session...
               </p>
             ) : null}
           </div>

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -40,7 +40,10 @@ type OrderHistoryProps = {
 
 export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
   const router = useRouter();
+  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [orders, setOrders] = useState(initialOrders);
+  const [hasRealtimeSession, setHasRealtimeSession] = useState(false);
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
   const ordersRef = useRef(initialOrders);
 
   useEffect(() => {
@@ -52,7 +55,35 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
   }, [initialOrders]);
 
   useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
+    let mounted = true;
+
+    const bootstrapSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!mounted) {
+        return;
+      }
+
+      setHasRealtimeSession(Boolean(data.session));
+    };
+
+    void bootstrapSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setHasRealtimeSession(Boolean(session));
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!hasRealtimeSession) {
+      return;
+    }
 
     const channel = supabase
       .channel(`orders-${userId}`)
@@ -113,12 +144,87 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
           });
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          setRealtimeConnected(true);
+          return;
+        }
+
+        if (
+          status === "CHANNEL_ERROR" ||
+          status === "TIMED_OUT" ||
+          status === "CLOSED"
+        ) {
+          setRealtimeConnected(false);
+        }
+      });
 
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [router, userId]);
+  }, [hasRealtimeSession, router, supabase, userId]);
+
+  const syncOrdersWithoutSocket = useCallback(async () => {
+    if (!hasRealtimeSession) {
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("orders")
+      .select("id,payment_status,order_status")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(25);
+
+    if (error) {
+      console.error("[Orders] Polling sync failed:", error.message);
+      return;
+    }
+
+    const latest = data ?? [];
+    const current = ordersRef.current;
+    const currentIds = new Set(current.map((entry) => entry.id));
+    const hasUnknownOrder = latest.some((entry) => !currentIds.has(entry.id));
+
+    if (hasUnknownOrder || latest.length !== current.length) {
+      router.refresh();
+      return;
+    }
+
+    setOrders((entries) =>
+      entries.map((entry) => {
+        const incoming = latest.find((item) => item.id === entry.id);
+        if (!incoming) {
+          return entry;
+        }
+
+        return {
+          ...entry,
+          payment_status: incoming.payment_status,
+          order_status: incoming.order_status,
+        };
+      }),
+    );
+  }, [hasRealtimeSession, router, supabase, userId]);
+
+  useEffect(() => {
+    if (!hasRealtimeSession || realtimeConnected) {
+      return;
+    }
+
+    const kickoff = window.setTimeout(() => {
+      void syncOrdersWithoutSocket();
+    }, 0);
+
+    const timer = window.setInterval(() => {
+      void syncOrdersWithoutSocket();
+    }, 4500);
+
+    return () => {
+      window.clearTimeout(kickoff);
+      window.clearInterval(timer);
+    };
+  }, [hasRealtimeSession, realtimeConnected, syncOrdersWithoutSocket]);
 
   if (orders.length === 0) {
     return (
