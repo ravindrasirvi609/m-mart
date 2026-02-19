@@ -31,9 +31,9 @@ export function DataTable<T>({ data, columns, searchKey, onSearch, onAction, ren
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
-                <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle" size={18} />
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative flex-1 w-full sm:max-w-sm">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle" size={16} />
                     <input
                         type="text"
                         placeholder={`Search ${searchKey ? String(searchKey) : '...'}`}
@@ -46,9 +46,9 @@ export function DataTable<T>({ data, columns, searchKey, onSearch, onAction, ren
                     />
                 </div>
                 <div className="flex items-center gap-2">
-                    <button className="flex items-center gap-2 rounded-xl border border-admin-border bg-admin-card px-3 py-2 text-sm font-medium text-text-subtle hover:text-text-main transition-all">
+                    <button className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-admin-border bg-admin-card px-3 py-2 text-sm font-medium text-text-subtle hover:text-text-main transition-all sm:flex-none">
                         <Filter size={16} />
-                        Filter
+                        <span>Filter</span>
                     </button>
                 </div>
             </div>

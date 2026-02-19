@@ -78,12 +78,12 @@ export function DeliveryClient({ orders }: DeliveryClientProps) {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="font-heading text-2xl font-black text-text-main">Delivery Management</h1>
-                <p className="text-sm text-text-subtle">Monitor active shipments and delivery performance.</p>
+            <div className="flex flex-col gap-1">
+                <h1 className="font-heading text-xl sm:text-2xl font-black text-text-main">Delivery Management</h1>
+                <p className="text-xs sm:text-sm text-text-subtle">Monitor active shipments and delivery performance.</p>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
                 <div className="rounded-2xl border border-admin-border bg-admin-card p-4">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">Preparing</p>
                     <p className="mt-2 text-2xl font-black text-text-main">

@@ -48,7 +48,7 @@ export function Modal({ isOpen, onClose, title, description, children }: ModalPr
                         <X size={20} />
                     </button>
                 </div>
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                     {children}
                 </div>
             </div>

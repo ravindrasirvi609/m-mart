@@ -40,17 +40,17 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="font-heading text-2xl font-black text-text-main">Categories</h1>
-                    <p className="text-sm text-text-subtle">Organize your products into categories.</p>
+                    <h1 className="font-heading text-xl sm:text-2xl font-black text-text-main">Categories</h1>
+                    <p className="text-xs sm:text-sm text-text-subtle">Organize your products into categories.</p>
                 </div>
                 <Button
                     onClick={() => setIsAddModalOpen(true)}
-                    className="flex items-center gap-2 rounded-xl bg-brand-red font-bold text-white hover:bg-brand-red/90"
+                    className="flex items-center justify-center gap-2 rounded-xl bg-brand-red px-4 py-2.5 font-bold text-white hover:bg-brand-red/90 w-full sm:w-auto"
                 >
                     <Plus size={18} />
-                    Add Category
+                    <span>Add Category</span>
                 </Button>
             </div>
 

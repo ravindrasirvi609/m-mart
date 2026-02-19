@@ -26,7 +26,7 @@ const colorMap = {
 export function StatsCard({ title, value, icon: Icon, description, trend, color = "red" }: StatsCardProps) {
     return (
         <Card className="hover:border-brand-red/30 transition-all duration-300">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                     <div className={cn("rounded-xl p-2.5 border", colorMap[color])}>
                         <Icon size={24} />

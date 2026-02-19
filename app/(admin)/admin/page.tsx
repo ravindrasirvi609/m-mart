@@ -16,9 +16,9 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="font-heading text-2xl font-black text-text-main">Dashboard</h1>
-        <p className="text-sm text-text-subtle">Welcome back! Here&apos;s what&apos;s happening today.</p>
+      <div className="flex flex-col gap-1 sm:gap-2">
+        <h1 className="font-heading text-xl sm:text-2xl font-black text-text-main">Dashboard</h1>
+        <p className="text-xs sm:text-sm text-text-subtle">Welcome back! Here&apos;s what&apos;s happening today.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

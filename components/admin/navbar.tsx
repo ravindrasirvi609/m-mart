@@ -14,9 +14,10 @@ interface NavbarProps {
         items: any[];
         notificationsAvailable: boolean;
     };
+    onMenuClick?: () => void;
 }
 
-export function Navbar({ user, notificationState }: NavbarProps) {
+export function Navbar({ user, notificationState, onMenuClick }: NavbarProps) {
     const pathname = usePathname();
 
     // Basic breadcrumb logic
@@ -29,7 +30,10 @@ export function Navbar({ user, notificationState }: NavbarProps) {
     return (
         <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-admin-border bg-dashboard/80 px-4 backdrop-blur-md lg:px-6">
             <div className="flex items-center gap-4">
-                <button className="lg:hidden p-2 text-text-subtle hover:text-text-main">
+                <button
+                    onClick={onMenuClick}
+                    className="lg:hidden p-2 text-text-subtle hover:text-text-main"
+                >
                     <Menu size={20} />
                 </button>
 

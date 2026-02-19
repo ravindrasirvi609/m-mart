@@ -9,9 +9,9 @@ export const metadata = {
 export default function AdminSettingsPage() {
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="font-heading text-2xl font-black text-white">Settings</h1>
-                <p className="text-sm text-text-subtle">Manage your store configuration and preferences.</p>
+            <div className="flex flex-col gap-1">
+                <h1 className="font-heading text-xl sm:text-2xl font-black text-white">Settings</h1>
+                <p className="text-xs sm:text-sm text-text-subtle">Manage your store configuration and preferences.</p>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">

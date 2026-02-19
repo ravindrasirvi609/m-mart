@@ -84,6 +84,14 @@ export function OrdersClient({ orders }: OrdersClientProps) {
                 searchKey="id"
                 isLoading={false}
                 onAction={handleViewOrder}
+                renderActions={(order) => (
+                    <button
+                        onClick={() => handleViewOrder(order)}
+                        className="rounded-lg p-2 text-text-subtle hover:bg-white/10 hover:text-text-main transition-colors"
+                    >
+                        <Eye size={18} />
+                    </button>
+                )}
             />
 
             <Modal
