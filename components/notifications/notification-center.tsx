@@ -65,17 +65,59 @@ export function NotificationCenter({
     return count + (entry.is_read ? 0 : 1);
   }, 0);
 
-  const pushVisualNotification = useCallback((title: string, message: string, tag: string) => {
-    toast(title, { description: message });
+  useEffect(() => {
+    setNotifications(initialNotifications);
+  }, [initialNotifications]);
 
-    if (
-      isPushSupported() &&
-      Notification.permission === "granted" &&
-      document.visibilityState !== "visible"
-    ) {
-      new Notification(title, { body: message, tag });
-    }
-  }, []);
+  useEffect(() => {
+    setUseOrdersFallback(!notificationsAvailable);
+  }, [notificationsAvailable]);
+
+  const pushVisualNotification = useCallback(
+    (title: string, message: string, tag: string) => {
+      toast(title, { description: message });
+
+      if (
+        !isPushSupported() ||
+        Notification.permission !== "granted" ||
+        document.visibilityState === "visible"
+      ) {
+        return;
+      }
+
+      const destination = mode === "admin" ? "/admin/orders" : "/orders";
+
+      const showSystemNotification = async () => {
+        try {
+          if ("serviceWorker" in navigator) {
+            const registration = await navigator.serviceWorker.getRegistration();
+
+            if (registration) {
+              await registration.showNotification(title, {
+                body: message,
+                tag,
+                icon: "/icons/icon-192x192.png",
+                badge: "/icons/icon-192x192.png",
+                data: { url: destination },
+              });
+              return;
+            }
+          }
+
+          new Notification(title, {
+            body: message,
+            tag,
+            data: { url: destination },
+          });
+        } catch (error) {
+          console.error("[Notifications] Failed to display browser notification:", error);
+        }
+      };
+
+      void showSystemNotification();
+    },
+    [mode],
+  );
 
   const pushRuntimeNotification = useCallback(
     (title: string, message: string, tag: string) => {
@@ -318,6 +360,13 @@ export function NotificationCenter({
     setPermission(nextPermission);
 
     if (nextPermission === "granted") {
+      if ("serviceWorker" in navigator) {
+        try {
+          await navigator.serviceWorker.ready;
+        } catch (error) {
+          console.error("[Notifications] Service worker is not ready:", error);
+        }
+      }
       toast.success("Push notifications enabled");
       return;
     }

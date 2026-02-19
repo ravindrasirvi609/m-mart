@@ -280,7 +280,12 @@ export async function updateOrderStatusAction(
         orderStatus: parsed.data.orderStatus,
       },
       admin,
-    );
+    ).catch((notificationError) => {
+      console.error(
+        `[Orders] Failed to create status notification for order ${order.id}:`,
+        notificationError,
+      );
+    });
 
     revalidatePath("/admin/orders");
     revalidatePath("/orders");

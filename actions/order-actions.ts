@@ -187,6 +187,17 @@ export async function placeOrderAction(formData: FormData): Promise<PlaceOrderRe
       };
     });
 
+    await createOrderPlacedNotifications(
+      {
+        orderId,
+        customerId: user.id,
+        customerName: profilePayload.data.name,
+      },
+      admin,
+    ).catch((error) => {
+      console.error("[Orders] Failed to create order notifications:", error);
+    });
+
     await Promise.allSettled([
       sendOrderEmails({
         orderId,
@@ -198,14 +209,6 @@ export async function placeOrderAction(formData: FormData): Promise<PlaceOrderRe
         paymentStatus: "Pending Verification",
       }),
       sendLowStockEmail(refreshedProducts ?? []),
-      createOrderPlacedNotifications(
-        {
-          orderId,
-          customerId: user.id,
-          customerName: profilePayload.data.name,
-        },
-        admin,
-      ),
     ]);
 
     revalidatePath("/orders");

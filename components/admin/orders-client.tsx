@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { Eye, ExternalLink } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { DataTable } from "@/components/admin/ui/data-table";
 import { Badge } from "@/components/admin/ui/badge";
 import { Modal } from "@/components/admin/ui/modal";
 import { UpdateOrderStatusForm } from "@/components/admin/update-order-status-form";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
 
 interface OrdersClientProps {
@@ -15,6 +18,7 @@ interface OrdersClientProps {
 }
 
 type OrderAddress = Database["public"]["Tables"]["orders"]["Row"]["delivery_address"];
+type RealtimeOrderRow = Database["public"]["Tables"]["orders"]["Row"];
 
 interface OrderUser {
   id?: string;
@@ -77,11 +81,102 @@ function getAddressLabel(address: OrderAddress) {
 }
 
 export function OrdersClient({ orders }: OrdersClientProps) {
-  const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
+  const router = useRouter();
+  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+  const refreshTimerRef = useRef<number | null>(null);
+  const [statusOverrides, setStatusOverrides] = useState<
+    Record<string, { payment_status: string; order_status: string }>
+  >({});
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const liveOrders = useMemo(() => {
+    return orders.map((order) => {
+      const override = statusOverrides[order.id];
+      if (!override) {
+        return order;
+      }
+
+      return {
+        ...order,
+        payment_status: override.payment_status,
+        order_status: override.order_status,
+      };
+    });
+  }, [orders, statusOverrides]);
+
+  const selectedOrder = useMemo(() => {
+    if (!selectedOrderId) {
+      return null;
+    }
+
+    return liveOrders.find((entry) => entry.id === selectedOrderId) ?? null;
+  }, [liveOrders, selectedOrderId]);
+
+  const scheduleRefresh = useCallback(
+    (delay = 220) => {
+      if (refreshTimerRef.current !== null) {
+        window.clearTimeout(refreshTimerRef.current);
+      }
+
+      refreshTimerRef.current = window.setTimeout(() => {
+        refreshTimerRef.current = null;
+        router.refresh();
+      }, delay);
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-orders-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "orders",
+        },
+        (payload) => {
+          const incoming = payload.new as RealtimeOrderRow;
+          toast("New order received", {
+            description: `Order #${incoming.id.slice(0, 8).toUpperCase()} was just placed.`,
+          });
+          scheduleRefresh(120);
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+        },
+        (payload) => {
+          const incoming = payload.new as RealtimeOrderRow;
+
+          setStatusOverrides((current) => ({
+            ...current,
+            [incoming.id]: {
+              payment_status: incoming.payment_status,
+              order_status: incoming.order_status,
+            },
+          }));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      if (refreshTimerRef.current !== null) {
+        window.clearTimeout(refreshTimerRef.current);
+      }
+
+      void supabase.removeChannel(channel);
+    };
+  }, [scheduleRefresh, supabase]);
+
   const handleViewOrder = (order: AdminOrder) => {
-    setSelectedOrder(order);
+    setSelectedOrderId(order.id);
     setIsModalOpen(true);
   };
 
@@ -146,7 +241,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
   return (
     <>
       <DataTable
-        data={orders}
+        data={liveOrders}
         columns={columns}
         searchKey="id"
         isLoading={false}
@@ -277,6 +372,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
                   Update Status
                 </p>
                 <UpdateOrderStatusForm
+                  key={`${selectedOrder.id}-${selectedOrder.payment_status}-${selectedOrder.order_status}`}
                   orderId={selectedOrder.id}
                   paymentStatus={selectedOrder.payment_status}
                   orderStatus={selectedOrder.order_status}

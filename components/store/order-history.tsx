@@ -1,9 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import type { Database } from "@/lib/supabase/types";
 import { formatCurrency, formatOrderStatus } from "@/lib/utils";
 import { StatusPill } from "@/components/ui/status-pill";
 
@@ -28,6 +31,7 @@ type UserOrder = {
   payment_screenshot_url: string | null;
   order_items: OrderItem[];
 };
+type RealtimeOrderRow = Database["public"]["Tables"]["orders"]["Row"];
 
 type OrderHistoryProps = {
   userId: string;
@@ -35,7 +39,17 @@ type OrderHistoryProps = {
 };
 
 export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
+  const router = useRouter();
   const [orders, setOrders] = useState(initialOrders);
+  const ordersRef = useRef(initialOrders);
+
+  useEffect(() => {
+    ordersRef.current = orders;
+  }, [orders]);
+
+  useEffect(() => {
+    setOrders(initialOrders);
+  }, [initialOrders]);
 
   useEffect(() => {
     const supabase = createBrowserSupabaseClient();
@@ -45,24 +59,58 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
       .on(
         "postgres_changes",
         {
+          event: "INSERT",
+          schema: "public",
+          table: "orders",
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const inserted = payload.new as RealtimeOrderRow;
+          toast("Order placed", {
+            description: `Order #${inserted.id.slice(0, 8).toUpperCase()} is now in your history.`,
+          });
+          router.refresh();
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
           event: "UPDATE",
           schema: "public",
           table: "orders",
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          const updated = payload.new;
-          setOrders((current) =>
-            current.map((entry) =>
+          const updated = payload.new as RealtimeOrderRow;
+          const previous = ordersRef.current.find((entry) => entry.id === updated.id);
+          const nextOrderStatus = String(updated.order_status);
+          const nextPaymentStatus = String(updated.payment_status);
+
+          if (!previous) {
+            router.refresh();
+            return;
+          }
+
+          if (
+            previous.order_status !== nextOrderStatus ||
+            previous.payment_status !== nextPaymentStatus
+          ) {
+            toast("Order status updated", {
+              description: `#${updated.id.slice(0, 8).toUpperCase()} is ${formatOrderStatus(nextOrderStatus)}.`,
+            });
+          }
+
+          setOrders((current) => {
+            return current.map((entry) =>
               entry.id === updated.id
                 ? {
                     ...entry,
-                    payment_status: String(updated.payment_status),
-                    order_status: String(updated.order_status),
+                    payment_status: nextPaymentStatus,
+                    order_status: nextOrderStatus,
                   }
                 : entry,
-            ),
-          );
+            );
+          });
         },
       )
       .subscribe();
@@ -70,7 +118,7 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [userId]);
+  }, [router, userId]);
 
   if (orders.length === 0) {
     return (
