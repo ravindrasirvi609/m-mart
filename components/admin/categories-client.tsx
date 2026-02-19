@@ -6,9 +6,10 @@ import { DataTable } from "@/components/admin/ui/data-table";
 import { Modal } from "@/components/admin/ui/modal";
 import { Button } from "@/components/ui/button";
 import { AddCategoryForm } from "@/components/admin/add-category-form";
+import type { Category } from "@/lib/queries";
 
 interface CategoriesClientProps {
-    categories: any[];
+    categories: Category[];
 }
 
 export function CategoriesClient({ categories }: CategoriesClientProps) {
@@ -18,7 +19,7 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
         {
             header: "Category Name",
             accessorKey: "name",
-            cell: (category: any) => (
+            cell: (category: Category) => (
                 <div className="flex items-center gap-3">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-red/10 text-brand-red">
                         <Tag size={16} />
@@ -30,7 +31,7 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
         {
             header: "ID",
             accessorKey: "id",
-            cell: (category: any) => (
+            cell: (category: Category) => (
                 <span className="font-mono text-[11px] text-text-subtle">
                     {category.id}
                 </span>

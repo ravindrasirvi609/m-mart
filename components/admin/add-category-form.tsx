@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { upsertCategoryAction } from "@/actions/admin-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ActionFeedback } from "@/components/admin/ui/action-feedback";
 
 export function AddCategoryForm() {
     const formRef = useRef<HTMLFormElement>(null);
@@ -35,7 +36,12 @@ export function AddCategoryForm() {
                     className="!bg-white/5 !text-text-main"
                     disabled={isPending}
                 />
-                <Button type="submit" disabled={isPending}>
+                <ActionFeedback
+                    state={state}
+                    successFallback="Category saved successfully."
+                    errorFallback="Unable to save category."
+                />
+                <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
                     {isPending ? "Saving..." : "Save Category"}
                 </Button>
             </div>

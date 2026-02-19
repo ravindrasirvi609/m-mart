@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Category } from "@/lib/queries";
+import { ActionFeedback } from "@/components/admin/ui/action-feedback";
 
 export function AddProductForm({ categories }: { categories: Category[] }) {
     const formRef = useRef<HTMLFormElement>(null);
@@ -113,7 +114,13 @@ export function AddProductForm({ categories }: { categories: Category[] }) {
                     <input type="checkbox" name="is_active" defaultChecked disabled={isPending} className="accent-brand-red" /> Active
                 </label>
 
-                <Button type="submit" disabled={isPending}>
+                <ActionFeedback
+                    state={state}
+                    successFallback="Product created successfully."
+                    errorFallback="Unable to save product."
+                />
+
+                <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
                     {isPending ? "Creating..." : "Create Product"}
                 </Button>
             </div>

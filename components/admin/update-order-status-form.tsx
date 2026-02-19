@@ -7,6 +7,7 @@ import { updateOrderStatusAction } from "@/actions/admin-actions";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { ORDER_STATUS_OPTIONS, PAYMENT_STATUS_OPTIONS } from "@/lib/constants";
+import { ActionFeedback } from "@/components/admin/ui/action-feedback";
 
 interface UpdateOrderStatusFormProps {
     orderId: string;
@@ -36,7 +37,7 @@ export function UpdateOrderStatusForm({
             <Select
                 name="payment_status"
                 defaultValue={paymentStatus}
-                className="!bg-[#202332] !text-zinc-100"
+                className="!bg-white/5 !text-text-main"
                 disabled={isPending}
             >
                 {PAYMENT_STATUS_OPTIONS.map((status) => (
@@ -49,7 +50,7 @@ export function UpdateOrderStatusForm({
             <Select
                 name="order_status"
                 defaultValue={orderStatus}
-                className="!bg-[#202332] !text-zinc-100"
+                className="!bg-white/5 !text-text-main"
                 disabled={isPending}
             >
                 {ORDER_STATUS_OPTIONS.map((status) => (
@@ -59,9 +60,17 @@ export function UpdateOrderStatusForm({
                 ))}
             </Select>
 
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
                 {isPending ? "Updating..." : "Update Status"}
             </Button>
+
+            <div className="sm:col-span-3">
+                <ActionFeedback
+                    state={state}
+                    successFallback="Order status updated successfully."
+                    errorFallback="Unable to update order status."
+                />
+            </div>
         </form>
     );
 }

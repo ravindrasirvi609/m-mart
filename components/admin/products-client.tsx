@@ -11,10 +11,11 @@ import { Modal } from "@/components/admin/ui/modal";
 import { Button } from "@/components/ui/button";
 import { DeleteProductButton } from "@/components/admin/delete-product-form";
 import { AddProductForm } from "@/components/admin/add-product-form";
+import type { Category, Product } from "@/lib/queries";
 
 interface ProductsClientProps {
-    products: any[];
-    categories: any[];
+    products: Product[];
+    categories: Category[];
 }
 
 export function ProductsClient({ products, categories }: ProductsClientProps) {
@@ -24,7 +25,7 @@ export function ProductsClient({ products, categories }: ProductsClientProps) {
         {
             header: "Product",
             accessorKey: "name",
-            cell: (product: any) => (
+            cell: (product: Product) => (
                 <div className="flex items-center gap-3">
                     <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-admin-border">
                         <Image
@@ -44,7 +45,7 @@ export function ProductsClient({ products, categories }: ProductsClientProps) {
         {
             header: "Price",
             accessorKey: "price",
-            cell: (product: any) => (
+            cell: (product: Product) => (
                 <div className="flex flex-col">
                     <span className="font-bold text-text-main">{formatCurrency(product.price)}</span>
                     {product.discount_price && (
@@ -58,7 +59,7 @@ export function ProductsClient({ products, categories }: ProductsClientProps) {
         {
             header: "Stock",
             accessorKey: "stock",
-            cell: (product: any) => {
+            cell: (product: Product) => {
                 const isLow = product.stock <= 5;
                 return (
                     <div className="flex flex-col gap-1">
@@ -78,7 +79,7 @@ export function ProductsClient({ products, categories }: ProductsClientProps) {
         {
             header: "Status",
             accessorKey: "is_active",
-            cell: (product: any) => (
+            cell: (product: Product) => (
                 <Badge variant={product.is_active ? "success" : "outline"}>
                     {product.is_active ? "Active" : "Inactive"}
                 </Badge>

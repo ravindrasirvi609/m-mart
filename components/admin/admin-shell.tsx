@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { Sidebar } from "./sidebar";
 import { Navbar } from "./navbar";
+import type { Database } from "@/lib/supabase/types";
+
+type NotificationRow = Database["public"]["Tables"]["notifications"]["Row"];
 
 interface AdminShellProps {
     children: React.ReactNode;
@@ -13,19 +15,13 @@ interface AdminShellProps {
         email: string;
     };
     notificationState: {
-        items: any[];
+        items: NotificationRow[];
         notificationsAvailable: boolean;
     };
 }
 
 export function AdminShell({ children, user, notificationState }: AdminShellProps) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const pathname = usePathname();
-
-    // Close sidebar when route changes on mobile
-    useEffect(() => {
-        setIsSidebarOpen(false);
-    }, [pathname]);
 
     return (
         <div className="flex min-h-screen bg-dashboard text-text-main dark">

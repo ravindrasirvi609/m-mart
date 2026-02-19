@@ -1,7 +1,6 @@
 import { requireAdmin } from "@/lib/auth";
 import { getCurrentUserNotifications, getUserProfile } from "@/lib/queries";
-import { Sidebar } from "@/components/admin/sidebar";
-import { Navbar } from "@/components/admin/navbar";
+import { AdminShell } from "@/components/admin/admin-shell";
 
 export const dynamic = "force-dynamic";
 
@@ -26,16 +25,8 @@ export default async function AdminLayout({
   };
 
   return (
-    <div className="flex min-h-screen bg-dashboard text-text-main antialiased dark">
-      <Sidebar />
-      <div className="flex flex-1 flex-col">
-        <Navbar user={adminUser} notificationState={notificationState} />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
-          <div className="mx-auto max-w-7xl animate-page-enter">
-            {children}
-          </div>
-        </main>
-      </div>
-    </div>
+    <AdminShell user={adminUser} notificationState={notificationState}>
+      {children}
+    </AdminShell>
   );
 }

@@ -12,9 +12,10 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  LogOut
+  LogOut,
+  X,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -35,13 +36,6 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
 
   return (
     <>
@@ -57,11 +51,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       <aside
         className={cn(
           "fixed left-0 top-0 z-50 h-screen border-r border-admin-border bg-sidebar transition-all duration-300 ease-in-out lg:static lg:z-auto",
-          isCollapsed ? "w-20" : "w-64",
+          "w-[17rem] lg:w-64",
+          isCollapsed && "lg:w-20",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <div className="flex h-full flex-col p-4">
+        <div className="flex h-full flex-col overflow-y-auto p-4">
           <div className="mb-8 flex items-center justify-between px-2">
             {!isCollapsed && (
               <div className="flex flex-col">
@@ -78,6 +73,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             >
               {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
             </button>
+            <button
+              onClick={onClose}
+              className="rounded-lg p-1.5 text-text-subtle hover:bg-white/10 hover:text-text-main lg:hidden"
+              aria-label="Close menu"
+            >
+              <X size={18} />
+            </button>
           </div>
 
           <nav className="flex-1 space-y-1">
@@ -89,6 +91,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={onClose}
                   className={cn(
                     "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
                     isActive

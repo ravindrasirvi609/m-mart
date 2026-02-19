@@ -1,6 +1,6 @@
 import { STORE } from "@/lib/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card";
-import { Settings, Store, Shield, Bell, HardDrive } from "lucide-react";
+import { Store, Shield, HardDrive } from "lucide-react";
 
 export const metadata = {
     title: "Admin Settings",
@@ -10,7 +10,7 @@ export default function AdminSettingsPage() {
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-1">
-                <h1 className="font-heading text-xl sm:text-2xl font-black text-white">Settings</h1>
+                <h1 className="font-heading text-xl sm:text-2xl font-black text-text-main">Settings</h1>
                 <p className="text-xs sm:text-sm text-text-subtle">Manage your store configuration and preferences.</p>
             </div>
 
@@ -25,19 +25,19 @@ export default function AdminSettingsPage() {
                     <CardContent className="space-y-4">
                         <div className="grid gap-1">
                             <p className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">Store Name</p>
-                            <p className="text-sm font-medium text-white">{STORE.name}</p>
+                            <p className="text-sm font-medium text-text-main">{STORE.name}</p>
                         </div>
                         <div className="grid gap-1">
                             <p className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">Owner</p>
-                            <p className="text-sm font-medium text-white">{STORE.owner}</p>
+                            <p className="text-sm font-medium text-text-main">{STORE.owner}</p>
                         </div>
                         <div className="grid gap-1">
                             <p className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">Location</p>
-                            <p className="text-sm font-medium text-white">{STORE.location}</p>
+                            <p className="text-sm font-medium text-text-main">{STORE.location}</p>
                         </div>
                         <div className="grid gap-1">
                             <p className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">Phone</p>
-                            <p className="text-sm font-medium text-white">{STORE.phone}</p>
+                            <p className="text-sm font-medium text-text-main">{STORE.phone}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -50,18 +50,18 @@ export default function AdminSettingsPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between border-b border-admin-border pb-4">
-                            <div>
-                                <p className="text-sm font-bold text-white">Free Delivery Threshold</p>
+                        <div className="flex flex-col gap-2 border-b border-admin-border pb-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="min-w-0">
+                                <p className="text-sm font-bold text-text-main">Free Delivery Threshold</p>
                                 <p className="text-xs text-text-subtle">Minimum amount for free shipping</p>
                             </div>
                             <span className="rounded-lg bg-blue-500/10 px-3 py-1 text-sm font-black text-blue-500">
                                 ₹{STORE.freeDeliveryThreshold}
                             </span>
                         </div>
-                        <div className="flex items-center justify-between border-b border-admin-border pb-4">
-                            <div>
-                                <p className="text-sm font-bold text-white">Base Delivery Charge</p>
+                        <div className="flex flex-col gap-2 border-b border-admin-border pb-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="min-w-0">
+                                <p className="text-sm font-bold text-text-main">Base Delivery Charge</p>
                                 <p className="text-xs text-text-subtle">Standard shipping fee</p>
                             </div>
                             <span className="rounded-lg bg-blue-500/10 px-3 py-1 text-sm font-black text-blue-500">
@@ -84,26 +84,26 @@ export default function AdminSettingsPage() {
                                 <p className="text-[10px] font-bold text-text-subtle uppercase">Database</p>
                                 <div className="mt-2 flex items-center gap-2">
                                     <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                                    <span className="text-sm font-bold text-white">Connected</span>
+                                    <span className="text-sm font-bold text-text-main">Connected</span>
                                 </div>
                             </div>
                             <div className="rounded-xl border border-admin-border bg-white/[0.02] p-4">
                                 <p className="text-[10px] font-bold text-text-subtle uppercase">Storage</p>
                                 <div className="mt-2 flex items-center gap-2">
                                     <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                                    <span className="text-sm font-bold text-white">Active</span>
+                                    <span className="text-sm font-bold text-text-main">Active</span>
                                 </div>
                             </div>
                             <div className="rounded-xl border border-admin-border bg-white/[0.02] p-4">
                                 <p className="text-[10px] font-bold text-text-subtle uppercase">API Latency</p>
                                 <div className="mt-2 flex items-center gap-2">
-                                    <span className="text-sm font-bold text-white">24ms</span>
+                                    <span className="text-sm font-bold text-text-main">24ms</span>
                                 </div>
                             </div>
                             <div className="rounded-xl border border-admin-border bg-white/[0.02] p-4">
                                 <p className="text-[10px] font-bold text-text-subtle uppercase">Version</p>
                                 <div className="mt-2 flex items-center gap-2">
-                                    <span className="text-sm font-bold text-white">v2.1.0-admin</span>
+                                    <span className="text-sm font-bold text-text-main">v2.1.0-admin</span>
                                 </div>
                             </div>
                         </div>

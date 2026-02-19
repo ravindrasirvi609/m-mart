@@ -1,8 +1,11 @@
 "use client";
 
-import { Bell, Search, User, Menu } from "lucide-react";
+import { Search, Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { NotificationCenter } from "@/components/notifications/notification-center";
+import type { Database } from "@/lib/supabase/types";
+
+type NotificationRow = Database["public"]["Tables"]["notifications"]["Row"];
 
 interface NavbarProps {
     user: {
@@ -11,7 +14,7 @@ interface NavbarProps {
         email: string;
     };
     notificationState: {
-        items: any[];
+        items: NotificationRow[];
         notificationsAvailable: boolean;
     };
     onMenuClick?: () => void;
@@ -32,12 +35,17 @@ export function Navbar({ user, notificationState, onMenuClick }: NavbarProps) {
             <div className="flex items-center gap-4">
                 <button
                     onClick={onMenuClick}
-                    className="lg:hidden p-2 text-text-subtle hover:text-text-main"
+                    className="p-2 text-text-subtle hover:text-text-main lg:hidden"
+                    aria-label="Open menu"
                 >
                     <Menu size={20} />
                 </button>
 
-                <nav className="hidden sm:flex items-center text-sm font-medium text-text-subtle">
+                <p className="text-sm font-semibold text-text-main sm:hidden">
+                    {breadcrumbs[breadcrumbs.length - 1]?.label || "Admin"}
+                </p>
+
+                <nav className="hidden items-center text-sm font-medium text-text-subtle sm:flex">
                     {breadcrumbs.map((crumb, i) => (
                         <div key={crumb.href} className="flex items-center">
                             {i > 0 && <span className="mx-2 text-white/20">/</span>}

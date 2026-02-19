@@ -5,8 +5,19 @@ import { DataTable } from "@/components/admin/ui/data-table";
 import { Badge } from "@/components/admin/ui/badge";
 import { formatDate } from "@/lib/utils";
 
+interface DeliveryOrder {
+    id: string;
+    created_at: string;
+    order_status: string;
+    users: {
+        name: string | null;
+        phone: string | null;
+    } | null;
+    delivery_address: string | { address?: string } | null;
+}
+
 interface DeliveryClientProps {
-    orders: any[];
+    orders: DeliveryOrder[];
 }
 
 export function DeliveryClient({ orders }: DeliveryClientProps) {
@@ -19,7 +30,7 @@ export function DeliveryClient({ orders }: DeliveryClientProps) {
         {
             header: "Order ID",
             accessorKey: "id",
-            cell: (order: any) => (
+            cell: (order: DeliveryOrder) => (
                 <span className="font-mono text-xs font-bold text-text-main">
                     #{order.id.split("-")[0]}
                 </span>
@@ -28,7 +39,7 @@ export function DeliveryClient({ orders }: DeliveryClientProps) {
         {
             header: "Customer",
             accessorKey: "users",
-            cell: (order: any) => (
+            cell: (order: DeliveryOrder) => (
                 <div>
                     <p className="font-bold text-text-main">{order.users?.name || "Guest"}</p>
                     <p className="text-[10px] text-text-subtle truncate max-w-[150px]">{order.users?.phone}</p>
@@ -38,7 +49,7 @@ export function DeliveryClient({ orders }: DeliveryClientProps) {
         {
             header: "Address",
             accessorKey: "delivery_address",
-            cell: (order: any) => (
+            cell: (order: DeliveryOrder) => (
                 <span className="text-[11px] text-text-subtle truncate max-w-[200px] block">
                     {typeof order.delivery_address === 'object' ? order.delivery_address.address : order.delivery_address}
                 </span>
@@ -47,7 +58,7 @@ export function DeliveryClient({ orders }: DeliveryClientProps) {
         {
             header: "Status",
             accessorKey: "order_status",
-            cell: (order: any) => {
+            cell: (order: DeliveryOrder) => {
                 let variant: "warning" | "success" | "outline" = "outline";
                 let Icon = Clock;
 
@@ -70,7 +81,7 @@ export function DeliveryClient({ orders }: DeliveryClientProps) {
         {
             header: "Date",
             accessorKey: "created_at",
-            cell: (order: any) => (
+            cell: (order: DeliveryOrder) => (
                 <span className="text-xs">{formatDate(order.created_at)}</span>
             ),
         },

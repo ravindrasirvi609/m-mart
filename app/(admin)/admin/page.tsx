@@ -2,7 +2,7 @@ import { ShoppingBag, DollarSign, Users, AlertTriangle, Clock, ArrowUpRight } fr
 import Link from "next/link";
 
 import { getAdminDashboardData } from "@/lib/queries";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { StatsCard } from "@/components/admin/ui/stats-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card";
 import { Badge } from "@/components/admin/ui/badge";
@@ -57,20 +57,48 @@ export default async function AdminDashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
             <CardTitle className="flex items-center gap-2">
               <Clock size={20} className="text-brand-red" />
               Recent Orders
             </CardTitle>
             <Link
               href="/admin/orders"
-              className="text-xs font-bold text-brand-red hover:underline flex items-center gap-1"
+              className="flex items-center gap-1 text-xs font-bold text-brand-red hover:underline"
             >
               View All <ArrowUpRight size={14} />
             </Link>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
+            <div className="space-y-3 p-4 sm:hidden">
+              {data.recentOrders.length === 0 ? (
+                <div className="rounded-xl border border-admin-border bg-white/[0.02] px-4 py-8 text-center text-sm text-text-subtle">
+                  No recent orders.
+                </div>
+              ) : (
+                data.recentOrders.map((order) => (
+                  <div key={`mobile-${order.id}`} className="rounded-xl border border-admin-border bg-white/[0.02] p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-mono text-[11px] text-text-subtle">
+                        #{order.id.split("-")[0]}
+                      </p>
+                      <Badge variant={order.order_status === "delivered" ? "success" : "warning"}>
+                        {order.order_status}
+                      </Badge>
+                    </div>
+                    <div className="mt-2">
+                      <p className="text-sm font-bold text-text-main">{order.user?.name || "Guest"}</p>
+                      <p className="text-[11px] text-text-subtle">{order.user?.email}</p>
+                    </div>
+                    <p className="mt-2 text-right text-sm font-bold text-text-main">
+                      {formatCurrency(order.total_amount)}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="hidden overflow-x-auto sm:block">
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-admin-border bg-white/[0.02]">
@@ -132,7 +160,7 @@ export default async function AdminDashboardPage() {
                 {data.lowStockProducts.map((product) => (
                   <div
                     key={product.id}
-                    className="flex items-center justify-between rounded-xl border border-admin-border bg-white/[0.02] p-3 transition-colors hover:bg-white/[0.05]"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-admin-border bg-white/[0.02] p-3 transition-colors hover:bg-white/[0.05]"
                   >
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold text-text-main">{product.name}</p>

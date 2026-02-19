@@ -4,9 +4,10 @@ import { User } from "lucide-react";
 import { DataTable } from "@/components/admin/ui/data-table";
 import { Badge } from "@/components/admin/ui/badge";
 import { formatDate } from "@/lib/utils";
+import type { UserRow } from "@/lib/queries";
 
 interface UsersClientProps {
-    users: any[];
+    users: UserRow[];
 }
 
 export function UsersClient({ users }: UsersClientProps) {
@@ -14,7 +15,7 @@ export function UsersClient({ users }: UsersClientProps) {
         {
             header: "Customer",
             accessorKey: "name",
-            cell: (user: any) => (
+            cell: (user: UserRow) => (
                 <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500/10 text-blue-500">
                         <User size={18} />
@@ -29,21 +30,21 @@ export function UsersClient({ users }: UsersClientProps) {
         {
             header: "Phone",
             accessorKey: "phone",
-            cell: (user: any) => (
+            cell: (user: UserRow) => (
                 <span className="text-xs text-text-subtle">{user.phone || "N/A"}</span>
             ),
         },
         {
             header: "Joined",
             accessorKey: "created_at",
-            cell: (user: any) => (
+            cell: (user: UserRow) => (
                 <span className="text-xs">{formatDate(user.created_at)}</span>
             ),
         },
         {
             header: "Role",
             accessorKey: "role",
-            cell: (user: any) => (
+            cell: (user: UserRow) => (
                 <Badge variant={user.role === "admin" ? "success" : "outline"}>
                     {user.role}
                 </Badge>
