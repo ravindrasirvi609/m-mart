@@ -159,10 +159,18 @@ export function useRealtimeChannel<T extends TableName>({
                     subscriptionStatus === "CLOSED"
                 ) {
                     setStatus("disconnected");
-                    console.warn(
-                        `[Realtime] Channel "${channelName}" ${subscriptionStatus}`,
-                        err ?? "",
+                    const errorMsg = err?.message || (err as unknown as string) || "Unknown error";
+                    console.error(
+                        `[Realtime] ❌ Channel "${channelName}" failed (${subscriptionStatus}):`,
+                        errorMsg,
                     );
+
+                    if (errorMsg.includes("JWT")) {
+                        console.error("[Realtime] Hint: Your authentication token might be invalid or expired.");
+                    }
+                    if (errorMsg.includes("API key")) {
+                        console.error("[Realtime] Hint: Your NEXT_PUBLIC_SUPABASE_ANON_KEY might be incorrect.");
+                    }
 
                     // Exponential backoff reconnection
                     const delay = backoffRef.current;

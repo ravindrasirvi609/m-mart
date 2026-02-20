@@ -24,12 +24,16 @@ type PushPermission = "granted" | "denied" | "default" | "unsupported";
  * - Plays an audio bell on every `sendPush()` call
  */
 export function usePushNotifications() {
-    const [permission, setPermission] = useState<PushPermission>(() => {
-        if (typeof window === "undefined" || !("Notification" in window)) {
-            return "unsupported";
-        }
-        return Notification.permission;
-    });
+  const [permission, setPermission] = useState<PushPermission>("default");
+
+  // On mount, sync permission state to overcome hydration mismatch
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      setPermission("unsupported");
+      return;
+    }
+    setPermission(Notification.permission as PushPermission);
+  }, []);
 
     const permissionRef = useRef(permission);
     useEffect(() => {
