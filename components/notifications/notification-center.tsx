@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { markNotificationsReadAction } from "@/actions/notification-actions";
 import { Button } from "@/components/ui/button";
+import { playNotificationBell } from "@/lib/notification-sound";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
 import { cn, formatOrderStatus } from "@/lib/utils";
@@ -63,6 +64,7 @@ export function NotificationCenter({
     isPushSupported() ? Notification.permission : "unsupported",
   );
   const panelRef = useRef<HTMLDivElement>(null);
+  const reconnectTimerRef = useRef<number | null>(null);
 
   const unreadCount = notifications.reduce((count, entry) => {
     return count + (entry.is_read ? 0 : 1);
@@ -109,6 +111,11 @@ export function NotificationCenter({
     (title: string, message: string, tag: string) => {
       toast(title, { description: message });
 
+      // Play audible bell for admin notifications
+      if (mode === "admin") {
+        playNotificationBell();
+      }
+
       if (
         !isPushSupported() ||
         Notification.permission !== "granted"
@@ -127,10 +134,12 @@ export function NotificationCenter({
               await registration.showNotification(title, {
                 body: message,
                 tag,
+                renotify: true,
                 icon: "/icons/icon-192x192.png",
                 badge: "/icons/icon-192x192.png",
+                vibrate: [200, 100, 200],
                 data: { url: destination },
-              });
+              } as NotificationOptions);
               return;
             }
           }
@@ -254,11 +263,24 @@ export function NotificationCenter({
         ) {
           setRealtimeConnected(false);
           setUseOrdersFallback(true);
+
+          // Attempt to reconnect after a delay instead of staying in fallback mode permanently
+          if (reconnectTimerRef.current !== null) {
+            window.clearTimeout(reconnectTimerRef.current);
+          }
+          reconnectTimerRef.current = window.setTimeout(() => {
+            reconnectTimerRef.current = null;
+            setUseOrdersFallback(false);
+          }, 15000);
         }
       });
 
     return () => {
       setRealtimeConnected(false);
+      if (reconnectTimerRef.current !== null) {
+        window.clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
       void supabase.removeChannel(channel);
     };
   }, [hasRealtimeSession, mode, pushVisualNotification, supabase, useOrdersFallback, userId]);

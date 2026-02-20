@@ -11,6 +11,7 @@ import { Badge } from "@/components/admin/ui/badge";
 import { Modal } from "@/components/admin/ui/modal";
 import { UpdateOrderStatusForm } from "@/components/admin/update-order-status-form";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { playNotificationBell } from "@/lib/notification-sound";
 import type { Database } from "@/lib/supabase/types";
 
 interface OrdersClientProps {
@@ -182,6 +183,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
           toast("New order received", {
             description: `Order #${incoming.id.slice(0, 8).toUpperCase()} was just placed.`,
           });
+          playNotificationBell();
           scheduleRefresh(120);
         },
       )

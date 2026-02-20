@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { playNotificationBell } from "@/lib/notification-sound";
 import type { Database } from "@/lib/supabase/types";
 import { formatCurrency, formatOrderStatus } from "@/lib/utils";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -45,6 +46,43 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
   const [hasRealtimeSession, setHasRealtimeSession] = useState(false);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const ordersRef = useRef(initialOrders);
+
+  const triggerPushNotification = useCallback((title: string, body: string, tag: string) => {
+    playNotificationBell();
+
+    if (
+      typeof window === "undefined" ||
+      !("Notification" in window) ||
+      Notification.permission !== "granted"
+    ) {
+      return;
+    }
+
+    const showNotification = async () => {
+      try {
+        if ("serviceWorker" in navigator) {
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (registration) {
+            await registration.showNotification(title, {
+              body,
+              tag,
+              renotify: true,
+              icon: "/icons/icon-192x192.png",
+              badge: "/icons/icon-192x192.png",
+              vibrate: [200, 100, 200],
+              data: { url: "/orders" },
+            } as NotificationOptions);
+            return;
+          }
+        }
+        new Notification(title, { body, tag });
+      } catch (error) {
+        console.error("[Orders] Push notification failed:", error);
+      }
+    };
+
+    void showNotification();
+  }, []);
 
   useEffect(() => {
     ordersRef.current = orders;
@@ -130,19 +168,25 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
             previous.order_status !== nextOrderStatus ||
             previous.payment_status !== nextPaymentStatus
           ) {
+            const statusMessage = `#${updated.id.slice(0, 8).toUpperCase()} is ${formatOrderStatus(nextOrderStatus)}.`;
             toast("Order status updated", {
-              description: `#${updated.id.slice(0, 8).toUpperCase()} is ${formatOrderStatus(nextOrderStatus)}.`,
+              description: statusMessage,
             });
+            triggerPushNotification(
+              "Order status updated",
+              statusMessage,
+              `order-update-${updated.id}-${nextOrderStatus}`,
+            );
           }
 
           setOrders((current) => {
             return current.map((entry) =>
               entry.id === updated.id
                 ? {
-                    ...entry,
-                    payment_status: nextPaymentStatus,
-                    order_status: nextOrderStatus,
-                  }
+                  ...entry,
+                  payment_status: nextPaymentStatus,
+                  order_status: nextOrderStatus,
+                }
                 : entry,
             );
           });

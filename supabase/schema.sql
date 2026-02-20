@@ -385,5 +385,10 @@ begin
 end;
 $$;
 
+-- Replica identity full is required for Supabase Realtime filtered subscriptions.
+-- Without it, filters like "user_id=eq.X" or "target_role=eq.admin" silently fail.
+alter table public.orders replica identity full;
+alter table public.notifications replica identity full;
+
 -- Seed your admin access (replace email before executing)
 -- insert into public.admin_users (email) values ('admin@example.com') on conflict do nothing;
