@@ -10,16 +10,22 @@ import { DataTable } from "@/components/admin/ui/data-table";
 import { Badge } from "@/components/admin/ui/badge";
 import { Modal } from "@/components/admin/ui/modal";
 import { UpdateOrderStatusForm } from "@/components/admin/update-order-status-form";
+import { useRealtimeChannel } from "@/lib/hooks/use-realtime";
+import { usePushNotifications } from "@/lib/hooks/use-push-notifications";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { playNotificationBell } from "@/lib/notification-sound";
+import type { RealtimePayload } from "@/lib/hooks/use-realtime";
 import type { Database } from "@/lib/supabase/types";
+
+/* ------------------------------------------------------------------ */
+/*  Types                                                              */
+/* ------------------------------------------------------------------ */
 
 interface OrdersClientProps {
   orders: AdminOrder[];
 }
 
 type OrderAddress = Database["public"]["Tables"]["orders"]["Row"]["delivery_address"];
-type RealtimeOrderRow = Database["public"]["Tables"]["orders"]["Row"];
+type OrderRow = Database["public"]["Tables"]["orders"]["Row"];
 
 interface OrderUser {
   id?: string;
@@ -54,11 +60,12 @@ interface AdminOrder {
   order_items: OrderItem[] | null;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
+
 function getOrderUser(users: AdminOrder["users"]) {
-  if (Array.isArray(users)) {
-    return users[0] ?? null;
-  }
-  return users;
+  return Array.isArray(users) ? users[0] ?? null : users;
 }
 
 function getOrderItems(items: AdminOrder["order_items"]) {
@@ -66,10 +73,7 @@ function getOrderItems(items: AdminOrder["order_items"]) {
 }
 
 function getOrderProduct(products: OrderItem["products"]) {
-  if (Array.isArray(products)) {
-    return products[0] ?? null;
-  }
-  return products;
+  return Array.isArray(products) ? products[0] ?? null : products;
 }
 
 function getAddressLabel(address: OrderAddress) {
@@ -81,220 +85,138 @@ function getAddressLabel(address: OrderAddress) {
   return "N/A";
 }
 
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
+
 export function OrdersClient({ orders }: OrdersClientProps) {
   const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
-  const refreshTimerRef = useRef<number | null>(null);
   const liveOrdersRef = useRef<AdminOrder[]>(orders);
+
   const [statusOverrides, setStatusOverrides] = useState<
     Record<string, { payment_status: string; order_status: string }>
   >({});
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [hasRealtimeSession, setHasRealtimeSession] = useState(false);
-  const [realtimeConnected, setRealtimeConnected] = useState(false);
 
+  const { sendPush } = usePushNotifications();
+
+  /* ----- Derived state ----- */
   const liveOrders = useMemo(() => {
     return orders.map((order) => {
       const override = statusOverrides[order.id];
-      if (!override) {
-        return order;
-      }
-
-      return {
-        ...order,
-        payment_status: override.payment_status,
-        order_status: override.order_status,
-      };
+      if (!override) return order;
+      return { ...order, ...override };
     });
   }, [orders, statusOverrides]);
 
   const selectedOrder = useMemo(() => {
-    if (!selectedOrderId) {
-      return null;
-    }
-
-    return liveOrders.find((entry) => entry.id === selectedOrderId) ?? null;
+    if (!selectedOrderId) return null;
+    return liveOrders.find((o) => o.id === selectedOrderId) ?? null;
   }, [liveOrders, selectedOrderId]);
 
   useEffect(() => {
     liveOrdersRef.current = liveOrders;
   }, [liveOrders]);
 
-  useEffect(() => {
-    let mounted = true;
+  /* ----- Realtime: listen to ALL order changes (no filter) ----- */
+  const handleOrderChange = useCallback(
+    (payload: RealtimePayload<"orders">) => {
+      if (payload.eventType === "INSERT") {
+        const incoming = payload.new as OrderRow;
+        const orderId = incoming.id.slice(0, 8).toUpperCase();
 
-    const bootstrapSession = async () => {
-      const [{ data: sessionData }, { data: userData, error: userError }] = await Promise.all([
-        supabase.auth.getSession(),
-        supabase.auth.getUser(),
-      ]);
-      if (!mounted) {
+        toast("🔔 New order received!", {
+          description: `Order #${orderId} was just placed.`,
+          duration: 8000,
+        });
+
+        void sendPush("New order received!", `Order #${orderId} was just placed.`, {
+          tag: `admin-new-order-${incoming.id}`,
+          url: "/admin/orders",
+        });
+
+        // Refresh the page data to load full order details
+        router.refresh();
+      }
+
+      if (payload.eventType === "UPDATE") {
+        const incoming = payload.new as OrderRow;
+        setStatusOverrides((current) => ({
+          ...current,
+          [incoming.id]: {
+            payment_status: incoming.payment_status,
+            order_status: incoming.order_status,
+          },
+        }));
+      }
+    },
+    [router, sendPush],
+  );
+
+  useRealtimeChannel({
+    channelName: "admin-orders-live",
+    table: "orders",
+    event: "*",
+    onPayload: handleOrderChange,
+  });
+
+  /* ----- Polling backup: 30s safety net ----- */
+  const syncOrders = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id,payment_status,order_status")
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      if (error) {
+        console.error("[Admin Orders] Poll failed:", error.message);
         return;
       }
 
-      setHasRealtimeSession(Boolean(sessionData.session || userData.user) && !userError);
-    };
+      const latest = data ?? [];
+      const current = liveOrdersRef.current;
+      const currentIds = new Set(current.map((o) => o.id));
+      const hasNewOrder = latest.some((o) => !currentIds.has(o.id));
 
-    void bootstrapSession();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setHasRealtimeSession(Boolean(session));
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [supabase]);
-
-  const scheduleRefresh = useCallback(
-    (delay = 220) => {
-      if (refreshTimerRef.current !== null) {
-        window.clearTimeout(refreshTimerRef.current);
-      }
-
-      refreshTimerRef.current = window.setTimeout(() => {
-        refreshTimerRef.current = null;
+      if (hasNewOrder || latest.length !== current.length) {
         router.refresh();
-      }, delay);
-    },
-    [router],
-  );
-
-  useEffect(() => {
-    if (!hasRealtimeSession) {
-      return;
-    }
-
-    const channel = supabase
-      .channel("admin-orders-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "orders",
-        },
-        (payload) => {
-          const incoming = payload.new as RealtimeOrderRow;
-          toast("New order received", {
-            description: `Order #${incoming.id.slice(0, 8).toUpperCase()} was just placed.`,
-          });
-          playNotificationBell();
-          scheduleRefresh(120);
-        },
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "orders",
-        },
-        (payload) => {
-          const incoming = payload.new as RealtimeOrderRow;
-
-          setStatusOverrides((current) => ({
-            ...current,
-            [incoming.id]: {
-              payment_status: incoming.payment_status,
-              order_status: incoming.order_status,
-            },
-          }));
-        },
-      )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          setRealtimeConnected(true);
-          return;
-        }
-
-        if (
-          status === "CHANNEL_ERROR" ||
-          status === "TIMED_OUT" ||
-          status === "CLOSED"
-        ) {
-          setRealtimeConnected(false);
-        }
-      });
-
-    return () => {
-      if (refreshTimerRef.current !== null) {
-        window.clearTimeout(refreshTimerRef.current);
+        return;
       }
 
-      void supabase.removeChannel(channel);
-    };
-  }, [hasRealtimeSession, scheduleRefresh, supabase]);
-
-  const syncOrdersWithoutSocket = useCallback(async () => {
-    if (!hasRealtimeSession) {
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("orders")
-      .select("id,payment_status,order_status")
-      .order("created_at", { ascending: false })
-      .limit(100);
-
-    if (error) {
-      console.error("[Admin Orders] Polling sync failed:", error.message);
-      return;
-    }
-
-    const latest = data ?? [];
-    const current = liveOrdersRef.current;
-    const currentIds = new Set(current.map((entry) => entry.id));
-    const hasUnknownOrder = latest.some((entry) => !currentIds.has(entry.id));
-
-    if (hasUnknownOrder || latest.length !== current.length) {
-      scheduleRefresh(80);
-      return;
-    }
-
-    setStatusOverrides((currentOverrides) => {
-      const nextOverrides = { ...currentOverrides };
-
-      latest.forEach((entry) => {
-        nextOverrides[entry.id] = {
-          payment_status: entry.payment_status,
-          order_status: entry.order_status,
-        };
+      setStatusOverrides((prev) => {
+        const next = { ...prev };
+        latest.forEach((o) => {
+          next[o.id] = {
+            payment_status: o.payment_status,
+            order_status: o.order_status,
+          };
+        });
+        return next;
       });
-
-      return nextOverrides;
-    });
-  }, [hasRealtimeSession, scheduleRefresh, supabase]);
+    } catch {
+      // Silently ignore
+    }
+  }, [router, supabase]);
 
   useEffect(() => {
-    if (!hasRealtimeSession) {
-      return;
-    }
-
-    const kickoff = window.setTimeout(() => {
-      void syncOrdersWithoutSocket();
-    }, realtimeConnected ? 2200 : 0);
-
-    const intervalMs = realtimeConnected ? 12000 : 4500;
-    const timer = window.setInterval(() => {
-      void syncOrdersWithoutSocket();
-    }, intervalMs);
-
+    const kickoff = setTimeout(() => void syncOrders(), 2000);
+    const timer = setInterval(() => void syncOrders(), 30000);
     return () => {
-      window.clearTimeout(kickoff);
-      window.clearInterval(timer);
+      clearTimeout(kickoff);
+      clearInterval(timer);
     };
-  }, [hasRealtimeSession, realtimeConnected, syncOrdersWithoutSocket]);
+  }, [syncOrders]);
 
+  /* ----- Handlers ----- */
   const handleViewOrder = (order: AdminOrder) => {
     setSelectedOrderId(order.id);
     setIsModalOpen(true);
   };
 
+  /* ----- Table columns ----- */
   const columns = [
     {
       header: "Order ID",
@@ -353,6 +275,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
   const orderItems = selectedOrder ? getOrderItems(selectedOrder.order_items) : [];
   const selectedOrderUser = selectedOrder ? getOrderUser(selectedOrder.users) : null;
 
+  /* ----- Render ----- */
   return (
     <>
       <DataTable
@@ -406,7 +329,6 @@ export function OrdersClient({ orders }: OrdersClientProps) {
               <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
                 {orderItems.map((item) => {
                   const itemProduct = getOrderProduct(item.products);
-
                   return (
                     <div
                       key={item.id}
@@ -448,9 +370,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
               <div className="flex justify-between text-sm">
                 <span className="text-text-subtle">Subtotal</span>
                 <span className="font-bold text-text-main">
-                  {formatCurrency(
-                    selectedOrder.total_amount - (selectedOrder.delivery_charge || 0),
-                  )}
+                  {formatCurrency(selectedOrder.total_amount - (selectedOrder.delivery_charge || 0))}
                 </span>
               </div>
               <div className="mt-1 flex justify-between text-sm">

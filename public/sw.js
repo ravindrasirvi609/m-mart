@@ -1,4 +1,4 @@
-const CACHE_VERSION = "mmart-pwa-v1";
+const CACHE_VERSION = "mmart-pwa-v2";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const OFFLINE_URL = "/offline";
@@ -11,6 +11,10 @@ const PRECACHE_URLS = [
   "/icons/icon-512x512.png",
   "/apple-touch-icon.png",
 ];
+
+/* ------------------------------------------------------------------ */
+/*  Lifecycle                                                          */
+/* ------------------------------------------------------------------ */
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -32,34 +36,36 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+/* ------------------------------------------------------------------ */
+/*  Fetch (cache strategy)                                             */
+/* ------------------------------------------------------------------ */
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
 
-  if (request.method !== "GET") {
-    return;
-  }
+  if (request.method !== "GET") return;
 
   const requestUrl = new URL(request.url);
-  if (requestUrl.origin !== self.location.origin) {
-    return;
-  }
+  if (requestUrl.origin !== self.location.origin) return;
 
+  // Navigation requests: network-first with offline fallback
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const responseClone = response.clone();
-          caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, responseClone));
+          const clone = response.clone();
+          caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, clone));
           return response;
         })
         .catch(async () => {
-          const cachedPage = await caches.match(request);
-          return cachedPage ?? caches.match(OFFLINE_URL);
+          const cached = await caches.match(request);
+          return cached ?? caches.match(OFFLINE_URL);
         }),
     );
     return;
   }
 
+  // Static assets: stale-while-revalidate
   const isStaticAsset =
     requestUrl.pathname.startsWith("/_next/static/") ||
     request.destination === "image" ||
@@ -72,8 +78,8 @@ self.addEventListener("fetch", (event) => {
       caches.match(request).then((cached) => {
         const networkFetch = fetch(request)
           .then((response) => {
-            const responseClone = response.clone();
-            caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, responseClone));
+            const clone = response.clone();
+            caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, clone));
             return response;
           })
           .catch(() => cached);
@@ -84,10 +90,12 @@ self.addEventListener("fetch", (event) => {
   }
 });
 
+/* ------------------------------------------------------------------ */
+/*  Push Notifications                                                 */
+/* ------------------------------------------------------------------ */
+
 self.addEventListener("push", (event) => {
-  if (!event.data) {
-    return;
-  }
+  if (!event.data) return;
 
   let payload = {};
 
@@ -127,18 +135,25 @@ self.addEventListener("push", (event) => {
     self.registration.showNotification(title, {
       body,
       tag,
+      renotify: true,
       icon,
       badge,
+      vibrate: [200, 100, 200],
       data: { url },
     }),
   );
 });
 
+/* ------------------------------------------------------------------ */
+/*  Notification Click                                                 */
+/* ------------------------------------------------------------------ */
+
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+
   const destination =
     typeof event.notification.data?.url === "string" &&
-    event.notification.data.url.startsWith("/")
+      event.notification.data.url.startsWith("/")
       ? event.notification.data.url
       : "/";
 
@@ -146,14 +161,28 @@ self.addEventListener("notificationclick", (event) => {
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((windowClients) => {
-        const matchingClient = windowClients.find(
-          (client) => "focus" in client && client.url.includes(destination),
-        );
-
-        if (matchingClient && "focus" in matchingClient) {
-          return matchingClient.focus();
+        // Try to focus an existing window
+        for (const client of windowClients) {
+          if ("focus" in client) {
+            try {
+              const clientUrl = new URL(client.url);
+              if (clientUrl.pathname.startsWith(destination)) {
+                return client.focus();
+              }
+            } catch {
+              // Invalid URL, skip
+            }
+          }
         }
 
+        // If no matching window, try to focus any existing window and navigate
+        for (const client of windowClients) {
+          if ("focus" in client && "navigate" in client) {
+            return client.focus().then(() => client.navigate(destination));
+          }
+        }
+
+        // Last resort: open a new window
         if (self.clients.openWindow) {
           return self.clients.openWindow(destination);
         }

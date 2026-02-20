@@ -5,11 +5,17 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { useRealtimeChannel } from "@/lib/hooks/use-realtime";
+import { usePushNotifications } from "@/lib/hooks/use-push-notifications";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { playNotificationBell } from "@/lib/notification-sound";
+import type { RealtimePayload } from "@/lib/hooks/use-realtime";
 import type { Database } from "@/lib/supabase/types";
 import { formatCurrency, formatOrderStatus } from "@/lib/utils";
 import { StatusPill } from "@/components/ui/status-pill";
+
+/* ------------------------------------------------------------------ */
+/*  Types                                                              */
+/* ------------------------------------------------------------------ */
 
 type OrderItem = {
   id: string;
@@ -32,57 +38,25 @@ type UserOrder = {
   payment_screenshot_url: string | null;
   order_items: OrderItem[];
 };
-type RealtimeOrderRow = Database["public"]["Tables"]["orders"]["Row"];
+
+type OrderRow = Database["public"]["Tables"]["orders"]["Row"];
 
 type OrderHistoryProps = {
   userId: string;
   initialOrders: UserOrder[];
 };
 
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
+
 export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
   const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [orders, setOrders] = useState(initialOrders);
-  const [hasRealtimeSession, setHasRealtimeSession] = useState(false);
-  const [realtimeConnected, setRealtimeConnected] = useState(false);
   const ordersRef = useRef(initialOrders);
 
-  const triggerPushNotification = useCallback((title: string, body: string, tag: string) => {
-    playNotificationBell();
-
-    if (
-      typeof window === "undefined" ||
-      !("Notification" in window) ||
-      Notification.permission !== "granted"
-    ) {
-      return;
-    }
-
-    const showNotification = async () => {
-      try {
-        if ("serviceWorker" in navigator) {
-          const registration = await navigator.serviceWorker.getRegistration();
-          if (registration) {
-            await registration.showNotification(title, {
-              body,
-              tag,
-              renotify: true,
-              icon: "/icons/icon-192x192.png",
-              badge: "/icons/icon-192x192.png",
-              vibrate: [200, 100, 200],
-              data: { url: "/orders" },
-            } as NotificationOptions);
-            return;
-          }
-        }
-        new Notification(title, { body, tag });
-      } catch (error) {
-        console.error("[Orders] Push notification failed:", error);
-      }
-    };
-
-    void showNotification();
-  }, []);
+  const { sendPush } = usePushNotifications();
 
   useEffect(() => {
     ordersRef.current = orders;
@@ -92,190 +66,129 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
     setOrders(initialOrders);
   }, [initialOrders]);
 
-  useEffect(() => {
-    let mounted = true;
+  /* ----- Realtime: listen to ALL order changes (client-side filter) ----- */
+  const handleOrderChange = useCallback(
+    (payload: RealtimePayload<"orders">) => {
+      if (payload.eventType === "INSERT") {
+        const incoming = payload.new as OrderRow;
 
-    const bootstrapSession = async () => {
-      const [{ data: sessionData }, { data: userData, error: userError }] = await Promise.all([
-        supabase.auth.getSession(),
-        supabase.auth.getUser(),
-      ]);
-      if (!mounted) {
-        return;
+        // Client-side filter: only my orders
+        if (incoming.user_id !== userId) return;
+
+        toast("Order placed! ✓", {
+          description: `Order #${incoming.id.slice(0, 8).toUpperCase()} is now in your history.`,
+        });
+
+        void sendPush(
+          "Order placed!",
+          `Order #${incoming.id.slice(0, 8).toUpperCase()} has been placed successfully.`,
+          { tag: `order-placed-${incoming.id}`, url: "/orders" },
+        );
+
+        router.refresh();
       }
 
-      setHasRealtimeSession(Boolean(sessionData.session || userData.user) && !userError);
-    };
+      if (payload.eventType === "UPDATE") {
+        const updated = payload.new as OrderRow;
 
-    void bootstrapSession();
+        // Client-side filter: only my orders
+        if (updated.user_id !== userId) return;
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setHasRealtimeSession(Boolean(session));
-    });
+        const previous = ordersRef.current.find((o) => o.id === updated.id);
+        const nextOrderStatus = String(updated.order_status);
+        const nextPaymentStatus = String(updated.payment_status);
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [supabase]);
-
-  useEffect(() => {
-    if (!hasRealtimeSession) {
-      setRealtimeConnected(false);
-      return;
-    }
-
-    const channel = supabase
-      .channel(`orders-${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "orders",
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          const inserted = payload.new as RealtimeOrderRow;
-          toast("Order placed", {
-            description: `Order #${inserted.id.slice(0, 8).toUpperCase()} is now in your history.`,
-          });
+        if (!previous) {
           router.refresh();
-        },
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "orders",
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          const updated = payload.new as RealtimeOrderRow;
-          const previous = ordersRef.current.find((entry) => entry.id === updated.id);
-          const nextOrderStatus = String(updated.order_status);
-          const nextPaymentStatus = String(updated.payment_status);
-
-          if (!previous) {
-            router.refresh();
-            return;
-          }
-
-          if (
-            previous.order_status !== nextOrderStatus ||
-            previous.payment_status !== nextPaymentStatus
-          ) {
-            const statusMessage = `#${updated.id.slice(0, 8).toUpperCase()} is ${formatOrderStatus(nextOrderStatus)}.`;
-            toast("Order status updated", {
-              description: statusMessage,
-            });
-            triggerPushNotification(
-              "Order status updated",
-              statusMessage,
-              `order-update-${updated.id}-${nextOrderStatus}`,
-            );
-          }
-
-          setOrders((current) => {
-            return current.map((entry) =>
-              entry.id === updated.id
-                ? {
-                  ...entry,
-                  payment_status: nextPaymentStatus,
-                  order_status: nextOrderStatus,
-                }
-                : entry,
-            );
-          });
-        },
-      )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          setRealtimeConnected(true);
           return;
         }
 
+        // Notify only if status actually changed
         if (
-          status === "CHANNEL_ERROR" ||
-          status === "TIMED_OUT" ||
-          status === "CLOSED"
+          previous.order_status !== nextOrderStatus ||
+          previous.payment_status !== nextPaymentStatus
         ) {
-          setRealtimeConnected(false);
-        }
-      });
+          const statusMsg = `Order #${updated.id.slice(0, 8).toUpperCase()} is ${formatOrderStatus(nextOrderStatus)}.`;
 
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [hasRealtimeSession, router, supabase, userId]);
+          toast("Order status updated", { description: statusMsg });
 
-  const syncOrdersWithoutSocket = useCallback(async () => {
-    if (!hasRealtimeSession) {
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("orders")
-      .select("id,payment_status,order_status")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(25);
-
-    if (error) {
-      console.error("[Orders] Polling sync failed:", error.message);
-      return;
-    }
-
-    const latest = data ?? [];
-    const current = ordersRef.current;
-    const currentIds = new Set(current.map((entry) => entry.id));
-    const hasUnknownOrder = latest.some((entry) => !currentIds.has(entry.id));
-
-    if (hasUnknownOrder || latest.length !== current.length) {
-      router.refresh();
-      return;
-    }
-
-    setOrders((entries) =>
-      entries.map((entry) => {
-        const incoming = latest.find((item) => item.id === entry.id);
-        if (!incoming) {
-          return entry;
+          void sendPush("Order status updated", statusMsg, {
+            tag: `order-update-${updated.id}-${nextOrderStatus}`,
+            url: "/orders",
+          });
         }
 
-        return {
-          ...entry,
-          payment_status: incoming.payment_status,
-          order_status: incoming.order_status,
-        };
-      }),
-    );
-  }, [hasRealtimeSession, router, supabase, userId]);
+        // Update local state immediately
+        setOrders((current) =>
+          current.map((o) =>
+            o.id === updated.id
+              ? { ...o, payment_status: nextPaymentStatus, order_status: nextOrderStatus }
+              : o,
+          ),
+        );
+      }
+    },
+    [router, sendPush, userId],
+  );
+
+  useRealtimeChannel({
+    channelName: `customer-orders-${userId}`,
+    table: "orders",
+    event: "*",
+    onPayload: handleOrderChange,
+  });
+
+  /* ----- Polling backup: 30s safety net ----- */
+  const syncOrders = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id,payment_status,order_status")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(25);
+
+      if (error) {
+        console.error("[Orders] Poll failed:", error.message);
+        return;
+      }
+
+      const latest = data ?? [];
+      const current = ordersRef.current;
+      const currentIds = new Set(current.map((o) => o.id));
+      const hasNew = latest.some((o) => !currentIds.has(o.id));
+
+      if (hasNew || latest.length !== current.length) {
+        router.refresh();
+        return;
+      }
+
+      setOrders((entries) =>
+        entries.map((entry) => {
+          const incoming = latest.find((o) => o.id === entry.id);
+          if (!incoming) return entry;
+          return {
+            ...entry,
+            payment_status: incoming.payment_status,
+            order_status: incoming.order_status,
+          };
+        }),
+      );
+    } catch {
+      // Silently ignore
+    }
+  }, [router, supabase, userId]);
 
   useEffect(() => {
-    if (!hasRealtimeSession) {
-      return;
-    }
-
-    const kickoff = window.setTimeout(() => {
-      void syncOrdersWithoutSocket();
-    }, realtimeConnected ? 2200 : 0);
-
-    const intervalMs = realtimeConnected ? 12000 : 4500;
-
-    const timer = window.setInterval(() => {
-      void syncOrdersWithoutSocket();
-    }, intervalMs);
-
+    const kickoff = setTimeout(() => void syncOrders(), 2000);
+    const timer = setInterval(() => void syncOrders(), 30000);
     return () => {
-      window.clearTimeout(kickoff);
-      window.clearInterval(timer);
+      clearTimeout(kickoff);
+      clearInterval(timer);
     };
-  }, [hasRealtimeSession, realtimeConnected, syncOrdersWithoutSocket]);
+  }, [syncOrders]);
 
+  /* ----- Render ----- */
   if (orders.length === 0) {
     return (
       <div className="premium-card border-dashed p-10 text-center">
