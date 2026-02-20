@@ -1,5 +1,8 @@
+import { redirect } from "next/navigation";
+
 import { LoginForm } from "@/components/auth/login-form";
 import { STORE } from "@/lib/constants";
+import { checkIsAdmin, getCurrentUser } from "@/lib/auth";
 
 export const metadata = {
   title: "Login",
@@ -18,10 +21,18 @@ function getSafeNextPath(nextPath: string | undefined, fallback = "/") {
     return fallback;
   }
 
+  if (
+    nextPath === "/login" ||
+    nextPath.startsWith("/login?") ||
+    nextPath.startsWith("/auth/callback")
+  ) {
+    return fallback;
+  }
+
   return nextPath;
 }
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
   searchParams: {
@@ -31,6 +42,13 @@ export default function LoginPage({
 }) {
   const nextPath = getSafeNextPath(getParamValue(searchParams.next));
   const initialError = getParamValue(searchParams.error);
+  const user = await getCurrentUser();
+
+  if (user) {
+    const isAdmin = await checkIsAdmin(user.email);
+    const destination = nextPath === "/" && isAdmin ? "/admin" : nextPath;
+    redirect(destination);
+  }
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center justify-center gap-6 px-4 py-10 sm:px-6">

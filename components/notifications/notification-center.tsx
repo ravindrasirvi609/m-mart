@@ -80,12 +80,15 @@ export function NotificationCenter({
     let mounted = true;
 
     const bootstrapSession = async () => {
-      const { data } = await supabase.auth.getSession();
+      const [{ data: sessionData }, { data: userData, error: userError }] = await Promise.all([
+        supabase.auth.getSession(),
+        supabase.auth.getUser(),
+      ]);
       if (!mounted) {
         return;
       }
 
-      setHasRealtimeSession(Boolean(data.session));
+      setHasRealtimeSession(Boolean(sessionData.session || userData.user) && !userError);
     };
 
     void bootstrapSession();
@@ -377,14 +380,11 @@ export function NotificationCenter({
       return;
     }
 
-    if (!useOrdersFallback && realtimeConnected) {
-      return;
-    }
-
     void fetchLatestNotifications();
+    const intervalMs = !useOrdersFallback && realtimeConnected ? 12000 : 4500;
     const timer = window.setInterval(() => {
       void fetchLatestNotifications();
-    }, 4500);
+    }, intervalMs);
 
     return () => {
       window.clearInterval(timer);

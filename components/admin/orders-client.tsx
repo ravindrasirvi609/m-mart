@@ -124,12 +124,15 @@ export function OrdersClient({ orders }: OrdersClientProps) {
     let mounted = true;
 
     const bootstrapSession = async () => {
-      const { data } = await supabase.auth.getSession();
+      const [{ data: sessionData }, { data: userData, error: userError }] = await Promise.all([
+        supabase.auth.getSession(),
+        supabase.auth.getUser(),
+      ]);
       if (!mounted) {
         return;
       }
 
-      setHasRealtimeSession(Boolean(data.session));
+      setHasRealtimeSession(Boolean(sessionData.session || userData.user) && !userError);
     };
 
     void bootstrapSession();
@@ -266,16 +269,18 @@ export function OrdersClient({ orders }: OrdersClientProps) {
   }, [hasRealtimeSession, scheduleRefresh, supabase]);
 
   useEffect(() => {
-    if (!hasRealtimeSession || realtimeConnected) {
+    if (!hasRealtimeSession) {
       return;
     }
 
     const kickoff = window.setTimeout(() => {
       void syncOrdersWithoutSocket();
-    }, 0);
+    }, realtimeConnected ? 2200 : 0);
+
+    const intervalMs = realtimeConnected ? 12000 : 4500;
     const timer = window.setInterval(() => {
       void syncOrdersWithoutSocket();
-    }, 4500);
+    }, intervalMs);
 
     return () => {
       window.clearTimeout(kickoff);
