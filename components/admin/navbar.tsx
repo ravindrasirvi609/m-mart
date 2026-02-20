@@ -7,6 +7,7 @@ import { NotificationCenter } from "@/components/notifications/notification-cent
 import type { Database } from "@/lib/supabase/types";
 import { Modal } from "@/components/admin/ui/modal";
 import { Button } from "@/components/ui/button";
+import { logoutAction } from "@/actions/auth-actions";
 
 type NotificationRow = Database["public"]["Tables"]["notifications"]["Row"];
 
@@ -112,7 +113,7 @@ export function Navbar({ user, notificationState, onMenuClick }: NavbarProps) {
                     </div>
 
                     <div className="flex flex-col gap-3 sm:flex-row-reverse">
-                        <form action="/auth/logout" method="post" className="flex-1">
+                        <form action={logoutAction} className="flex-1">
                             <Button
                                 type="submit"
                                 className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold h-11"

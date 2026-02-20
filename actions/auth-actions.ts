@@ -2,7 +2,9 @@
 
 import { Resend } from "resend";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getServerEnv } from "@/lib/env";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -112,4 +114,11 @@ export async function sendMagicLinkAction(email: string, nextPath = "/") {
     console.error("Magic link action error:", err);
     return { ok: false, error: "An unexpected error occurred." };
   }
+}
+
+
+export async function logoutAction() {
+  const supabase = await createServerSupabaseClient();
+  await supabase.auth.signOut();
+  redirect("/login");
 }

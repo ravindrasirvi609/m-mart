@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { logoutAction } from "@/actions/auth-actions";
 import { Modal } from "@/components/admin/ui/modal";
 import { Button } from "@/components/ui/button";
 
@@ -147,7 +148,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
           
           <div className="flex flex-col gap-3 sm:flex-row-reverse">
-            <form action="/auth/logout" method="post" className="flex-1">
+            <form action={logoutAction} className="flex-1">
               <Button 
                 type="submit"
                 className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold h-11"

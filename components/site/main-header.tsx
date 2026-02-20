@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { STORE } from "@/lib/constants";
 import type { Database } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
+import { logoutAction } from "@/actions/auth-actions";
 
 type NotificationRow = Database["public"]["Tables"]["notifications"]["Row"];
 
@@ -125,7 +126,7 @@ export function MainHeader({
           </button>
 
           {isLoggedIn ? (
-            <form action="/auth/logout" method="post" className="hidden md:block">
+            <form action={logoutAction} className="hidden md:block">
               <Button variant="outline" type="submit">
                 Logout
               </Button>
@@ -153,8 +154,7 @@ export function MainHeader({
             ))}
             {isLoggedIn ? (
               <form
-                action="/auth/logout"
-                method="post"
+                action={logoutAction}
                 onSubmit={() => setOpen(false)}
               >
                 <Button variant="outline" type="submit" className="w-full">
