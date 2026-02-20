@@ -31,11 +31,12 @@ function createLogoutSupabaseClient(request: NextRequest, response: NextResponse
 
 // Never sign out on GET; this route can be fetched by prefetchers or bots.
 export async function GET(request: NextRequest) {
-  return NextResponse.redirect(new URL("/login", request.url));
+  return NextResponse.redirect(new URL("/login", request.url), 302);
 }
 
 export async function POST(request: NextRequest) {
-  const response = NextResponse.redirect(new URL("/login", request.url));
+  // Use 303 so form POSTs are converted to a GET on /login.
+  const response = NextResponse.redirect(new URL("/login", request.url), 303);
   const supabase = createLogoutSupabaseClient(request, response);
 
   if (supabase) {
