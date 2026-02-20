@@ -32,14 +32,13 @@ function getSafeNextPath(nextPath: string | undefined, fallback = "/") {
   return nextPath;
 }
 
-export default async function LoginPage({
-  searchParams,
-}: {
-  searchParams: {
+export default async function LoginPage(props: {
+  searchParams: Promise<{
     next?: string | string[];
     error?: string | string[];
-  };
+  }>;
 }) {
+  const searchParams = await props.searchParams;
   const nextPath = getSafeNextPath(getParamValue(searchParams.next));
   const initialError = getParamValue(searchParams.error);
   const user = await getCurrentUser();
