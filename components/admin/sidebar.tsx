@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { Modal } from "@/components/admin/ui/modal";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -36,6 +38,7 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   return (
     <>
@@ -116,16 +119,52 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </nav>
 
           <div className="mt-auto border-t border-admin-border pt-4">
-            <button className={cn(
-              "group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-text-subtle transition-all hover:bg-rose-500/10 hover:text-rose-500",
-              isCollapsed && "justify-center"
-            )}>
+            <button 
+              onClick={() => setShowLogoutModal(true)}
+              className={cn(
+                "group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-text-subtle transition-all hover:bg-rose-500/10 hover:text-rose-500",
+                isCollapsed && "justify-center"
+              )}
+            >
               <LogOut size={20} className="shrink-0" />
               {!isCollapsed && <span>Logout</span>}
             </button>
           </div>
         </div>
       </aside>
+
+      <Modal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        title="Logout Confirmation"
+        description="Are you sure you want to logout? You will need to login again to access the admin panel."
+      >
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center justify-center p-6 bg-rose-500/5 rounded-2xl border border-rose-500/10">
+            <div className="h-16 w-16 items-center justify-center flex rounded-full bg-rose-500/10 text-rose-500">
+              <LogOut size={32} />
+            </div>
+          </div>
+          
+          <div className="flex flex-col gap-3 sm:flex-row-reverse">
+            <form action="/auth/logout" method="post" className="flex-1">
+              <Button 
+                type="submit"
+                className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold h-11"
+              >
+                Logout Now
+              </Button>
+            </form>
+            <Button
+              variant="outline"
+              onClick={() => setShowLogoutModal(false)}
+              className="flex-1 border-admin-border hover:bg-white/5 text-text-main h-11"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }
