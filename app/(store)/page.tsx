@@ -79,23 +79,22 @@ export default async function HomePage() {
         <div className="grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
           <Reveal>
             <div className="space-y-6">
-              <p className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em]">
+              <p className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em]">
                 <Sparkles size={14} />
-                Premium Grocery Experience
+                Online Grocery. App-like Experience.
               </p>
 
-              <h1 className="max-w-2xl font-display text-4xl font-black leading-tight tracking-[0.02em] sm:text-5xl lg:text-6xl">
-                Fresh Groceries Delivered to Your Doorstep
+              <h1 className="max-w-2xl font-display text-4xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+                Fresh Groceries Delivered with Speed and Clarity
               </h1>
 
               <p className="max-w-xl text-sm text-white/90 sm:text-base">
-                Fast delivery in Mukai Nagar, Hinjewadi Phase 1, Pune. Curated quality,
-                startup-speed experience, and trusted manual UPI verification.
+                Shop daily essentials with smooth browsing, secure UPI verification, and fast local delivery in Pune.
               </p>
 
               <div className="flex flex-wrap gap-3">
                 <Link href="/products">
-                  <Button className="bg-white !text-[#e10600]">Shop Now</Button>
+                  <Button className="bg-white !text-[#c91510]">Start Shopping</Button>
                 </Link>
                 <a href={`tel:${STORE.phone}`}>
                   <Button variant="outline" className="!text-white !ring-white/55 hover:!bg-white/15">
@@ -109,7 +108,7 @@ export default async function HomePage() {
                   type="search"
                   name="search"
                   placeholder="Search fruits, vegetables, essentials..."
-                  className="h-11 flex-1 rounded-xl border border-white/35 bg-white/90 px-3 text-sm text-zinc-900 outline-none"
+                  className="h-11 flex-1 rounded-xl border border-white/35 bg-white/95 px-3 text-sm font-medium text-zinc-900 outline-none"
                 />
                 <Button type="submit" className="!bg-zinc-900">
                   Search
@@ -123,7 +122,7 @@ export default async function HomePage() {
                   return (
                     <span
                       key={item.label}
-                      className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold"
+                      className="inline-flex items-center gap-1 rounded-full bg-white/16 px-3 py-1.5 text-xs font-bold"
                     >
                       <Icon size={13} />
                       {item.label}
@@ -148,10 +147,10 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              <div className="animate-float absolute -left-6 top-8 rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#e10600] shadow-lg">
+              <div className="animate-float absolute -left-6 top-8 rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#c91510] shadow-lg">
                 10 min dispatch
               </div>
-              <div className="animate-float absolute -right-4 bottom-8 rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#e10600] shadow-lg [animation-delay:0.8s]">
+              <div className="animate-float absolute -right-4 bottom-8 rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#c91510] shadow-lg [animation-delay:0.8s]">
                 100% Fresh Pick
               </div>
             </div>
@@ -163,7 +162,7 @@ export default async function HomePage() {
         <Reveal>
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Featured Categories</h2>
-            <Link href="/products" className="text-sm font-bold uppercase tracking-[0.1em] text-[#e10600]">
+            <Link href="/products" className="text-sm font-black uppercase tracking-[0.1em] text-[#c91510]">
               Explore all
             </Link>
           </div>
@@ -177,12 +176,12 @@ export default async function HomePage() {
               <Reveal key={category.name} delay={index * 70}>
                 <Link
                   href={`/products?category=${encodeURIComponent(category.name)}`}
-                  className="glow-on-hover flex flex-col items-center gap-3 rounded-2xl border border-red-100 bg-white p-4 text-center"
+                  className="glow-on-hover premium-card flex flex-col items-center gap-3 rounded-2xl p-4 text-center"
                 >
-                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-[#e10600]">
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#fff1eb] text-[#c91510] dark:bg-zinc-800">
                     <Icon size={24} />
                   </span>
-                  <span className="text-xs font-bold uppercase tracking-[0.1em] text-zinc-700">
+                  <span className="text-xs font-bold uppercase tracking-[0.08em] text-zinc-700 dark:text-zinc-200">
                     {category.name}
                   </span>
                 </Link>
@@ -194,19 +193,19 @@ export default async function HomePage() {
 
       <section className="space-y-5">
         <Reveal>
-          <div className="premium-card flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-[#fff4f4] to-[#ffe9e9] p-4">
+          <div className="premium-card flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-[#fff4ef] to-[#ffede5] p-4 dark:from-[#2a1b1e] dark:to-[#24181c]">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#e10600]">Today Offer</p>
-              <p className="font-heading text-xl font-bold text-zinc-900">Free Delivery Above ₹500</p>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#c91510]">Today Offer</p>
+              <p className="font-heading text-xl font-bold text-zinc-900 dark:text-zinc-100">Free Delivery Above ₹500</p>
             </div>
-            <BadgeCheck className="text-[#e10600]" />
+            <BadgeCheck className="text-[#c91510]" />
           </div>
         </Reveal>
 
         <Reveal>
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Trending Products</h2>
-            <Link href="/products" className="text-sm font-bold uppercase tracking-[0.1em] text-[#e10600]">
+            <Link href="/products" className="text-sm font-black uppercase tracking-[0.1em] text-[#c91510]">
               View all
             </Link>
           </div>
@@ -248,10 +247,10 @@ export default async function HomePage() {
 
             return (
               <Reveal key={feature.title} delay={index * 90}>
-                <article className="glow-on-hover soft-red-panel rounded-2xl border border-red-100 p-5">
-                  <Icon className="text-[#e10600]" size={22} />
-                  <h3 className="mt-3 font-heading text-lg font-bold">{feature.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300">{feature.text}</p>
+                <article className="glow-on-hover premium-card soft-red-panel rounded-2xl p-5">
+                  <Icon className="text-[#c91510]" size={22} />
+                  <h3 className="mt-3 font-heading text-lg font-bold text-zinc-900 dark:text-zinc-100">{feature.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-200">{feature.text}</p>
                 </article>
               </Reveal>
             );
@@ -272,11 +271,11 @@ export default async function HomePage() {
           ].map((step, index) => (
             <Reveal key={step} delay={index * 100}>
               <article className="premium-card relative overflow-hidden p-5">
-                <p className="mb-3 text-3xl font-black text-[#e10600]">0{index + 1}</p>
-                <h3 className="text-lg font-bold">{step}</h3>
+                <p className="mb-3 text-3xl font-black text-[#c91510]">0{index + 1}</p>
+                <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{step}</h3>
                 {index < 2 ? (
                   <div className="absolute right-0 top-0 hidden h-full w-8 items-center justify-center md:flex">
-                    <span className="h-0.5 w-7 bg-red-200" />
+                    <span className="h-0.5 w-7 bg-[#c91510]/25" />
                   </div>
                 ) : null}
               </article>
@@ -297,9 +296,9 @@ export default async function HomePage() {
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <Reveal>
           <div className="premium-card p-6">
-            <h2 className="text-2xl font-bold">Visit or Contact</h2>
-            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">{STORE.name}</p>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">{STORE.location}</p>
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Visit or Contact</h2>
+            <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-200">{STORE.name}</p>
+            <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-200">{STORE.location}</p>
             <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{STORE.phone}</p>
 
             <div className="mt-5 flex flex-wrap gap-3">
@@ -318,11 +317,11 @@ export default async function HomePage() {
 
         <Reveal delay={120}>
           <div className="premium-card soft-red-panel relative min-h-[220px] overflow-hidden p-6">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#e10600]">Map Preview</p>
-            <p className="mt-3 max-w-xs text-sm text-zinc-600 dark:text-zinc-300">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#c91510]">Map Preview</p>
+            <p className="mt-3 max-w-xs text-sm text-zinc-700 dark:text-zinc-200">
               Google Maps integration placeholder. Connect your live store pin in deployment.
             </p>
-            <div className="absolute bottom-5 right-5 rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#e10600] shadow">
+            <div className="absolute bottom-5 right-5 rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#c91510] shadow dark:bg-zinc-900">
               Hinjewadi Phase 1
             </div>
           </div>

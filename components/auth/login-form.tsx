@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Mail } from "lucide-react";
+import { CheckCircle2, Mail, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -95,7 +95,7 @@ export function LoginForm({
           <CheckCircle2 size={24} />
         </div>
         <h1 className="font-heading text-2xl font-bold">Check your email</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-300">
+        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
           We sent a magic link to <span className="font-semibold text-zinc-900 dark:text-zinc-100">{email}</span>.
         </p>
         <Button variant="outline" className="w-full" onClick={() => setLinkSent(false)}>
@@ -107,8 +107,8 @@ export function LoginForm({
 
   return (
     <div className="premium-card mx-auto w-full max-w-md space-y-4 p-6">
-      <h1 className="font-heading text-2xl font-bold">Login to Mmart</h1>
-      <p className="text-sm text-zinc-600 dark:text-zinc-300">
+      <h1 className="font-heading text-2xl font-bold text-zinc-900 dark:text-zinc-100">Login to Mmart</h1>
+      <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
         Secure one-tap login with email magic link.
       </p>
 
@@ -121,6 +121,11 @@ export function LoginForm({
           placeholder="you@example.com"
         />
       </label>
+
+      <p className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-500 dark:text-zinc-300">
+        <Shield size={13} />
+        We only use your email for secure authentication.
+      </p>
 
       <Button disabled={loading || !email} className="w-full" onClick={sendMagicLink}>
         <Mail size={14} />

@@ -14,7 +14,7 @@ export function ProductCard({ product }: { product: Product }) {
       : 0;
 
   return (
-    <article className="group glow-on-hover overflow-hidden rounded-3xl border border-red-100 bg-white">
+    <article className="group glow-on-hover premium-card overflow-hidden rounded-3xl">
       <Link href={`/products/${product.id}`} className="relative block h-48 overflow-hidden bg-zinc-100">
         <Image
           src={product.image_url}
@@ -23,35 +23,50 @@ export function ProductCard({ product }: { product: Product }) {
           className="object-cover transition duration-500 group-hover:scale-110"
           sizes="(max-width: 768px) 100vw, 25vw"
         />
+
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/22 via-transparent to-transparent" />
+
         <button
           type="button"
-          className="absolute right-3 top-3 rounded-full bg-white/90 p-2 text-zinc-600 shadow-sm transition hover:text-[#e10600]"
+          className="absolute right-3 top-3 rounded-full bg-white/90 p-2 text-zinc-600 shadow-sm transition hover:text-[#c91510]"
           aria-label="Add to wishlist"
         >
           <Heart size={16} />
         </button>
 
         {discountPercent > 0 ? (
-          <span className="absolute left-3 top-3 rounded-full bg-orange-500 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-white">
+          <span className="absolute left-3 top-3 rounded-full bg-amber-500 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-white">
             {discountPercent}% Off
           </span>
         ) : null}
       </Link>
 
       <div className="space-y-3 p-4">
-        <div>
-          <p className="line-clamp-1 font-heading text-base font-bold text-zinc-900">{product.name}</p>
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">{product.category}</p>
+        <div className="space-y-1">
+          <p className="line-clamp-1 font-heading text-base font-bold text-zinc-900 dark:text-zinc-100">
+            {product.name}
+          </p>
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.09em] text-zinc-500 dark:text-zinc-300">
+            {product.category}
+          </p>
         </div>
 
         <div className="flex items-end gap-2">
           <p className="price-text">{formatCurrency(effectivePrice)}</p>
           {product.discount_price !== null ? (
-            <p className="pb-0.5 text-xs text-zinc-400 line-through">{formatCurrency(product.price)}</p>
+            <p className="pb-0.5 text-xs font-medium text-zinc-500 line-through dark:text-zinc-400">
+              {formatCurrency(product.price)}
+            </p>
           ) : null}
         </div>
 
-        <p className={`text-xs font-bold uppercase tracking-[0.08em] ${product.stock > 0 ? "text-emerald-700" : "text-rose-700"}`}>
+        <p
+          className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold tracking-[0.06em] ${
+            product.stock > 0
+              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+              : "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300"
+          }`}
+        >
           {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
         </p>
 

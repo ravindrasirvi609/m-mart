@@ -23,7 +23,7 @@ export function CartClient() {
   if (items.length === 0) {
     return (
       <div className="premium-card border-dashed p-10 text-center">
-        <p className="text-sm text-zinc-600 dark:text-zinc-300">Your cart is empty.</p>
+        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Your cart is empty.</p>
         <Link href="/products" className="mt-4 inline-flex">
           <Button>Browse Products</Button>
         </Link>
@@ -40,7 +40,7 @@ export function CartClient() {
           return (
             <div
               key={item.id}
-              className="animate-slide-in rounded-3xl border border-red-100 bg-white p-4 shadow-sm"
+              className="animate-slide-in premium-card p-4"
               style={{ animationDelay: `${index * 80}ms` }}
             >
               <div className="flex gap-3">
@@ -59,16 +59,16 @@ export function CartClient() {
                     <p className="font-heading text-base font-bold text-zinc-900 dark:text-zinc-100">
                       {item.name}
                     </p>
-                    <p className="text-xs uppercase tracking-[0.08em] text-zinc-500">
+                    <p className="text-xs font-semibold uppercase tracking-[0.06em] text-zinc-500 dark:text-zinc-300">
                       {formatCurrency(unitPrice)} each
                     </p>
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="inline-flex items-center rounded-xl border border-red-100 bg-white">
+                    <div className="inline-flex items-center rounded-xl border border-[#c91510]/20 bg-white dark:bg-zinc-900">
                       <button
                         type="button"
-                        className="h-9 w-9 text-lg"
+                        className="h-9 w-9 text-lg font-semibold"
                         onClick={() => setQuantity(item.id, item.quantity - 1)}
                       >
                         -
@@ -76,7 +76,7 @@ export function CartClient() {
                       <span className="w-8 text-center text-sm font-bold">{item.quantity}</span>
                       <button
                         type="button"
-                        className="h-9 w-9 text-lg"
+                        className="h-9 w-9 text-lg font-semibold"
                         onClick={() => setQuantity(item.id, item.quantity + 1)}
                       >
                         +
@@ -85,7 +85,7 @@ export function CartClient() {
 
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[0.1em] text-zinc-500 hover:text-rose-600"
+                      className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500 transition hover:text-rose-600"
                       onClick={() => removeItem(item.id)}
                     >
                       <Trash2 size={14} />
@@ -102,7 +102,7 @@ export function CartClient() {
       <aside className="premium-card sticky top-24 h-fit space-y-4 p-5">
         <h2 className="font-heading text-lg font-bold">Pricing Summary</h2>
 
-        <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+        <div className="space-y-2 text-sm font-medium text-zinc-700 dark:text-zinc-200">
           <div className="flex justify-between">
             <span>Subtotal</span>
             <span>{formatCurrency(subtotal)}</span>
@@ -111,21 +111,21 @@ export function CartClient() {
             <span>Delivery</span>
             <span>{deliveryCharge === 0 ? "Free" : formatCurrency(deliveryCharge)}</span>
           </div>
-          <div className="flex justify-between border-t border-red-100 pt-3 text-base font-black text-[#e10600]">
+          <div className="flex justify-between border-t border-[#c91510]/16 pt-3 text-base font-black text-[#c91510]">
             <span>Total</span>
             <span>{formatCurrency(total)}</span>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-dashed border-red-200 p-3">
-          <label className="mb-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-600">
+        <div className="rounded-2xl border border-dashed border-[#c91510]/30 p-3">
+          <label className="mb-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-700 dark:text-zinc-200">
             <TicketPercent size={14} />
             Coupon (Coming Soon)
           </label>
           <Input placeholder="Enter coupon code" disabled />
         </div>
 
-        <p className="rounded-xl bg-red-50 p-3 text-xs font-semibold text-[#e10600]">
+        <p className="rounded-xl bg-[#fff2ec] p-3 text-xs font-bold text-[#c91510] dark:bg-zinc-800 dark:text-[#ff8a6e]">
           Free delivery above ₹500. Below ₹500, delivery charge ₹30.
         </p>
 
@@ -138,11 +138,11 @@ export function CartClient() {
         </Button>
       </aside>
 
-      <div className="fixed inset-x-0 bottom-16 z-30 border-t border-red-100 bg-white/95 p-3 backdrop-blur md:hidden">
+      <div className="fixed inset-x-0 bottom-20 z-30 border-t border-[#c91510]/16 bg-white/96 p-3 backdrop-blur md:hidden dark:border-zinc-700 dark:bg-[#0f141d]/95">
         <div className="mx-auto flex max-w-md items-center justify-between gap-3">
           <div>
-            <p className="text-xs text-zinc-500">Total</p>
-            <p className="font-bold text-[#e10600]">{formatCurrency(total)}</p>
+            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-300">Total</p>
+            <p className="font-bold text-[#c91510]">{formatCurrency(total)}</p>
           </div>
           <Link href="/checkout">
             <Button>Checkout</Button>

@@ -50,11 +50,11 @@ export default async function LoginPage(props: {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center justify-center gap-6 px-4 py-10 sm:px-6">
-      <div className="text-center">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#e10600]">Welcome to</p>
-        <h1 className="font-display text-4xl font-black brand-gradient-text">{STORE.name}</h1>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">{STORE.location}</p>
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col items-center justify-center gap-6 px-4 py-10 sm:px-6">
+      <div className="premium-card soft-red-panel w-full max-w-3xl p-6 text-center sm:p-8">
+        <p className="text-xs font-black uppercase tracking-[0.18em] text-[#c91510]">Welcome to</p>
+        <h1 className="mt-1 font-display text-4xl font-black brand-gradient-text sm:text-5xl">{STORE.name}</h1>
+        <p className="mt-2 text-sm font-medium text-zinc-700 dark:text-zinc-200">{STORE.location}</p>
       </div>
 
       <LoginForm nextPath={nextPath} initialError={initialError} />

@@ -14,10 +14,10 @@ export default async function ProfilePage() {
   return (
     <div className="space-y-5">
       <Reveal>
-        <section className="premium-card soft-red-panel p-5">
-          <h1 className="font-display text-3xl font-black tracking-tight">My Profile</h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
-            Keep your phone and address updated for faster checkout.
+        <section className="premium-card soft-red-panel p-5 sm:p-6">
+          <h1 className="font-display text-3xl font-black tracking-tight text-zinc-900 dark:text-zinc-100">My Profile</h1>
+          <p className="mt-1 text-sm font-medium text-zinc-700 dark:text-zinc-200">
+            Keep contact details updated for faster checkout.
           </p>
         </section>
       </Reveal>

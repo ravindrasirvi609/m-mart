@@ -13,10 +13,6 @@ import type { Database } from "@/lib/supabase/types";
 import { formatCurrency, formatOrderStatus } from "@/lib/utils";
 import { StatusPill } from "@/components/ui/status-pill";
 
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
-
 type OrderItem = {
   id: string;
   quantity: number;
@@ -46,20 +42,11 @@ type OrderHistoryProps = {
   initialOrders: UserOrder[];
 };
 
-/* ------------------------------------------------------------------ */
-/*  Component                                                          */
-/* ------------------------------------------------------------------ */
-
 export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
   const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
-  const [mounted, setMounted] = useState(false);
   const [orders, setOrders] = useState(initialOrders);
   const ordersRef = useRef(initialOrders);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const { sendPush } = usePushNotifications();
 
@@ -71,13 +58,11 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
     setOrders(initialOrders);
   }, [initialOrders]);
 
-  /* ----- Realtime: listen to ALL order changes (client-side filter) ----- */
   const handleOrderChange = useCallback(
     (payload: RealtimePayload<"orders">) => {
       if (payload.eventType === "INSERT") {
         const incoming = payload.new as OrderRow;
 
-        // Client-side filter: only my orders
         if (incoming.user_id !== userId) return;
 
         toast("Order placed! ✓", {
@@ -96,7 +81,6 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
       if (payload.eventType === "UPDATE") {
         const updated = payload.new as OrderRow;
 
-        // Client-side filter: only my orders
         if (updated.user_id !== userId) return;
 
         const previous = ordersRef.current.find((o) => o.id === updated.id);
@@ -108,7 +92,6 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
           return;
         }
 
-        // Notify only if status actually changed
         if (
           previous.order_status !== nextOrderStatus ||
           previous.payment_status !== nextPaymentStatus
@@ -123,7 +106,6 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
           });
         }
 
-        // Update local state immediately
         setOrders((current) =>
           current.map((o) =>
             o.id === updated.id
@@ -143,7 +125,6 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
     onPayload: handleOrderChange,
   });
 
-  /* ----- Polling backup: 30s safety net ----- */
   const syncOrders = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -193,11 +174,10 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
     };
   }, [syncOrders]);
 
-  /* ----- Render ----- */
   if (orders.length === 0) {
     return (
       <div className="premium-card border-dashed p-10 text-center">
-        <p className="text-sm text-zinc-600 dark:text-zinc-300">No orders yet.</p>
+        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">No orders yet.</p>
       </div>
     );
   }
@@ -212,10 +192,10 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.08em] text-zinc-900 dark:text-zinc-100">
+              <p className="text-sm font-black uppercase tracking-[0.07em] text-zinc-900 dark:text-zinc-100">
                 Order #{order.id.slice(0, 8)}
               </p>
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs font-medium text-zinc-500 dark:text-zinc-300">
                 {new Date(order.created_at).toLocaleString("en-IN")}
               </p>
             </div>
@@ -228,7 +208,7 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
 
           <div className="grid gap-3 sm:grid-cols-2">
             {order.order_items.map((item) => (
-              <div key={item.id} className="flex items-center gap-3 rounded-xl bg-red-50/70 p-2 dark:bg-zinc-800">
+              <div key={item.id} className="flex items-center gap-3 rounded-xl bg-[#fff4ef] p-2 dark:bg-zinc-800">
                 <div className="relative h-14 w-14 overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-700">
                   <Image
                     src={item.products?.image_url || "/placeholder-product.svg"}
@@ -242,7 +222,7 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
                   <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                     {item.products?.name || "Unknown Product"}
                   </p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-zinc-600 dark:text-zinc-300">
                     Qty {item.quantity} • {formatCurrency(item.price * item.quantity)}
                   </p>
                 </div>
@@ -250,12 +230,13 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
             ))}
           </div>
 
-          <div className="flex justify-between border-t border-red-100 pt-3 text-sm font-bold text-zinc-700 dark:text-zinc-200">
+          <div className="flex justify-between border-t border-[#c91510]/16 pt-3 text-sm font-bold text-zinc-700 dark:text-zinc-200">
             <span>Status: {formatOrderStatus(order.order_status)}</span>
-            <span className="text-[#e10600]">Total: {formatCurrency(order.total_amount)}</span>
+            <span className="text-[#c91510]">Total: {formatCurrency(order.total_amount)}</span>
           </div>
         </article>
       ))}
+
     </div>
   );
 }

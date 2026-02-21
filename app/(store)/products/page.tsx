@@ -53,13 +53,16 @@ export default async function ProductsPage({
   return (
     <div className="space-y-5">
       <Reveal>
-        <section className="premium-card soft-red-panel p-5">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#e10600]">Mmart Store</p>
+        <section className="premium-card soft-red-panel p-5 sm:p-6">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#c91510]">Mmart Store</p>
           <h1 className="mt-2 font-display text-3xl font-black tracking-tight text-zinc-900 dark:text-zinc-100">
             Discover Fresh Grocery Picks
           </h1>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
-            Search products, filter by category, and add to cart in seconds.
+          <p className="mt-2 text-sm font-medium text-zinc-700 dark:text-zinc-200">
+            Search products, filter categories, and add to cart in seconds.
+          </p>
+          <p className="mt-3 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-300">
+            {totalCount} products found
           </p>
         </section>
       </Reveal>
@@ -71,7 +74,7 @@ export default async function ProductsPage({
       />
 
       {products.length === 0 ? (
-        <div className="premium-card border-dashed p-10 text-center text-sm text-zinc-600 dark:text-zinc-300">
+        <div className="premium-card border-dashed p-10 text-center text-sm font-medium text-zinc-700 dark:text-zinc-200">
           No products found for current filters.
         </div>
       ) : (

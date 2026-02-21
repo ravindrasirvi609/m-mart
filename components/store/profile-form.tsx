@@ -50,8 +50,8 @@ export function ProfileForm({
       }}
     >
       <div className="space-y-1">
-        <p className="text-xs font-bold uppercase tracking-[0.1em] text-zinc-500">Email</p>
-        <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
+        <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-300">Email</p>
+        <p className="rounded-xl bg-[#fff3ec] px-3 py-2 text-sm font-semibold text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
           {email}
         </p>
       </div>

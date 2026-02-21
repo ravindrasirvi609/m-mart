@@ -44,7 +44,7 @@ export function CheckoutForm({
   if (items.length === 0) {
     return (
       <div className="premium-card border-dashed p-10 text-center">
-        <p className="text-sm text-zinc-600 dark:text-zinc-300">
+        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
           Add items to cart before checkout.
         </p>
         <Button className="mt-4" onClick={() => router.push("/products")}>Browse Products</Button>
@@ -95,7 +95,7 @@ export function CheckoutForm({
       }}
     >
       <section className="premium-card space-y-4 p-5">
-        <h2 className="font-heading text-xl font-bold">Delivery Address</h2>
+        <h2 className="font-heading text-xl font-bold">Delivery & Payment</h2>
 
         <Input
           required
@@ -119,8 +119,8 @@ export function CheckoutForm({
           placeholder="Complete delivery address"
         />
 
-        <div className="rounded-xl bg-red-50 p-4 text-sm text-zinc-700">
-          <p className="font-bold text-[#e10600]">Payment Instructions</p>
+        <div className="rounded-xl bg-[#fff3ec] p-4 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+          <p className="font-bold text-[#c91510]">Payment Instructions</p>
           <p className="mt-1">Pay via UPI QR and upload screenshot for manual admin verification.</p>
           <div className="mt-3">
             <Button
@@ -158,22 +158,22 @@ export function CheckoutForm({
           />
         </label>
 
-        <div className="grid gap-2 rounded-xl border border-red-100 bg-white p-3 text-xs font-semibold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
+        <div className="grid gap-2 rounded-xl border border-[#c91510]/16 bg-white p-3 text-xs font-semibold text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
           <p className="inline-flex items-center gap-2"><ShieldCheck size={14} className="text-emerald-600" /> Secure checkout flow</p>
           <p className="inline-flex items-center gap-2"><Lock size={14} className="text-emerald-600" /> Manual payment verification</p>
         </div>
       </section>
 
-      <aside className="premium-card h-fit space-y-4 p-5">
+      <aside className="premium-card h-fit space-y-4 p-5 lg:sticky lg:top-24">
         <h2 className="font-heading text-xl font-bold">Order Summary</h2>
 
-        <div className="mx-auto w-fit rounded-2xl border border-red-200 bg-white p-2 shadow-[0_0_0_4px_rgba(225,6,0,0.08)]">
-          <div className="relative h-52 w-52 overflow-hidden rounded-xl border border-red-100 bg-white">
+        <div className="mx-auto w-fit rounded-2xl border border-[#c91510]/18 bg-white p-2 shadow-[0_0_0_4px_rgba(201,21,16,0.08)]">
+          <div className="relative h-52 w-52 overflow-hidden rounded-xl border border-[#c91510]/18 bg-white">
             <Image src="/upi-qr.svg" alt="UPI QR Code" fill className="object-contain p-3" />
           </div>
         </div>
 
-        <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+        <div className="space-y-2 text-sm font-medium text-zinc-700 dark:text-zinc-200">
           <div className="flex justify-between">
             <span>Subtotal</span>
             <span>{formatCurrency(subtotal)}</span>
@@ -182,7 +182,7 @@ export function CheckoutForm({
             <span>Delivery</span>
             <span>{deliveryCharge === 0 ? "Free" : formatCurrency(deliveryCharge)}</span>
           </div>
-          <div className="flex justify-between border-t border-red-100 pt-3 text-lg font-black text-[#e10600]">
+          <div className="flex justify-between border-t border-[#c91510]/14 pt-3 text-lg font-black text-[#c91510]">
             <span>Total</span>
             <span>{formatCurrency(total)}</span>
           </div>
