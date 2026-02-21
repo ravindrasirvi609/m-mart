@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { AppProviders } from "@/components/providers/app-providers";
 import { STORE } from "@/lib/constants";
 import "./globals.css";
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -76,7 +77,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen overscroll-y-none">
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>{children}        <SpeedInsights />
+        </AppProviders>
       </body>
     </html>
   );
