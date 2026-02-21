@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Lock, ShieldCheck } from "lucide-react";
+import { Check, Copy, ExternalLink, Lock, ShieldCheck } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { placeOrderAction } from "@/actions/order-actions";
@@ -12,9 +12,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { getPublicEnv } from "@/lib/env";
 import { showAppToast, triggerHaptic } from "@/lib/mobile/feedback";
-import { buildUpiPaymentUrl, openUpiPayment } from "@/lib/mobile/payments";
+import { buildUpiPaymentUrl, canAttemptUpiLaunch, openUpiPayment } from "@/lib/mobile/payments";
 import { formatCurrency } from "@/lib/utils";
 import { STORE } from "@/lib/constants";
+
+const allowedScreenshotTypes = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/webp",
+]);
+const maxScreenshotSizeBytes = 5 * 1024 * 1024;
 
 type CheckoutFormProps = {
   defaultName: string;
@@ -30,8 +38,9 @@ export function CheckoutForm({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { items, subtotal, deliveryCharge, total, clearCart } = useCart();
+  const upiId = getPublicEnv().NEXT_PUBLIC_UPI_ID;
   const upiPaymentUrl = buildUpiPaymentUrl({
-    upiId: getPublicEnv().NEXT_PUBLIC_UPI_ID,
+    upiId,
     payeeName: STORE.name,
     amount: total,
     note: "Mmart grocery order",
@@ -40,6 +49,36 @@ export function CheckoutForm({
   const [phone, setPhone] = useState(defaultPhone);
   const [address, setAddress] = useState(defaultAddress);
   const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const copyUpiId = async () => {
+    if (!upiId) {
+      await showAppToast("UPI ID is not configured yet.", "error");
+      return;
+    }
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(upiId);
+      } else {
+        const input = document.createElement("textarea");
+        input.value = upiId;
+        input.style.position = "fixed";
+        input.style.opacity = "0";
+        document.body.appendChild(input);
+        input.focus();
+        input.select();
+        document.execCommand("copy");
+        document.body.removeChild(input);
+      }
+
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+      await showAppToast("UPI ID copied.", "success");
+    } catch {
+      await showAppToast("Unable to copy UPI ID. Please copy it manually.", "error");
+    }
+  };
 
   if (items.length === 0) {
     return (
@@ -121,8 +160,20 @@ export function CheckoutForm({
 
         <div className="rounded-xl bg-[#fff3ec] p-4 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
           <p className="font-bold text-[#c91510]">Payment Instructions</p>
-          <p className="mt-1">Pay via UPI QR and upload screenshot for manual admin verification.</p>
-          <div className="mt-3">
+          <p className="mt-1">Pay via UPI QR and upload a screenshot for manual admin verification.</p>
+          <p className="mt-2 text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+            Amount: {formatCurrency(total)}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <p className="rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
+              UPI ID: {upiId ?? "Not configured"}
+            </p>
+            <Button type="button" variant="ghost" className="!px-2.5 !py-1.5 text-xs" onClick={copyUpiId}>
+              {copied ? <Check size={13} /> : <Copy size={13} />}
+              {copied ? "Copied" : "Copy UPI ID"}
+            </Button>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
             <Button
               type="button"
               variant="outline"
@@ -135,7 +186,22 @@ export function CheckoutForm({
                   return;
                 }
 
-                openUpiPayment(upiPaymentUrl);
+                if (!canAttemptUpiLaunch()) {
+                  showAppToast("Use your phone to open UPI app, or pay by scanning QR.", "info").catch(
+                    () => undefined,
+                  );
+                  return;
+                }
+
+                const opened = openUpiPayment(upiPaymentUrl);
+                if (!opened) {
+                  showAppToast("Could not open UPI app. Use QR or copy UPI ID.", "error").catch(
+                    () => undefined,
+                  );
+                  return;
+                }
+
+                showAppToast("Opening UPI app...", "info").catch(() => undefined);
               }}
             >
               <ExternalLink size={14} />
@@ -153,9 +219,32 @@ export function CheckoutForm({
             required
             onChange={(event) => {
               const file = event.target.files?.[0] ?? null;
+              if (!file) {
+                setScreenshot(null);
+                return;
+              }
+
+              if (!allowedScreenshotTypes.has(file.type)) {
+                showAppToast("Use PNG, JPG, or WEBP screenshot.", "error").catch(() => undefined);
+                event.currentTarget.value = "";
+                setScreenshot(null);
+                return;
+              }
+
+              if (file.size > maxScreenshotSizeBytes) {
+                showAppToast("Screenshot must be below 5MB.", "error").catch(() => undefined);
+                event.currentTarget.value = "";
+                setScreenshot(null);
+                return;
+              }
+
               setScreenshot(file);
             }}
           />
+          <p className="text-xs text-zinc-500 dark:text-zinc-300">
+            Accepted: PNG/JPG/WEBP, max 5MB.
+            {screenshot ? ` Selected: ${screenshot.name}` : ""}
+          </p>
         </label>
 
         <div className="grid gap-2 rounded-xl border border-[#c91510]/16 bg-white p-3 text-xs font-semibold text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
