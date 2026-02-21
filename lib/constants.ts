@@ -3,6 +3,7 @@ export const STORE = {
   owner: "Naveen Sirvi",
   location: "Mukai Nagar, Hinjewadi Phase 1, Pune, Maharashtra",
   phone: "8955872627",
+  upiId: "my.choice609@okhdfcbank",
   freeDeliveryThreshold: 500,
   baseDeliveryCharge: 30,
 } as const;

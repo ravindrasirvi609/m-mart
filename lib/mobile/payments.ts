@@ -36,6 +36,17 @@ export function canAttemptUpiLaunch() {
   return /android|iphone|ipad|ipod/i.test(window.navigator.userAgent);
 }
 
+export function buildUpiQrCodeUrl(upiUrl: string) {
+  const params = new URLSearchParams({
+    size: "512x512",
+    data: upiUrl,
+    qzone: "2",
+    format: "svg",
+  });
+
+  return `https://api.qrserver.com/v1/create-qr-code/?${params.toString()}`;
+}
+
 function buildAndroidIntentUrl(upiUrl: string) {
   if (!upiUrl.startsWith("upi://")) {
     return upiUrl;

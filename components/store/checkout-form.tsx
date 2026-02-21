@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { getPublicEnv } from "@/lib/env";
 import { showAppToast, triggerHaptic } from "@/lib/mobile/feedback";
-import { buildUpiPaymentUrl, canAttemptUpiLaunch, openUpiPayment } from "@/lib/mobile/payments";
+import { buildUpiPaymentUrl, buildUpiQrCodeUrl, canAttemptUpiLaunch, openUpiPayment } from "@/lib/mobile/payments";
 import { formatCurrency } from "@/lib/utils";
 import { STORE } from "@/lib/constants";
 
@@ -38,13 +38,15 @@ export function CheckoutForm({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { items, subtotal, deliveryCharge, total, clearCart } = useCart();
-  const upiId = getPublicEnv().NEXT_PUBLIC_UPI_ID;
+  const configuredUpiId = getPublicEnv().NEXT_PUBLIC_UPI_ID ?? STORE.upiId;
   const upiPaymentUrl = buildUpiPaymentUrl({
-    upiId,
+    upiId: configuredUpiId,
     payeeName: STORE.name,
     amount: total,
     note: "Mmart grocery order",
   });
+  const upiQrCodeUrl = upiPaymentUrl ? buildUpiQrCodeUrl(upiPaymentUrl) : null;
+
   const [name, setName] = useState(defaultName);
   const [phone, setPhone] = useState(defaultPhone);
   const [address, setAddress] = useState(defaultAddress);
@@ -52,17 +54,17 @@ export function CheckoutForm({
   const [copied, setCopied] = useState(false);
 
   const copyUpiId = async () => {
-    if (!upiId) {
+    if (!configuredUpiId) {
       await showAppToast("UPI ID is not configured yet.", "error");
       return;
     }
 
     try {
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(upiId);
+        await navigator.clipboard.writeText(configuredUpiId);
       } else {
         const input = document.createElement("textarea");
-        input.value = upiId;
+        input.value = configuredUpiId;
         input.style.position = "fixed";
         input.style.opacity = "0";
         document.body.appendChild(input);
@@ -166,7 +168,7 @@ export function CheckoutForm({
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <p className="rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
-              UPI ID: {upiId ?? "Not configured"}
+              UPI ID: {configuredUpiId}
             </p>
             <Button type="button" variant="ghost" className="!px-2.5 !py-1.5 text-xs" onClick={copyUpiId}>
               {copied ? <Check size={13} /> : <Copy size={13} />}
@@ -258,7 +260,11 @@ export function CheckoutForm({
 
         <div className="mx-auto w-fit rounded-2xl border border-[#c91510]/18 bg-white p-2 shadow-[0_0_0_4px_rgba(201,21,16,0.08)]">
           <div className="relative h-52 w-52 overflow-hidden rounded-xl border border-[#c91510]/18 bg-white">
-            <Image src="/upi-qr.svg" alt="UPI QR Code" fill className="object-contain p-3" />
+            {upiQrCodeUrl ? (
+              <Image src={upiQrCodeUrl} alt="UPI QR Code" fill className="object-contain p-3" unoptimized />
+            ) : (
+              <Image src="/upi-qr.svg" alt="UPI QR placeholder" fill className="object-contain p-3" />
+            )}
           </div>
         </div>
 
