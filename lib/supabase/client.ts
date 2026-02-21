@@ -18,15 +18,13 @@ export function createBrowserSupabaseClient() {
     browserClient = createBrowserClient<Database>(
       env.NEXT_PUBLIC_SUPABASE_URL,
       env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      {
-        auth: {
-          storageKey: "mmart.auth.token",
-          persistSession: true,
-          detectSessionInUrl: true,
-          flowType: "pkce",
-          ...(nativeRuntime ? { storage: createSupabaseAuthStorage() } : {}),
-        },
-      },
+      nativeRuntime
+        ? {
+          auth: {
+            storage: createSupabaseAuthStorage(),
+          },
+        }
+        : {},
     );
   }
 

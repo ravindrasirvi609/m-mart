@@ -53,9 +53,20 @@ export function NotificationCenter({
   className,
 }: NotificationCenterProps) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState(initialNotifications);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  // Sync initialNotifications from server on revalidation
+  useEffect(() => {
+    setNotifications(initialNotifications);
+  }, [initialNotifications]);
+
+  // Set mounted on client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const { permission, requestPermission, sendPush } = usePushNotifications();
 
@@ -63,11 +74,6 @@ export function NotificationCenter({
     (count, n) => count + (n.is_read ? 0 : 1),
     0,
   );
-
-  // Sync initialNotifications from server on revalidation
-  useEffect(() => {
-    setNotifications(initialNotifications);
-  }, [initialNotifications]);
 
   /* ----- Client-side filter: only show notifications for this user/role ----- */
   const isRelevantNotification = useCallback(
@@ -94,7 +100,7 @@ export function NotificationCenter({
           return [incoming, ...current].slice(0, 20);
         });
 
-        // Toast + push + bell
+        // Toast + push
         toast(incoming.title, { description: incoming.message });
         void sendPush(incoming.title, incoming.message, {
           tag: `notif-${incoming.id}`,
@@ -218,7 +224,7 @@ export function NotificationCenter({
         aria-label="Notifications"
       >
         {unreadCount > 0 ? <BellRing size={17} /> : <Bell size={17} />}
-        {unreadCount > 0 && (
+        {mounted && unreadCount > 0 && (
           <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#e10600] px-1 text-[10px] font-bold text-white">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
@@ -248,14 +254,16 @@ export function NotificationCenter({
               >
                 Notifications
               </p>
-              <RealtimeStatusDot
-                status={realtimeStatus}
-                className={
-                  mode === "admin"
-                    ? "text-zinc-400"
-                    : "text-zinc-500 dark:text-zinc-400"
-                }
-              />
+              {mounted && (
+                <RealtimeStatusDot
+                  status={realtimeStatus}
+                  className={
+                    mode === "admin"
+                      ? "text-zinc-400"
+                      : "text-zinc-500 dark:text-zinc-400"
+                  }
+                />
+              )}
             </div>
             <button
               type="button"
@@ -272,41 +280,50 @@ export function NotificationCenter({
             </button>
           </div>
 
-          {/* Push permission banner */}
-          <div className="mb-3 space-y-2">
-            {permission === "granted" ? (
-              <p
-                className={cn(
-                  "text-xs",
-                  mode === "admin"
-                    ? "text-zinc-400"
-                    : "text-zinc-600 dark:text-zinc-300",
-                )}
-              >
-                ✓ Browser push notifications enabled.
-              </p>
-            ) : permission === "unsupported" ? (
-              <p
-                className={cn(
-                  "text-xs",
-                  mode === "admin"
-                    ? "text-zinc-400"
-                    : "text-zinc-600 dark:text-zinc-300",
-                )}
-              >
-                Push notifications not supported in this browser.
-              </p>
-            ) : (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void requestPermission()}
-                className="w-full text-[10px]"
-              >
-                🔔 Enable Push Notifications
-              </Button>
-            )}
-          </div>
+          {/* Push permission banner - mounted guard for hydration safety */}
+          {mounted && (
+            <div className="mb-3 space-y-2">
+              {permission === "granted" ? (
+                <p
+                  className={cn(
+                    "text-xs",
+                    mode === "admin"
+                      ? "text-zinc-400"
+                      : "text-zinc-600 dark:text-zinc-300",
+                  )}
+                >
+                  ✓ Browser push notifications enabled.
+                </p>
+              ) : permission === "unsupported" ? (
+                <p
+                  className={cn(
+                    "text-xs",
+                    mode === "admin"
+                      ? "text-zinc-400"
+                      : "text-zinc-600 dark:text-zinc-300",
+                  )}
+                >
+                  Push notifications not supported in this browser.
+                </p>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void requestPermission()}
+                  className="w-full text-[10px]"
+                >
+                  🔔 Enable Push Notifications
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Offline Debug Hint */}
+          {mounted && realtimeStatus === "disconnected" && (
+            <p className="mb-2 text-[9px] text-amber-600 dark:text-amber-400 text-center animate-pulse">
+              Realtime Offline. Polling active every 30s.
+            </p>
+          )}
 
           {/* Notification list */}
           <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
@@ -383,3 +400,4 @@ export function NotificationCenter({
     </div>
   );
 }
+

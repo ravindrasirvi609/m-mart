@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, Moon, Phone, ShoppingCart, Sun, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 
 import { NotificationCenter } from "@/components/notifications/notification-center";
@@ -40,7 +40,10 @@ export function MainHeader({
   const pathname = usePathname();
   const { totalItems } = useCart();
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { setTheme, resolvedTheme } = useTheme();
+
+  useEffect(() => setMounted(true), []);
 
   const links = isAdmin
     ? [...baseLinks, { href: "/admin", label: "Admin" }]
@@ -92,7 +95,7 @@ export function MainHeader({
             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-red-100 text-zinc-600 transition hover:bg-red-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
             aria-label="Toggle theme"
           >
-            {resolvedTheme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+            {mounted && resolvedTheme === "dark" ? <Sun size={17} /> : mounted ? <Moon size={17} /> : <div className="h-[17px] w-[17px]" />}
           </button>
 
           <Link

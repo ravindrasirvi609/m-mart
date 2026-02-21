@@ -92,7 +92,12 @@ function getAddressLabel(address: OrderAddress) {
 export function OrdersClient({ orders }: OrdersClientProps) {
   const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+  const [mounted, setMounted] = useState(false);
   const liveOrdersRef = useRef<AdminOrder[]>(orders);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const [statusOverrides, setStatusOverrides] = useState<
     Record<string, { payment_status: string; order_status: string }>

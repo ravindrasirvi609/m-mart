@@ -194,18 +194,33 @@ export function useRealtimeChannel<T extends TableName>({
     useEffect(() => {
         mountedRef.current = true;
 
+        console.debug("[Realtime] Status Check:", {
+            enabled,
+            hasSession,
+            url: env.NEXT_PUBLIC_SUPABASE_URL,
+            keyPrefix: env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.slice(0, 10),
+            channelName,
+        });
+
         if (enabled && hasSession) {
             subscribe();
         } else {
             cleanup();
             setStatus("disconnected");
+            if (!hasSession && enabled) {
+                console.info(`[Realtime] ⏸ Waiting for auth session before connecting to "${channelName}"...`);
+            }
         }
 
         return () => {
             mountedRef.current = false;
             cleanup();
         };
-    }, [enabled, hasSession, subscribe, cleanup]);
+    }, [enabled, hasSession, subscribe, cleanup, channelName]);
 
     return { status, hasSession };
 }
+
+import { getPublicEnv } from "@/lib/env";
+const env = getPublicEnv();
+

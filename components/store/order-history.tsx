@@ -53,8 +53,13 @@ type OrderHistoryProps = {
 export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
   const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
+  const [mounted, setMounted] = useState(false);
   const [orders, setOrders] = useState(initialOrders);
   const ordersRef = useRef(initialOrders);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const { sendPush } = usePushNotifications();
 

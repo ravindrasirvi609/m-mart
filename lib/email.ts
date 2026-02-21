@@ -177,7 +177,7 @@ export async function sendLowStockEmail(
               </table>
 
               <div style="text-align: center; margin-top: 32px;">
-                <a href="${env.NEXT_PUBLIC_BASE_URL || "https://mmart.example"}/admin/products" style="display: inline-block; background-color: #111827; color: #ffffff; padding: 12px 24px; border-radius: 8px; font-weight: 600; text-decoration: none;">Manage Inventory</a>
+                <a href="${env.NEXT_PUBLIC_BASE_URL || "https://mmart4u.com"}/admin/products" style="display: inline-block; background-color: #111827; color: #ffffff; padding: 12px 24px; border-radius: 8px; font-weight: 600; text-decoration: none;">Manage Inventory</a>
               </div>
             </div>
           </div>
