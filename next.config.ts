@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
+const isProduction = process.env.NODE_ENV === "production";
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https://fonts.gstatic.com",
@@ -18,7 +19,16 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: "8mb",
+      allowedOrigins: [
+        "localhost:3000",
+        "127.0.0.1:3000",
+        "mmart4u.com",
+        "www.mmart4u.com",
+      ],
     },
+  },
+  compiler: {
+    removeConsole: isProduction,
   },
   poweredByHeader: false,
   images: {

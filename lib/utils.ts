@@ -47,3 +47,12 @@ export function formatDate(date: string | Date) {
     minute: "2-digit",
   }).format(new Date(date));
 }
+
+export function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("\"", "&quot;")
+    .replaceAll("'", "&#39;");
+}

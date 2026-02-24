@@ -2,6 +2,11 @@ import { type EmailOtpType } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { recordSecurityEvent } from "@/lib/security/audit";
+import { detectSuspiciousLogin } from "@/lib/security/auth-monitor";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
+import { getRequestMetadata } from "@/lib/security/request";
+import { blacklistToken, isTokenBlacklisted } from "@/lib/security/token-blacklist";
 import { normalizeSupabaseCookieOptions } from "@/lib/supabase/proxy";
 
 function getSafeNextPath(nextPath: string | null, fallback = "/") {
@@ -22,6 +27,18 @@ export async function GET(request: NextRequest) {
   const tokenHash = requestUrl.searchParams.get("token_hash");
   const type = requestUrl.searchParams.get("type") as EmailOtpType | null;
   const nextPath = getSafeNextPath(requestUrl.searchParams.get("next"));
+  const metadata = await getRequestMetadata();
+  const limiter = consumeRateLimit({
+    key: `auth_callback:${metadata.ip}`,
+    limit: 60,
+    windowMs: 60_000,
+  });
+
+  if (!limiter.allowed) {
+    return NextResponse.redirect(
+      new URL("/login?error=Too many authentication attempts. Try again shortly.", request.url),
+    );
+  }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -35,6 +52,7 @@ export async function GET(request: NextRequest) {
   // Using cookies() from next/headers does NOT transfer cookies to a
   // NextResponse.redirect(), which causes session loss in production.
   const response = NextResponse.redirect(new URL(nextPath, request.url));
+  response.headers.set("Cache-Control", "no-store");
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -54,22 +72,67 @@ export async function GET(request: NextRequest) {
   });
 
   if (tokenHash && type) {
+    const replayed = await isTokenBlacklisted(tokenHash);
+    if (replayed) {
+      await recordSecurityEvent({
+        eventType: "auth_callback_blocked_replay",
+        outcome: "blocked",
+        riskLevel: "high",
+        ip: metadata.ip,
+        userAgent: metadata.userAgent,
+      });
+      return NextResponse.redirect(
+        new URL("/login?error=This sign-in link has already been used.", request.url),
+      );
+    }
+
     const { error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
       type,
     });
     if (error) {
-      console.error("Auth callback OTP error:", error.message);
-      return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error.message)}`, request.url));
+      await blacklistToken(tokenHash, 3600);
+      await recordSecurityEvent({
+        eventType: "auth_callback_verify_failed",
+        outcome: "failure",
+        riskLevel: "medium",
+        ip: metadata.ip,
+        userAgent: metadata.userAgent,
+        metadata: {
+          reason: "otp_verification_failed",
+        },
+      });
+      return NextResponse.redirect(
+        new URL("/login?error=Sign-in link is invalid or expired.", request.url),
+      );
     }
+
+    await blacklistToken(tokenHash, 3600);
   } else if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
-      console.error("Auth callback code error:", error.message);
-      return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error.message)}`, request.url));
+      await recordSecurityEvent({
+        eventType: "auth_callback_code_exchange_failed",
+        outcome: "failure",
+        riskLevel: "medium",
+        ip: metadata.ip,
+        userAgent: metadata.userAgent,
+        metadata: {
+          reason: "code_exchange_failed",
+        },
+      });
+      return NextResponse.redirect(
+        new URL("/login?error=Sign-in session could not be created.", request.url),
+      );
     }
   } else {
-    console.error("Auth callback error: No token_hash or code provided");
+    await recordSecurityEvent({
+      eventType: "auth_callback_missing_params",
+      outcome: "failure",
+      riskLevel: "medium",
+      ip: metadata.ip,
+      userAgent: metadata.userAgent,
+    });
     return NextResponse.redirect(new URL("/login?error=Invalid login link", request.url));
   }
 
@@ -79,7 +142,13 @@ export async function GET(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    console.error("Auth callback user error:", userError?.message ?? "No user found");
+    await recordSecurityEvent({
+      eventType: "auth_callback_no_user",
+      outcome: "failure",
+      riskLevel: "high",
+      ip: metadata.ip,
+      userAgent: metadata.userAgent,
+    });
     return NextResponse.redirect(new URL("/login?error=Session creation failed", request.url));
   }
 
@@ -93,9 +162,43 @@ export async function GET(request: NextRequest) {
     });
 
     if (upsertError) {
-      console.error("Auth callback user upsert error:", upsertError.message);
+      await recordSecurityEvent({
+        eventType: "auth_callback_profile_sync_failed",
+        outcome: "failure",
+        riskLevel: "medium",
+        ip: metadata.ip,
+        userAgent: metadata.userAgent,
+        email: user.email,
+        userId: user.id,
+      });
       return NextResponse.redirect(new URL("/login?error=Account sync failed", request.url));
     }
+  }
+
+  await recordSecurityEvent({
+    eventType: "auth_callback_success",
+    outcome: "success",
+    riskLevel: "low",
+    ip: metadata.ip,
+    userAgent: metadata.userAgent,
+    email: user.email ?? undefined,
+    userId: user.id,
+  });
+
+  const suspiciousLogin = detectSuspiciousLogin(user.email ?? "", metadata.ip);
+  if (suspiciousLogin) {
+    await recordSecurityEvent({
+      eventType: "auth_login_suspicious_pattern",
+      outcome: "suspicious",
+      riskLevel: "high",
+      ip: metadata.ip,
+      userAgent: metadata.userAgent,
+      email: user.email ?? undefined,
+      userId: user.id,
+      metadata: {
+        reason: "multiple_ips_seen_for_account_in_24h",
+      },
+    });
   }
 
   return response;

@@ -1,5 +1,7 @@
 import type { PostgrestError } from "@supabase/supabase-js";
+import { z } from "zod";
 
+import { assertAdminForAction } from "@/lib/auth";
 import { LOW_STOCK_THRESHOLD, PAGE_SIZE } from "@/lib/constants";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -130,6 +132,7 @@ export async function getUserOrders(userId: string) {
 }
 
 export async function getAdminDashboardData() {
+  await assertAdminForAction();
   const supabase = createAdminSupabaseClient();
 
   const [
@@ -185,6 +188,7 @@ export async function getAdminDashboardData() {
 }
 
 export async function getAdminProducts() {
+  await assertAdminForAction();
   const supabase = createAdminSupabaseClient();
 
   const [{ data: products }, { data: categories }] = await Promise.all([
@@ -196,10 +200,19 @@ export async function getAdminProducts() {
 }
 
 export async function getAdminProductById(productId: string) {
+  await assertAdminForAction();
+  const parsedProductId = z.string().uuid().safeParse(productId);
+  if (!parsedProductId.success) {
+    return {
+      product: null,
+      categories: [],
+    };
+  }
+
   const supabase = createAdminSupabaseClient();
 
   const [{ data: product }, { data: categories }] = await Promise.all([
-    supabase.from("products").select("*").eq("id", productId).single(),
+    supabase.from("products").select("*").eq("id", parsedProductId.data).single(),
     supabase.from("categories").select("*").eq("is_active", true).order("name"),
   ]);
 
@@ -210,6 +223,7 @@ export async function getAdminProductById(productId: string) {
 }
 
 export async function getAdminOrders() {
+  await assertAdminForAction();
   const supabase = createAdminSupabaseClient();
   const { data } = await supabase
     .from("orders")
@@ -298,6 +312,7 @@ export async function getCurrentUserNotifications({
 }
 
 export async function getAdminUsersData() {
+  await assertAdminForAction();
   const supabase = createAdminSupabaseClient();
   const [{ data: users }, { data: adminUsers }] = await Promise.all([
     supabase

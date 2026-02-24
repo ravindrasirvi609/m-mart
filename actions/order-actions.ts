@@ -7,6 +7,9 @@ import { assertUserForAction } from "@/lib/auth";
 import { LOW_STOCK_THRESHOLD } from "@/lib/constants";
 import { sendLowStockEmail, sendOrderEmails } from "@/lib/email";
 import { createOrderPlacedNotifications } from "@/lib/notifications";
+import { toPublicErrorMessage } from "@/lib/security/errors";
+import { assertTrustedRequestOrigin } from "@/lib/security/request";
+import { validateImageFile } from "@/lib/security/upload";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { sanitizeFileName } from "@/lib/utils";
 
@@ -46,13 +49,10 @@ function getFile(entry: FormDataEntryValue | null): File | null {
 }
 
 async function uploadPaymentScreenshot(file: File, userId: string) {
-  if (!allowedScreenshotTypes.has(file.type)) {
-    throw new Error("Payment screenshot must be PNG, JPG, or WEBP.");
-  }
-
-  if (file.size > 5 * 1024 * 1024) {
-    throw new Error("Payment screenshot must be smaller than 5MB.");
-  }
+  await validateImageFile(file, {
+    allowedMimeTypes: allowedScreenshotTypes,
+    maxBytes: 5 * 1024 * 1024,
+  });
 
   const admin = createAdminSupabaseClient();
   const filePath = `payments/${userId}/${Date.now()}-${sanitizeFileName(file.name)}`;
@@ -76,6 +76,7 @@ async function uploadPaymentScreenshot(file: File, userId: string) {
 
 export async function placeOrderAction(formData: FormData): Promise<PlaceOrderResult> {
   try {
+    await assertTrustedRequestOrigin();
     const user = await assertUserForAction();
     const admin = createAdminSupabaseClient();
 
@@ -90,7 +91,13 @@ export async function placeOrderAction(formData: FormData): Promise<PlaceOrderRe
     }
 
     const rawCart = String(formData.get("cart_payload") || "[]");
-    const parsedJson = JSON.parse(rawCart) as unknown;
+    let parsedJson: unknown;
+    try {
+      parsedJson = JSON.parse(rawCart) as unknown;
+    } catch {
+      return { ok: false, error: "Cart payload is invalid." };
+    }
+
     const cartValidation = z.array(cartItemSchema).min(1).safeParse(parsedJson);
 
     if (!cartValidation.success) {
@@ -111,7 +118,7 @@ export async function placeOrderAction(formData: FormData): Promise<PlaceOrderRe
       .in("id", productIds);
 
     if (productError) {
-      return { ok: false, error: productError.message };
+      return { ok: false, error: "Unable to validate cart items at this time." };
     }
 
     const productMap = new Map(products?.map((item) => [item.id, item]));
@@ -149,7 +156,7 @@ export async function placeOrderAction(formData: FormData): Promise<PlaceOrderRe
     );
 
     if (rpcError) {
-      return { ok: false, error: rpcError.message };
+      return { ok: false, error: "Unable to place order right now. Please try again." };
     }
 
     const orderResult = Array.isArray(rpcData) ? rpcData[0] : rpcData;
@@ -195,7 +202,7 @@ export async function placeOrderAction(formData: FormData): Promise<PlaceOrderRe
       },
       admin,
     ).catch((error) => {
-      console.error("[Orders] Failed to create order notifications:", error);
+      void error;
     });
 
     await Promise.allSettled([
@@ -219,10 +226,9 @@ export async function placeOrderAction(formData: FormData): Promise<PlaceOrderRe
 
     return { ok: true, orderId };
   } catch (error) {
-    if (error instanceof Error) {
-      return { ok: false, error: error.message };
-    }
-
-    return { ok: false, error: "Unexpected error while placing order." };
+    return {
+      ok: false,
+      error: toPublicErrorMessage(error, "Unexpected error while placing order."),
+    };
   }
 }

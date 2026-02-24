@@ -9,6 +9,17 @@ type AuthDeepLinkResult =
   | { handled: false }
   | { handled: true; nextPath?: string; error?: string };
 
+const consumedTokenHashes = new Map<string, number>();
+
+function cleanupConsumedTokenHashes() {
+  const now = Date.now();
+  for (const [tokenHash, expiresAt] of consumedTokenHashes.entries()) {
+    if (expiresAt <= now) {
+      consumedTokenHashes.delete(tokenHash);
+    }
+  }
+}
+
 function getSafeNextPath(nextPath: string | null, fallback = "/") {
   if (!nextPath) {
     return fallback;
@@ -52,13 +63,22 @@ export async function handleSupabaseAuthDeepLink(url: string): Promise<AuthDeepL
         return { handled: true, error: "Missing auth callback parameters." };
       }
 
+      cleanupConsumedTokenHashes();
+      const replayed = consumedTokenHashes.has(tokenHash);
+      if (replayed) {
+        return { handled: true, error: "This sign-in link has already been used." };
+      }
+
       const { error } = await supabase.auth.verifyOtp({
         token_hash: tokenHash,
         type: type as EmailOtpType,
       });
       if (error) {
+        consumedTokenHashes.set(tokenHash, Date.now() + 60 * 60 * 1000);
         return { handled: true, error: error.message };
       }
+
+      consumedTokenHashes.set(tokenHash, Date.now() + 60 * 60 * 1000);
     }
 
     const {

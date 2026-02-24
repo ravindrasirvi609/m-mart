@@ -2,6 +2,13 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const SHARED_PRODUCTION_COOKIE_DOMAIN = ".mmart4u.com";
+const SECURITY_HEADERS: Record<string, string> = {
+  "X-DNS-Prefetch-Control": "off",
+  "X-Download-Options": "noopen",
+  "X-Permitted-Cross-Domain-Policies": "none",
+  "Cross-Origin-Opener-Policy": "same-origin",
+  "Cross-Origin-Resource-Policy": "same-site",
+};
 
 function shouldScopeCookiesToSharedDomain(request: NextRequest) {
   if (process.env.NODE_ENV !== "production") {
@@ -26,7 +33,18 @@ export function normalizeSupabaseCookieOptions(
     normalizedOptions.domain = SHARED_PRODUCTION_COOKIE_DOMAIN;
   }
 
+  normalizedOptions.httpOnly = true;
+  normalizedOptions.secure = process.env.NODE_ENV === "production";
+  normalizedOptions.sameSite = "lax";
+  normalizedOptions.path = "/";
+
   return normalizedOptions;
+}
+
+function applySecurityHeaders(response: NextResponse) {
+  for (const [header, value] of Object.entries(SECURITY_HEADERS)) {
+    response.headers.set(header, value);
+  }
 }
 
 export async function updateSession(request: NextRequest) {
@@ -73,5 +91,6 @@ export async function updateSession(request: NextRequest) {
   // If this is not done, the browser and server go out of sync and the
   // user's session can be terminated prematurely.
 
+  applySecurityHeaders(supabaseResponse);
   return supabaseResponse;
 }

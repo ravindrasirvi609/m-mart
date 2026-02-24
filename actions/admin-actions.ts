@@ -10,6 +10,9 @@ import {
   ORDER_STATUS_OPTIONS,
   PAYMENT_STATUS_OPTIONS,
 } from "@/lib/constants";
+import { toPublicErrorMessage } from "@/lib/security/errors";
+import { assertTrustedRequestOrigin } from "@/lib/security/request";
+import { validateImageFile } from "@/lib/security/upload";
 import { sanitizeFileName } from "@/lib/utils";
 
 const categorySchema = z.object({
@@ -38,13 +41,10 @@ function getImageFile(entry: FormDataEntryValue | null) {
 }
 
 async function uploadProductImage(file: File) {
-  if (!allowedImageTypes.has(file.type)) {
-    throw new Error("Unsupported product image format.");
-  }
-
-  if (file.size > 4 * 1024 * 1024) {
-    throw new Error("Product image must be smaller than 4MB.");
-  }
+  await validateImageFile(file, {
+    allowedMimeTypes: allowedImageTypes,
+    maxBytes: 4 * 1024 * 1024,
+  });
 
   const admin = createAdminSupabaseClient();
   const filePath = `products/${Date.now()}-${sanitizeFileName(file.name)}`;
@@ -65,6 +65,7 @@ async function uploadProductImage(file: File) {
 
 export async function upsertCategoryAction(_prevState: unknown, formData: FormData) {
   try {
+    await assertTrustedRequestOrigin();
     await assertAdminForAction();
 
     const parsed = categorySchema.safeParse({
@@ -82,7 +83,7 @@ export async function upsertCategoryAction(_prevState: unknown, formData: FormDa
     });
 
     if (error) {
-      return { ok: false, error: error.message };
+      return { ok: false, error: "Unable to save category. Please try again." };
     }
 
     revalidatePath("/admin/products");
@@ -90,16 +91,16 @@ export async function upsertCategoryAction(_prevState: unknown, formData: FormDa
 
     return { ok: true, message: "Category saved successfully." };
   } catch (error) {
-    console.error("Error upserting category:", error);
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Failed to save category",
+      error: toPublicErrorMessage(error, "Failed to save category."),
     };
   }
 }
 
 export async function upsertProductAction(_prevState: unknown, formData: FormData) {
   try {
+    await assertTrustedRequestOrigin();
     await assertAdminForAction();
     const parsed = productSchema.safeParse({
       id: formData.get("id") || undefined,
@@ -114,7 +115,6 @@ export async function upsertProductAction(_prevState: unknown, formData: FormDat
     });
 
     if (!parsed.success) {
-      console.error("Product validation failed:", parsed.error.format());
       return { ok: false, error: "Product form is invalid." };
     }
 
@@ -159,13 +159,13 @@ export async function upsertProductAction(_prevState: unknown, formData: FormDat
         .eq("id", parsed.data.id);
 
       if (error) {
-        return { ok: false, error: error.message };
+        return { ok: false, error: "Unable to update product right now." };
       }
     } else {
       const { error } = await admin.from("products").insert(payload);
 
       if (error) {
-        return { ok: false, error: error.message };
+        return { ok: false, error: "Unable to create product right now." };
       }
     }
 
@@ -180,28 +180,27 @@ export async function upsertProductAction(_prevState: unknown, formData: FormDat
         : "Product created successfully.",
     };
   } catch (error) {
-    console.error("Error upserting product:", error);
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Failed to save product",
+      error: toPublicErrorMessage(error, "Failed to save product."),
     };
   }
 }
 
 export async function deleteProductAction(_prevState: unknown, formData: FormData) {
   try {
+    await assertTrustedRequestOrigin();
     await assertAdminForAction();
-    const id = String(formData.get("id") || "");
-
-    if (!id) {
+    const idPayload = z.string().uuid().safeParse(formData.get("id"));
+    if (!idPayload.success) {
       return { ok: false, error: "Missing product id." };
     }
 
     const admin = createAdminSupabaseClient();
-    const { error } = await admin.from("products").delete().eq("id", id);
+    const { error } = await admin.from("products").delete().eq("id", idPayload.data);
 
     if (error) {
-      return { ok: false, error: error.message };
+      return { ok: false, error: "Unable to delete product right now." };
     }
 
     revalidatePath("/admin/products");
@@ -210,10 +209,9 @@ export async function deleteProductAction(_prevState: unknown, formData: FormDat
 
     return { ok: true, message: "Product deleted successfully." };
   } catch (error) {
-    console.error("Error deleting product:", error);
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Failed to delete product",
+      error: toPublicErrorMessage(error, "Failed to delete product."),
     };
   }
 }
@@ -229,6 +227,7 @@ export async function updateOrderStatusAction(
   formData: FormData,
 ) {
   try {
+    await assertTrustedRequestOrigin();
     await assertAdminForAction();
 
     const parsed = orderStatusSchema.safeParse({
@@ -249,7 +248,7 @@ export async function updateOrderStatusAction(
       .single();
 
     if (orderError || !order) {
-      return { ok: false, error: orderError?.message ?? "Order not found." };
+      return { ok: false, error: "Order not found." };
     }
 
     const hasStatusChange =
@@ -269,7 +268,7 @@ export async function updateOrderStatusAction(
       .eq("id", parsed.data.orderId);
 
     if (error) {
-      return { ok: false, error: error.message };
+      return { ok: false, error: "Unable to update order status right now." };
     }
 
     await createOrderStatusUpdateNotification(
@@ -281,10 +280,7 @@ export async function updateOrderStatusAction(
       },
       admin,
     ).catch((notificationError) => {
-      console.error(
-        `[Orders] Failed to create status notification for order ${order.id}:`,
-        notificationError,
-      );
+      void notificationError;
     });
 
     revalidatePath("/admin/orders");
@@ -293,10 +289,9 @@ export async function updateOrderStatusAction(
 
     return { ok: true, message: "Order status updated successfully." };
   } catch (error) {
-    console.error("Error updating order status:", error);
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Failed to update status",
+      error: toPublicErrorMessage(error, "Failed to update status."),
     };
   }
 }

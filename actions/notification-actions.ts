@@ -1,6 +1,10 @@
 "use server";
 
+import { z } from "zod";
+
 import { assertUserForAction, checkIsAdmin } from "@/lib/auth";
+import { toPublicErrorMessage } from "@/lib/security/errors";
+import { assertTrustedRequestOrigin } from "@/lib/security/request";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 type MarkNotificationsReadResult =
@@ -11,7 +15,13 @@ export async function markNotificationsReadAction(
   ids: string[],
 ): Promise<MarkNotificationsReadResult> {
   try {
-    const normalizedIds = ids.filter((id) => typeof id === "string" && id.length > 0);
+    await assertTrustedRequestOrigin();
+    const idsPayload = z.array(z.string().uuid()).max(100).safeParse(ids);
+    if (!idsPayload.success) {
+      return { ok: false, error: "Invalid notification payload." };
+    }
+
+    const normalizedIds = [...new Set(idsPayload.data)];
 
     if (normalizedIds.length === 0) {
       return { ok: true, updatedCount: 0 };
@@ -36,15 +46,11 @@ export async function markNotificationsReadAction(
     const { data, error } = await query;
 
     if (error) {
-      return { ok: false, error: error.message };
+      return { ok: false, error: "Unable to update notifications right now." };
     }
 
     return { ok: true, updatedCount: data?.length ?? 0 };
   } catch (error) {
-    if (error instanceof Error) {
-      return { ok: false, error: error.message };
-    }
-
-    return { ok: false, error: "Failed to update notifications." };
+    return { ok: false, error: toPublicErrorMessage(error, "Failed to update notifications.") };
   }
 }

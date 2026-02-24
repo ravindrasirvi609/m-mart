@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 
 import { getServerEnv } from "@/lib/env";
+import { recordSecurityEvent } from "@/lib/security/audit";
+import { logger } from "@/lib/security/logger";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
@@ -49,7 +51,7 @@ export async function checkIsAdmin(email: string | null | undefined): Promise<bo
     .maybeSingle();
 
   if (error) {
-    console.error("[Auth] Error checking admin_users table:", error.message);
+    logger.warn("[Auth] Error checking admin_users table:", error.message);
     return false;
   }
 
@@ -81,7 +83,13 @@ export async function requireAdmin() {
 
   const isAdmin = await checkIsAdmin(user.email);
   if (!isAdmin) {
-    console.warn(`[Auth] Unauthorized admin access attempt by ${user.email}`);
+    await recordSecurityEvent({
+      eventType: "admin_access_denied",
+      outcome: "blocked",
+      riskLevel: "high",
+      email: user.email ?? undefined,
+      userId: user.id,
+    });
     redirect("/");
   }
 

@@ -77,6 +77,35 @@ create table if not exists public.notifications (
   )
 );
 
+create table if not exists public.security_audit_logs (
+  id uuid primary key default gen_random_uuid(),
+  event_type text not null,
+  outcome text not null check (outcome in ('success', 'failure', 'blocked', 'suspicious')),
+  risk_level text not null check (risk_level in ('low', 'medium', 'high', 'critical')),
+  email text,
+  user_id uuid references public.users(id) on delete set null,
+  ip_address text,
+  user_agent text,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.revoked_refresh_tokens (
+  token_hash text primary key,
+  user_id uuid references public.users(id) on delete set null,
+  revoked_reason text,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.user_security_settings (
+  user_id uuid primary key references public.users(id) on delete cascade,
+  two_factor_enabled boolean not null default false,
+  two_factor_secret_encrypted text,
+  recovery_codes_hashes jsonb not null default '[]'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists idx_products_category on public.products(category);
 create index if not exists idx_products_active on public.products(is_active);
 create index if not exists idx_orders_user on public.orders(user_id);
@@ -86,6 +115,10 @@ create index if not exists idx_notifications_target_role on public.notifications
 create index if not exists idx_notifications_user_id on public.notifications(user_id);
 create index if not exists idx_notifications_is_read on public.notifications(is_read);
 create index if not exists idx_notifications_created_at on public.notifications(created_at desc);
+create index if not exists idx_security_audit_logs_created_at on public.security_audit_logs(created_at desc);
+create index if not exists idx_security_audit_logs_event_type on public.security_audit_logs(event_type);
+create index if not exists idx_security_audit_logs_email on public.security_audit_logs(email);
+create index if not exists idx_revoked_refresh_tokens_expires_at on public.revoked_refresh_tokens(expires_at);
 
 create or replace function public.is_admin()
 returns boolean
@@ -231,6 +264,9 @@ alter table public.products enable row level security;
 alter table public.orders enable row level security;
 alter table public.order_items enable row level security;
 alter table public.notifications enable row level security;
+alter table public.security_audit_logs enable row level security;
+alter table public.revoked_refresh_tokens enable row level security;
+alter table public.user_security_settings enable row level security;
 
 -- admin_users policies
 drop policy if exists "Admin users readable by admins" on public.admin_users;
@@ -352,6 +388,42 @@ drop policy if exists "Admins can insert notifications" on public.notifications;
 create policy "Admins can insert notifications"
 on public.notifications for insert
 with check (public.is_admin());
+
+-- security audit logs policies
+drop policy if exists "Only admin can read audit logs" on public.security_audit_logs;
+create policy "Only admin can read audit logs"
+on public.security_audit_logs for select
+using (public.is_admin());
+
+drop policy if exists "Only admin can write audit logs" on public.security_audit_logs;
+create policy "Only admin can write audit logs"
+on public.security_audit_logs for all
+using (public.is_admin())
+with check (public.is_admin());
+
+-- revoked refresh tokens policies
+drop policy if exists "Only admin can read revoked tokens" on public.revoked_refresh_tokens;
+create policy "Only admin can read revoked tokens"
+on public.revoked_refresh_tokens for select
+using (public.is_admin());
+
+drop policy if exists "Only admin can write revoked tokens" on public.revoked_refresh_tokens;
+create policy "Only admin can write revoked tokens"
+on public.revoked_refresh_tokens for all
+using (public.is_admin())
+with check (public.is_admin());
+
+-- user security settings policies
+drop policy if exists "Users can view own security settings" on public.user_security_settings;
+create policy "Users can view own security settings"
+on public.user_security_settings for select
+using (user_id = auth.uid() or public.is_admin());
+
+drop policy if exists "Users can update own security settings" on public.user_security_settings;
+create policy "Users can update own security settings"
+on public.user_security_settings for all
+using (user_id = auth.uid() or public.is_admin())
+with check (user_id = auth.uid() or public.is_admin());
 
 -- Storage buckets
 insert into storage.buckets (id, name, public)

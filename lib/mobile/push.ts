@@ -25,7 +25,6 @@ export async function initializePushNotifications() {
   }
 
   if (permissionStatus.receive !== "granted") {
-    console.warn("Push notification permission was not granted.");
     return { available: true as const, enabled: false as const };
   }
 
@@ -39,16 +38,15 @@ export async function initializePushNotifications() {
       typeof (payload as { value: unknown }).value === "string"
         ? (payload as { value: string }).value
         : "Push token received (non-string payload)";
-    const tokenValue = value;
-    console.info("Push token ready:", tokenValue);
+    void value;
   });
 
-  await pushNotifications.addListener("registrationError", (error) => {
-    console.error("Push registration error:", error);
+  await pushNotifications.addListener("registrationError", (_error) => {
+    void _error;
   });
 
-  await pushNotifications.addListener("pushNotificationReceived", (notification) => {
-    console.info("Push notification received:", notification);
+  await pushNotifications.addListener("pushNotificationReceived", (_notification) => {
+    void _notification;
   });
 
   return { available: true as const, enabled: true as const };

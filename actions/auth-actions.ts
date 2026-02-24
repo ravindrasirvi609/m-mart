@@ -4,8 +4,19 @@ import { Resend } from "resend";
 import { headers } from "next/headers";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getServerEnv } from "@/lib/env";
+import { recordSecurityEvent } from "@/lib/security/audit";
+import {
+  getAuthLockState,
+  registerAuthFailure,
+  registerAuthSuccess,
+} from "@/lib/security/auth-monitor";
+import { SecurityError, toPublicErrorMessage } from "@/lib/security/errors";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
+import { assertTrustedRequestOrigin, getRequestMetadata } from "@/lib/security/request";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAGIC_LINK_IP_RATE_LIMIT = { limit: 15, windowMs: 5 * 60_000 };
+const MAGIC_LINK_EMAIL_RATE_LIMIT = { limit: 5, windowMs: 10 * 60_000 };
 
 function getSafeNextPath(nextPath: string | undefined, fallback = "/") {
   if (!nextPath) {
@@ -20,10 +31,73 @@ function getSafeNextPath(nextPath: string | undefined, fallback = "/") {
 }
 
 export async function sendMagicLinkAction(email: string, nextPath = "/") {
+  const metadata = await getRequestMetadata();
+
   try {
+    await assertTrustedRequestOrigin();
+
     const normalizedEmail = email.trim().toLowerCase();
     if (!EMAIL_REGEX.test(normalizedEmail)) {
+      registerAuthFailure(`magiclink:${normalizedEmail || "invalid"}`);
+      await recordSecurityEvent({
+        eventType: "magic_link_request_invalid_email",
+        outcome: "failure",
+        riskLevel: "medium",
+        ip: metadata.ip,
+        userAgent: metadata.userAgent,
+      });
       return { ok: false, error: "Please enter a valid email address." };
+    }
+
+    const ipLimiter = consumeRateLimit({
+      key: `magiclink:ip:${metadata.ip}`,
+      ...MAGIC_LINK_IP_RATE_LIMIT,
+    });
+    if (!ipLimiter.allowed) {
+      await recordSecurityEvent({
+        eventType: "magic_link_request_rate_limited_ip",
+        outcome: "blocked",
+        riskLevel: "high",
+        ip: metadata.ip,
+        userAgent: metadata.userAgent,
+        email: normalizedEmail,
+      });
+      return { ok: false, error: "Too many attempts. Please wait and try again." };
+    }
+
+    const emailLimiter = consumeRateLimit({
+      key: `magiclink:email:${normalizedEmail}`,
+      ...MAGIC_LINK_EMAIL_RATE_LIMIT,
+    });
+    if (!emailLimiter.allowed) {
+      await recordSecurityEvent({
+        eventType: "magic_link_request_rate_limited_email",
+        outcome: "blocked",
+        riskLevel: "high",
+        ip: metadata.ip,
+        userAgent: metadata.userAgent,
+        email: normalizedEmail,
+      });
+      return { ok: false, error: "Too many attempts for this email. Please try later." };
+    }
+
+    const lockState = getAuthLockState(`magiclink:${normalizedEmail}`);
+    if (lockState.locked) {
+      await recordSecurityEvent({
+        eventType: "magic_link_request_locked",
+        outcome: "blocked",
+        riskLevel: "high",
+        ip: metadata.ip,
+        userAgent: metadata.userAgent,
+        email: normalizedEmail,
+        metadata: {
+          retryAfterSeconds: lockState.retryAfterSeconds,
+        },
+      });
+      return {
+        ok: false,
+        error: `Account temporarily locked. Try again in ${lockState.retryAfterSeconds} seconds.`,
+      };
     }
 
     const env = getServerEnv();
@@ -44,12 +118,21 @@ export async function sendMagicLinkAction(email: string, nextPath = "/") {
     });
 
     if (error) {
-      console.error("Supabase generateLink error:", error.message);
-      return { ok: false, error: error.message };
+      const failureState = registerAuthFailure(`magiclink:${normalizedEmail}`);
+      await recordSecurityEvent({
+        eventType: "magic_link_request_generate_failed",
+        outcome: "failure",
+        riskLevel: failureState.locked ? "high" : "medium",
+        ip: metadata.ip,
+        userAgent: metadata.userAgent,
+        email: normalizedEmail,
+      });
+      return { ok: false, error: "Unable to send sign-in link right now. Please try again." };
     }
 
     const tokenHash = data.properties.hashed_token;
     if (!tokenHash) {
+      registerAuthFailure(`magiclink:${normalizedEmail}`);
       return { ok: false, error: "Could not generate sign-in token." };
     }
 
@@ -102,14 +185,39 @@ export async function sendMagicLinkAction(email: string, nextPath = "/") {
     });
 
     if (resendError) {
-      console.error("Resend error:", resendError);
+      registerAuthFailure(`magiclink:${normalizedEmail}`);
+      await recordSecurityEvent({
+        eventType: "magic_link_request_email_send_failed",
+        outcome: "failure",
+        riskLevel: "medium",
+        ip: metadata.ip,
+        userAgent: metadata.userAgent,
+        email: normalizedEmail,
+      });
       return { ok: false, error: "Failed to send email. Please try again later." };
     }
 
-    console.log(`Magic link successfully sent to ${normalizedEmail}`);
+    registerAuthSuccess(`magiclink:${normalizedEmail}`);
+    await recordSecurityEvent({
+      eventType: "magic_link_request_sent",
+      outcome: "success",
+      riskLevel: "low",
+      ip: metadata.ip,
+      userAgent: metadata.userAgent,
+      email: normalizedEmail,
+    });
     return { ok: true };
   } catch (err) {
-    console.error("Magic link action error:", err);
-    return { ok: false, error: "An unexpected error occurred." };
+    if (err instanceof SecurityError) {
+      await recordSecurityEvent({
+        eventType: "magic_link_request_blocked_origin",
+        outcome: "blocked",
+        riskLevel: "high",
+        ip: metadata.ip,
+        userAgent: metadata.userAgent,
+      });
+    }
+
+    return { ok: false, error: toPublicErrorMessage(err, "An unexpected error occurred.") };
   }
 }

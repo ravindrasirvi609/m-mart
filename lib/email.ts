@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 
 import { getServerEnv } from "@/lib/env";
-import { formatCurrency } from "@/lib/utils";
+import { escapeHtml, formatCurrency } from "@/lib/utils";
 
 type EmailItem = {
   name: string;
@@ -20,11 +20,14 @@ type OrderEmailPayload = {
 };
 
 function renderOrderHtml(payload: OrderEmailPayload, env: ReturnType<typeof getServerEnv>) {
+  const safeCustomerName = escapeHtml(payload.customerName || "Customer");
+  const safeDeliveryAddress = escapeHtml(payload.deliveryAddress);
+
   const itemsHtml = payload.items
     .map(
       (item) => `
       <tr style="border-bottom: 1px solid #edf2f7;">
-        <td style="padding: 12px 0; color: #4a5568;">${item.name} <span style="font-size: 12px; color: #718096;">× ${item.quantity}</span></td>
+        <td style="padding: 12px 0; color: #4a5568;">${escapeHtml(item.name)} <span style="font-size: 12px; color: #718096;">× ${item.quantity}</span></td>
         <td style="padding: 12px 0; text-align: right; color: #1a202c; font-weight: 600;">${formatCurrency(item.price * item.quantity)}</td>
       </tr>`,
     )
@@ -48,7 +51,7 @@ function renderOrderHtml(payload: OrderEmailPayload, env: ReturnType<typeof getS
           <!-- Body -->
           <div style="padding: 32px 24px;">
             <h2 style="color: #111827; margin: 0 0 16px; font-size: 20px; font-weight: 700;">Order Confirmation</h2>
-            <p style="color: #4b5563; margin-bottom: 24px; line-height: 1.5;">Hi ${payload.customerName || "Customer"}, your order has been placed successfully. We're getting it ready for delivery!</p>
+            <p style="color: #4b5563; margin-bottom: 24px; line-height: 1.5;">Hi ${safeCustomerName}, your order has been placed successfully. We're getting it ready for delivery!</p>
             
             <div style="background-color: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 24px; border: 1px solid #f3f4f6;">
               <p style="margin: 0 0 8px; font-size: 13px; color: #6b7280; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em;">Order Details</p>
@@ -58,7 +61,7 @@ function renderOrderHtml(payload: OrderEmailPayload, env: ReturnType<typeof getS
 
             <div style="margin-bottom: 24px;">
               <p style="margin: 0 0 8px; font-size: 13px; color: #6b7280; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em;">Delivery Address</p>
-              <p style="margin: 0; color: #111827; line-height: 1.5;">${payload.deliveryAddress}</p>
+              <p style="margin: 0; color: #111827; line-height: 1.5;">${safeDeliveryAddress}</p>
             </div>
 
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
@@ -168,7 +171,7 @@ export async function sendLowStockEmail(
         .map(
           (item) => `
                     <tr style="border-bottom: 1px solid #edf2f7;">
-                      <td style="padding: 12px 0; color: #1a202c; font-weight: 500;">${item.name}</td>
+                      <td style="padding: 12px 0; color: #1a202c; font-weight: 500;">${escapeHtml(item.name)}</td>
                       <td style="padding: 12px 0; text-align: right; color: #dc2626; font-weight: 700;">${item.stock}</td>
                     </tr>`,
         )
