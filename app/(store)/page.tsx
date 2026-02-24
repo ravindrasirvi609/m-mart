@@ -181,7 +181,7 @@ export default async function HomePage() {
                   <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#fff1eb] text-[#c91510] dark:bg-zinc-800">
                     <Icon size={24} />
                   </span>
-                  <span className="text-xs font-bold uppercase tracking-[0.08em] text-zinc-700 dark:text-zinc-200">
+                  <span className="text-xs font-bold uppercase tracking-[0.08em] text-text-subtle">
                     {category.name}
                   </span>
                 </Link>
@@ -196,7 +196,7 @@ export default async function HomePage() {
           <div className="premium-card flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-[#fff4ef] to-[#ffede5] p-4 dark:from-[#2a1b1e] dark:to-[#24181c]">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-[#c91510]">Today Offer</p>
-              <p className="font-heading text-xl font-bold text-zinc-900 dark:text-zinc-100">Free Delivery Above ₹500</p>
+              <p className="font-heading text-xl font-bold text-text-main">Free Delivery Above ₹500</p>
             </div>
             <BadgeCheck className="text-[#c91510]" />
           </div>
@@ -249,8 +249,8 @@ export default async function HomePage() {
               <Reveal key={feature.title} delay={index * 90}>
                 <article className="glow-on-hover premium-card soft-red-panel rounded-2xl p-5">
                   <Icon className="text-[#c91510]" size={22} />
-                  <h3 className="mt-3 font-heading text-lg font-bold text-zinc-900 dark:text-zinc-100">{feature.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-200">{feature.text}</p>
+                  <h3 className="mt-3 font-heading text-lg font-bold text-text-main">{feature.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-text-subtle">{feature.text}</p>
                 </article>
               </Reveal>
             );
@@ -272,7 +272,7 @@ export default async function HomePage() {
             <Reveal key={step} delay={index * 100}>
               <article className="premium-card relative overflow-hidden p-5">
                 <p className="mb-3 text-3xl font-black text-[#c91510]">0{index + 1}</p>
-                <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{step}</h3>
+                <h3 className="text-lg font-bold text-text-main">{step}</h3>
                 {index < 2 ? (
                   <div className="absolute right-0 top-0 hidden h-full w-8 items-center justify-center md:flex">
                     <span className="h-0.5 w-7 bg-[#c91510]/25" />
@@ -296,10 +296,10 @@ export default async function HomePage() {
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <Reveal>
           <div className="premium-card p-6">
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Visit or Contact</h2>
-            <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-200">{STORE.name}</p>
-            <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-200">{STORE.location}</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{STORE.phone}</p>
+            <h2 className="text-2xl font-bold text-text-main">Visit or Contact</h2>
+            <p className="mt-2 text-sm text-text-subtle">{STORE.name}</p>
+            <p className="mt-1 text-sm text-text-subtle">{STORE.location}</p>
+            <p className="mt-1 text-sm font-semibold text-text-main">{STORE.phone}</p>
 
             <div className="mt-5 flex flex-wrap gap-3">
               <a href={`tel:${STORE.phone}`}>
@@ -318,7 +318,7 @@ export default async function HomePage() {
         <Reveal delay={120}>
           <div className="premium-card soft-red-panel relative min-h-[220px] overflow-hidden p-6">
             <p className="text-xs font-black uppercase tracking-[0.16em] text-[#c91510]">Map Preview</p>
-            <p className="mt-3 max-w-xs text-sm text-zinc-700 dark:text-zinc-200">
+            <p className="mt-3 max-w-xs text-sm text-text-subtle">
               Google Maps integration placeholder. Connect your live store pin in deployment.
             </p>
             <div className="absolute bottom-5 right-5 rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#c91510] shadow dark:bg-zinc-900">

@@ -85,7 +85,7 @@ export function CheckoutForm({
   if (items.length === 0) {
     return (
       <div className="premium-card border-dashed p-10 text-center">
-        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+        <p className="text-sm font-medium text-text-subtle">
           Add items to cart before checkout.
         </p>
         <Button className="mt-4" onClick={() => router.push("/products")}>Browse Products</Button>
@@ -160,14 +160,14 @@ export function CheckoutForm({
           placeholder="Complete delivery address"
         />
 
-        <div className="rounded-xl bg-[#fff3ec] p-4 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+        <div className="rounded-xl bg-[#fff3ec] p-4 text-sm text-text-subtle dark:bg-zinc-800 dark:text-text-subtle">
           <p className="font-bold text-[#c91510]">Payment Instructions</p>
           <p className="mt-1">Pay via UPI QR and upload a screenshot for manual admin verification.</p>
-          <p className="mt-2 text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+          <p className="mt-2 text-xs font-semibold text-text-subtle">
             Amount: {formatCurrency(total)}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <p className="rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
+            <p className="rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-text-main dark:bg-zinc-900 dark:text-text-main">
               UPI ID: {configuredUpiId}
             </p>
             <Button type="button" variant="ghost" className="!px-2.5 !py-1.5 text-xs" onClick={copyUpiId}>
@@ -213,7 +213,7 @@ export function CheckoutForm({
         </div>
 
         <label className="block space-y-2">
-          <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Upload Payment Screenshot</span>
+          <span className="text-sm font-semibold text-text-subtle">Upload Payment Screenshot</span>
           <Input
             type="file"
             accept="image/png,image/jpeg,image/webp"
@@ -243,13 +243,13 @@ export function CheckoutForm({
               setScreenshot(file);
             }}
           />
-          <p className="text-xs text-zinc-500 dark:text-zinc-300">
+          <p className="text-xs text-text-subtle">
             Accepted: PNG/JPG/WEBP, max 5MB.
             {screenshot ? ` Selected: ${screenshot.name}` : ""}
           </p>
         </label>
 
-        <div className="grid gap-2 rounded-xl border border-[#c91510]/16 bg-white p-3 text-xs font-semibold text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+        <div className="grid gap-2 rounded-xl border border-[#c91510]/16 bg-white p-3 text-xs font-semibold text-text-subtle dark:bg-zinc-900 dark:text-text-subtle">
           <p className="inline-flex items-center gap-2"><ShieldCheck size={14} className="text-emerald-600" /> Secure checkout flow</p>
           <p className="inline-flex items-center gap-2"><Lock size={14} className="text-emerald-600" /> Manual payment verification</p>
         </div>
@@ -268,7 +268,7 @@ export function CheckoutForm({
           </div>
         </div>
 
-        <div className="space-y-2 text-sm font-medium text-zinc-700 dark:text-zinc-200">
+        <div className="space-y-2 text-sm font-medium text-text-subtle">
           <div className="flex justify-between">
             <span>Subtotal</span>
             <span>{formatCurrency(subtotal)}</span>
@@ -283,7 +283,7 @@ export function CheckoutForm({
           </div>
         </div>
 
-        <p className="rounded-xl bg-zinc-100 p-3 text-xs font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+        <p className="rounded-xl bg-zinc-100 p-3 text-xs font-semibold text-text-subtle dark:bg-zinc-800 dark:text-text-subtle">
           Initial status: <strong>Payment Pending Verification</strong>
         </p>
 

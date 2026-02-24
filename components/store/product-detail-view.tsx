@@ -62,10 +62,10 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
         </p>
 
         <div>
-          <h1 className="font-display text-3xl font-black tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-4xl">
+          <h1 className="font-display text-3xl font-black tracking-tight text-text-main sm:text-4xl">
             {product.name}
           </h1>
-          <p className="mt-2 text-sm leading-7 text-zinc-700 dark:text-zinc-200">
+          <p className="mt-2 text-sm leading-7 text-text-subtle">
             {product.description}
           </p>
         </div>
@@ -73,7 +73,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
         <div className="flex items-end gap-2">
           <p className="price-text">{formatCurrency(effectivePrice)}</p>
           {product.discount_price !== null ? (
-            <p className="pb-1 text-sm font-medium text-zinc-500 line-through dark:text-zinc-400">
+            <p className="pb-1 text-sm font-medium text-text-subtle line-through">
               {formatCurrency(product.price)}
             </p>
           ) : null}
@@ -113,7 +113,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
           </Button>
         </div>
 
-        <div className="grid gap-2 rounded-2xl bg-[#fff4ef] p-4 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+        <div className="grid gap-2 rounded-2xl bg-[#fff4ef] p-4 text-sm text-text-subtle dark:bg-zinc-800 dark:text-text-subtle">
           <p className="flex items-center gap-2"><Truck size={14} /> Delivery in 30-45 mins</p>
           <p className="flex items-center gap-2"><ShieldCheck size={14} /> Secure manual UPI verification</p>
           <p className="flex items-center gap-2"><Star size={14} /> Quality checked before dispatch</p>
@@ -127,7 +127,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
               className={`rounded-full px-3 py-1.5 text-xs font-bold tracking-[0.08em] ${
                 tab === "description"
                   ? "bg-[#c91510] text-white"
-                  : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                  : "bg-zinc-100 text-text-subtle dark:bg-zinc-800 dark:text-text-subtle"
               }`}
             >
               Description
@@ -138,7 +138,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
               className={`rounded-full px-3 py-1.5 text-xs font-bold tracking-[0.08em] ${
                 tab === "reviews"
                   ? "bg-[#c91510] text-white"
-                  : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                  : "bg-zinc-100 text-text-subtle dark:bg-zinc-800 dark:text-text-subtle"
               }`}
             >
               Reviews
@@ -146,11 +146,11 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
           </div>
 
           {tab === "description" ? (
-            <p className="animate-page-enter text-sm leading-7 text-zinc-700 dark:text-zinc-200">
+            <p className="animate-page-enter text-sm leading-7 text-text-subtle">
               {product.description}. Carefully packed and dispatched with local delivery partner support.
             </p>
           ) : (
-            <div className="animate-page-enter space-y-2 text-sm text-zinc-700 dark:text-zinc-200">
+            <div className="animate-page-enter space-y-2 text-sm text-text-subtle">
               <p>★★★★★ “Fresh quality and timely delivery.”</p>
               <p>★★★★★ “Very smooth checkout and updates.”</p>
             </div>
