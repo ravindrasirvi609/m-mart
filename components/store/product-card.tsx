@@ -43,10 +43,10 @@ export function ProductCard({ product }: { product: Product }) {
 
       <div className="space-y-3 p-4">
         <div className="space-y-1">
-          <p className="line-clamp-1 font-heading text-base font-bold text-zinc-900 dark:text-zinc-100">
+          <p className="line-clamp-1 font-heading text-base font-bold text-text-main">
             {product.name}
           </p>
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.09em] text-zinc-500 dark:text-zinc-300">
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.09em] text-text-subtle">
             {product.category}
           </p>
         </div>
@@ -54,7 +54,7 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="flex items-end gap-2">
           <p className="price-text">{formatCurrency(effectivePrice)}</p>
           {product.discount_price !== null ? (
-            <p className="pb-0.5 text-xs font-medium text-zinc-500 line-through dark:text-zinc-400">
+            <p className="pb-0.5 text-xs font-medium text-text-subtle line-through">
               {formatCurrency(product.price)}
             </p>
           ) : null}

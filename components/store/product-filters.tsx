@@ -47,7 +47,7 @@ export function ProductFilters({
   return (
     <section className="premium-card grid gap-3 p-4 sm:grid-cols-[1fr_0.65fr] sm:items-end">
       <label className="block space-y-2">
-        <span className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.1em] text-zinc-600 dark:text-zinc-300">
+        <span className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.1em] text-text-subtle">
           <Search size={14} />
           Search Products
         </span>
@@ -60,7 +60,7 @@ export function ProductFilters({
       </label>
 
       <label className="block space-y-2">
-        <span className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.1em] text-zinc-600 dark:text-zinc-300">
+        <span className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.1em] text-text-subtle">
           <SlidersHorizontal size={14} />
           Category
         </span>

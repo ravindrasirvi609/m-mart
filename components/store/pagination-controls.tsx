@@ -32,7 +32,7 @@ export function PaginationControls({
         <span className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-400">Previous</span>
       )}
 
-      <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-zinc-700 dark:text-zinc-200">
+      <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-text-subtle">
         Page {page} of {totalPages}
       </p>
 
