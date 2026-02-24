@@ -23,7 +23,7 @@ export function CartClient() {
   if (items.length === 0) {
     return (
       <div className="premium-card border-dashed p-10 text-center">
-        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Your cart is empty.</p>
+        <p className="text-sm font-medium text-text-subtle">Your cart is empty.</p>
         <Link href="/products" className="mt-4 inline-flex">
           <Button>Browse Products</Button>
         </Link>
@@ -56,10 +56,10 @@ export function CartClient() {
 
                 <div className="flex flex-1 flex-col justify-between gap-2">
                   <div>
-                    <p className="font-heading text-base font-bold text-zinc-900 dark:text-zinc-100">
+                    <p className="font-heading text-base font-bold text-text-main">
                       {item.name}
                     </p>
-                    <p className="text-xs font-semibold uppercase tracking-[0.06em] text-zinc-500 dark:text-zinc-300">
+                    <p className="text-xs font-semibold uppercase tracking-[0.06em] text-text-subtle">
                       {formatCurrency(unitPrice)} each
                     </p>
                   </div>
@@ -68,15 +68,15 @@ export function CartClient() {
                     <div className="inline-flex items-center rounded-xl border border-[#c91510]/20 bg-white dark:bg-zinc-900">
                       <button
                         type="button"
-                        className="h-9 w-9 text-lg font-semibold"
+                        className="h-9 w-9 text-lg font-semibold text-text-main"
                         onClick={() => setQuantity(item.id, item.quantity - 1)}
                       >
                         -
                       </button>
-                      <span className="w-8 text-center text-sm font-bold">{item.quantity}</span>
+                      <span className="w-8 text-center text-sm font-bold text-text-main">{item.quantity}</span>
                       <button
                         type="button"
-                        className="h-9 w-9 text-lg font-semibold"
+                        className="h-9 w-9 text-lg font-semibold text-text-main"
                         onClick={() => setQuantity(item.id, item.quantity + 1)}
                       >
                         +
@@ -85,7 +85,7 @@ export function CartClient() {
 
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500 transition hover:text-rose-600"
+                      className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[0.08em] text-text-subtle transition hover:text-rose-600"
                       onClick={() => removeItem(item.id)}
                     >
                       <Trash2 size={14} />
@@ -100,9 +100,9 @@ export function CartClient() {
       </div>
 
       <aside className="premium-card sticky top-24 h-fit space-y-4 p-5">
-        <h2 className="font-heading text-lg font-bold">Pricing Summary</h2>
+        <h2 className="font-heading text-lg font-bold text-text-main">Pricing Summary</h2>
 
-        <div className="space-y-2 text-sm font-medium text-zinc-700 dark:text-zinc-200">
+        <div className="space-y-2 text-sm font-medium text-text-subtle">
           <div className="flex justify-between">
             <span>Subtotal</span>
             <span>{formatCurrency(subtotal)}</span>
@@ -118,7 +118,7 @@ export function CartClient() {
         </div>
 
         <div className="rounded-2xl border border-dashed border-[#c91510]/30 p-3">
-          <label className="mb-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-700 dark:text-zinc-200">
+          <label className="mb-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-text-subtle">
             <TicketPercent size={14} />
             Coupon (Coming Soon)
           </label>
@@ -141,7 +141,7 @@ export function CartClient() {
       <div className="fixed inset-x-0 bottom-20 z-30 border-t border-[#c91510]/16 bg-white/96 p-3 backdrop-blur md:hidden dark:border-zinc-700 dark:bg-[#0f141d]/95">
         <div className="mx-auto flex max-w-md items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-300">Total</p>
+            <p className="text-xs font-medium text-text-subtle">Total</p>
             <p className="font-bold text-[#c91510]">{formatCurrency(total)}</p>
           </div>
           <Link href="/checkout">
