@@ -154,18 +154,20 @@ export function NotificationCenter({
     }
   }, [mode, supabase, userId]);
 
+  /* ----- Polling backup: adaptive interval ----- */
+  /* Poll every 10s when realtime is disconnected, 30s when connected */
   useEffect(() => {
     // Initial fetch after short delay
     const kickoff = setTimeout(() => void fetchLatest(), 1500);
 
-    // Poll every 30s as safety net
-    const timer = setInterval(() => void fetchLatest(), 30000);
+    const pollInterval = realtimeStatus === "connected" ? 30000 : 10000;
+    const timer = setInterval(() => void fetchLatest(), pollInterval);
 
     return () => {
       clearTimeout(kickoff);
       clearInterval(timer);
     };
-  }, [fetchLatest]);
+  }, [fetchLatest, realtimeStatus]);
 
   /* ----- Click outside to close ----- */
   useEffect(() => {

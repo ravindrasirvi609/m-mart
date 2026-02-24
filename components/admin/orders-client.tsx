@@ -160,7 +160,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
     [router, sendPush],
   );
 
-  useRealtimeChannel({
+  const { status: realtimeStatus } = useRealtimeChannel({
     channelName: "admin-orders-live",
     table: "orders",
     event: "*",
@@ -206,14 +206,16 @@ export function OrdersClient({ orders }: OrdersClientProps) {
     }
   }, [router, supabase]);
 
+  /* Poll every 10s when realtime is disconnected, 30s when connected */
   useEffect(() => {
     const kickoff = setTimeout(() => void syncOrders(), 2000);
-    const timer = setInterval(() => void syncOrders(), 30000);
+    const pollInterval = realtimeStatus === "connected" ? 30000 : 10000;
+    const timer = setInterval(() => void syncOrders(), pollInterval);
     return () => {
       clearTimeout(kickoff);
       clearInterval(timer);
     };
-  }, [syncOrders]);
+  }, [syncOrders, realtimeStatus]);
 
   /* ----- Handlers ----- */
   const handleViewOrder = (order: AdminOrder) => {

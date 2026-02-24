@@ -39,6 +39,17 @@ interface UseRealtimeChannelOptions<T extends TableName> {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Constants                                                          */
+/* ------------------------------------------------------------------ */
+
+/** How often (ms) to check if the channel is still alive */
+const HEARTBEAT_INTERVAL_MS = 25_000;
+
+/** Initial reconnect delay (doubles each failure, capped at 30s) */
+const INITIAL_BACKOFF_MS = 2_000;
+const MAX_BACKOFF_MS = 30_000;
+
+/* ------------------------------------------------------------------ */
 /*  Hook                                                               */
 /* ------------------------------------------------------------------ */
 
@@ -52,6 +63,10 @@ interface UseRealtimeChannelOptions<T extends TableName> {
  * Features:
  * - Bootstraps auth session before subscribing
  * - Exponential backoff reconnection (2s → 4s → 8s → max 30s)
+ * - **Visibility-based reconnection** — reconnects when tab regains focus
+ * - **Heartbeat keep-alive** — detects stale connections every 25s
+ * - **Online/offline detection** — reconnects when network comes back
+ * - Auth token refresh before reconnecting
  * - Reports connection status
  * - Cleans up channel on unmount
  */
@@ -68,14 +83,21 @@ export function useRealtimeChannel<T extends TableName>({
 
     const channelRef = useRef<RealtimeChannel | null>(null);
     const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const backoffRef = useRef(2000);
+    const heartbeatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const backoffRef = useRef(INITIAL_BACKOFF_MS);
     const mountedRef = useRef(true);
+    const statusRef = useRef<RealtimeStatus>("disconnected");
 
     // Keep onPayload ref stable to avoid channel re-creation
     const handlerRef = useRef(onPayload);
     useEffect(() => {
         handlerRef.current = onPayload;
     }, [onPayload]);
+
+    // Keep status ref in sync
+    useEffect(() => {
+        statusRef.current = status;
+    }, [status]);
 
     /* ----- Auth session bootstrap ----- */
     useEffect(() => {
@@ -114,17 +136,29 @@ export function useRealtimeChannel<T extends TableName>({
             clearTimeout(reconnectTimerRef.current);
             reconnectTimerRef.current = null;
         }
+        if (heartbeatTimerRef.current) {
+            clearInterval(heartbeatTimerRef.current);
+            heartbeatTimerRef.current = null;
+        }
         if (channelRef.current) {
             void supabase.removeChannel(channelRef.current);
             channelRef.current = null;
         }
     }, [supabase]);
 
-    const subscribe = useCallback(() => {
+    const subscribe = useCallback(async () => {
         // Clean up any previous channel
         cleanup();
 
         if (!mountedRef.current) return;
+
+        // Refresh auth token before subscribing to prevent JWT expiry failures
+        try {
+            await supabase.auth.getSession();
+        } catch {
+            // If session refresh fails, still attempt to subscribe
+            console.warn("[Realtime] Could not refresh auth session before subscribing");
+        }
 
         setStatus("connecting");
 
@@ -148,7 +182,7 @@ export function useRealtimeChannel<T extends TableName>({
 
                 if (subscriptionStatus === "SUBSCRIBED") {
                     setStatus("connected");
-                    backoffRef.current = 2000; // Reset backoff on success
+                    backoffRef.current = INITIAL_BACKOFF_MS; // Reset backoff on success
                     console.info(`[Realtime] ✓ Subscribed to "${channelName}"`);
                     return;
                 }
@@ -173,24 +207,33 @@ export function useRealtimeChannel<T extends TableName>({
                     }
 
                     // Exponential backoff reconnection
-                    const delay = backoffRef.current;
-                    backoffRef.current = Math.min(delay * 2, 30000);
-
-                    reconnectTimerRef.current = setTimeout(() => {
-                        reconnectTimerRef.current = null;
-                        if (mountedRef.current) {
-                            console.info(
-                                `[Realtime] Reconnecting "${channelName}" (backoff: ${delay}ms)...`,
-                            );
-                            subscribe();
-                        }
-                    }, delay);
+                    scheduleReconnect();
                 }
             });
 
         channelRef.current = channel;
     }, [channelName, cleanup, event, supabase, table]);
 
+    /** Schedule a reconnect with exponential backoff */
+    const scheduleReconnect = useCallback(() => {
+        // Don't schedule if one is already pending
+        if (reconnectTimerRef.current) return;
+
+        const delay = backoffRef.current;
+        backoffRef.current = Math.min(delay * 2, MAX_BACKOFF_MS);
+
+        reconnectTimerRef.current = setTimeout(() => {
+            reconnectTimerRef.current = null;
+            if (mountedRef.current) {
+                console.info(
+                    `[Realtime] Reconnecting "${channelName}" (backoff: ${delay}ms)...`,
+                );
+                void subscribe();
+            }
+        }, delay);
+    }, [channelName, subscribe]);
+
+    /* ----- Main subscription effect ----- */
     useEffect(() => {
         mountedRef.current = true;
 
@@ -203,7 +246,7 @@ export function useRealtimeChannel<T extends TableName>({
         });
 
         if (enabled && hasSession) {
-            subscribe();
+            void subscribe();
         } else {
             cleanup();
             setStatus("disconnected");
@@ -218,9 +261,102 @@ export function useRealtimeChannel<T extends TableName>({
         };
     }, [enabled, hasSession, subscribe, cleanup, channelName]);
 
+    /* ----- Heartbeat: periodic channel health check ----- */
+    useEffect(() => {
+        if (!enabled || !hasSession) return;
+
+        heartbeatTimerRef.current = setInterval(() => {
+            if (!mountedRef.current || !enabled) return;
+
+            const channel = channelRef.current;
+            if (!channel) {
+                // Channel is gone — try to reconnect
+                if (statusRef.current !== "connecting") {
+                    console.info(`[Realtime] 💓 Heartbeat: no channel found for "${channelName}", reconnecting...`);
+                    backoffRef.current = INITIAL_BACKOFF_MS;
+                    void subscribe();
+                }
+                return;
+            }
+
+            // Check the internal Supabase channel state
+            // RealtimeChannel exposes a `.state` getter: "joined" | "joining" | "leaving" | "closed" | "errored"
+            const state = (channel as unknown as { state?: string }).state;
+            if (state && state !== "joined" && state !== "joining") {
+                console.info(`[Realtime] 💓 Heartbeat: channel "${channelName}" in state "${state}", reconnecting...`);
+                setStatus("disconnected");
+                backoffRef.current = INITIAL_BACKOFF_MS;
+                void subscribe();
+            }
+        }, HEARTBEAT_INTERVAL_MS);
+
+        return () => {
+            if (heartbeatTimerRef.current) {
+                clearInterval(heartbeatTimerRef.current);
+                heartbeatTimerRef.current = null;
+            }
+        };
+    }, [enabled, hasSession, channelName, subscribe]);
+
+    /* ----- Visibility change: reconnect when tab regains focus ----- */
+    useEffect(() => {
+        if (!enabled || !hasSession) return;
+
+        const onVisibilityChange = () => {
+            if (document.visibilityState !== "visible") return;
+            if (!mountedRef.current) return;
+
+            // Tab just became visible — check if connection is still alive
+            const channel = channelRef.current;
+            const state = channel
+                ? (channel as unknown as { state?: string }).state
+                : null;
+
+            if (!channel || (state && state !== "joined")) {
+                console.info(
+                    `[Realtime] 👁 Tab visible: channel "${channelName}" is stale (state: ${state ?? "null"}), reconnecting...`,
+                );
+                setStatus("disconnected");
+                backoffRef.current = INITIAL_BACKOFF_MS; // Reset backoff for quick reconnect
+                void subscribe();
+            } else {
+                console.debug(`[Realtime] 👁 Tab visible: channel "${channelName}" still alive`);
+            }
+        };
+
+        document.addEventListener("visibilitychange", onVisibilityChange);
+        return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+    }, [enabled, hasSession, channelName, subscribe]);
+
+    /* ----- Online/offline: reconnect when network comes back ----- */
+    useEffect(() => {
+        if (!enabled || !hasSession) return;
+
+        const onOnline = () => {
+            if (!mountedRef.current) return;
+            console.info(`[Realtime] 🌐 Network online: reconnecting "${channelName}"...`);
+            backoffRef.current = INITIAL_BACKOFF_MS;
+            void subscribe();
+        };
+
+        const onOffline = () => {
+            if (!mountedRef.current) return;
+            console.info(`[Realtime] 📴 Network offline: marking "${channelName}" disconnected`);
+            setStatus("disconnected");
+        };
+
+        window.addEventListener("online", onOnline);
+        window.addEventListener("offline", onOffline);
+        return () => {
+            window.removeEventListener("online", onOnline);
+            window.removeEventListener("offline", onOffline);
+        };
+    }, [enabled, hasSession, channelName, subscribe]);
+
     return { status, hasSession };
 }
 
 import { getPublicEnv } from "@/lib/env";
 const env = getPublicEnv();
+
 
