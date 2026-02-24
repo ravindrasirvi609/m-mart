@@ -60,9 +60,9 @@ export default async function HomePage() {
   const displayCategories =
     categories.length > 0
       ? categories.slice(0, 6).map((category, index) => ({
-          name: category.name,
-          icon: fallbackCategories[index % fallbackCategories.length].icon,
-        }))
+        name: category.name,
+        icon: fallbackCategories[index % fallbackCategories.length].icon,
+      }))
       : fallbackCategories;
 
   return (
@@ -138,7 +138,7 @@ export default async function HomePage() {
               <div className="relative mx-auto h-[360px] w-full max-w-md overflow-hidden rounded-[1.8rem] border border-white/30 bg-white/10 p-2 backdrop-blur">
                 <div className="relative h-full w-full overflow-hidden rounded-[1.4rem] bg-white">
                   <Image
-                    src="https://images.unsplash.com/photo-1610348725531-843dff563e2c?auto=format&fit=crop&w=900&q=80"
+                    src="https://images.unsplash.com/photo-1604719312566-8912e9227c6a?q=80&w=2148&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                     alt="Fresh groceries"
                     fill
                     className="object-cover"
