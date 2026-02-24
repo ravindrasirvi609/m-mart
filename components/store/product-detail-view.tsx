@@ -93,15 +93,15 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
           <div className="inline-flex items-center rounded-xl border border-[#c91510]/20 bg-white dark:bg-zinc-900">
             <button
               type="button"
-              className="h-10 w-10 text-lg font-semibold"
+              className="h-10 w-10 text-lg font-semibold text-text-main"
               onClick={() => setQuantity((value) => Math.max(1, value - 1))}
             >
               -
             </button>
-            <span className="w-8 text-center text-sm font-bold">{quantity}</span>
+            <span className="w-8 text-center text-sm font-bold text-text-main">{quantity}</span>
             <button
               type="button"
-              className="h-10 w-10 text-lg font-semibold"
+              className="h-10 w-10 text-lg font-semibold text-text-main"
               onClick={() => setQuantity((value) => Math.min(product.stock, value + 1))}
             >
               +
@@ -161,7 +161,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
       <div className="fixed inset-x-0 bottom-20 z-30 border-t border-[#c91510]/16 bg-white/96 p-3 backdrop-blur md:hidden dark:border-zinc-700 dark:bg-[#0f141d]/95">
         <div className="mx-auto flex max-w-md items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-300">Total</p>
+            <p className="text-xs font-medium text-text-subtle">Total</p>
             <p className="font-bold text-[#c91510]">{formatCurrency(effectivePrice * quantity)}</p>
           </div>
           <Button className="min-w-40" disabled={product.stock <= 0} onClick={addWithQuantity}>
