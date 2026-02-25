@@ -120,7 +120,7 @@ export function NotificationCenter({
     [isRelevantNotification, mode, sendPush],
   );
 
-  const { status: realtimeStatus } = useRealtimeChannel({
+  const { status: realtimeStatus, retry: realtimeRetry } = useRealtimeChannel({
     channelName: `notif-center-${mode}-${userId}`,
     table: "notifications",
     event: "*",
@@ -259,6 +259,7 @@ export function NotificationCenter({
               {mounted && (
                 <RealtimeStatusDot
                   status={realtimeStatus}
+                  onRetry={realtimeRetry}
                   className={
                     mode === "admin"
                       ? "text-zinc-400"

@@ -14,9 +14,11 @@ const statusConfig: Record<
 
 export function RealtimeStatusDot({
     status,
+    onRetry,
     className,
 }: {
     status: RealtimeStatus;
+    onRetry?: () => void;
     className?: string;
 }) {
     const config = statusConfig[status];
@@ -32,6 +34,18 @@ export function RealtimeStatusDot({
             <span className="text-[10px] font-medium opacity-70">
                 {config.label}
             </span>
+            {status === "disconnected" && onRetry && (
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onRetry();
+                    }}
+                    className="ml-0.5 text-[10px] font-semibold text-amber-500 hover:text-amber-400 underline underline-offset-2 transition-colors"
+                >
+                    Retry
+                </button>
+            )}
         </span>
     );
 }
