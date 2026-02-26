@@ -46,6 +46,36 @@ export async function getProductsPageData({
   page: number;
 }) {
   const supabase = await createServerSupabaseClient();
+  const { products, totalCount, error } = await getProductsChunk({
+    search,
+    category,
+    page,
+  });
+
+  const { data: categories } = await supabase
+    .from("categories")
+    .select("id,name")
+    .eq("is_active", true)
+    .order("name", { ascending: true });
+
+  return {
+    products,
+    categories: categories ?? [],
+    totalCount,
+    error,
+  };
+}
+
+export async function getProductsChunk({
+  search,
+  category,
+  page,
+}: {
+  search: string;
+  category: string;
+  page: number;
+}) {
+  const supabase = await createServerSupabaseClient();
   let query = supabase
     .from("products")
     .select("*", { count: "exact" })
@@ -62,20 +92,10 @@ export async function getProductsPageData({
 
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
-
-  const [{ data: products, count, error }, { data: categories }] =
-    await Promise.all([
-      query.range(from, to),
-      supabase
-        .from("categories")
-        .select("id,name")
-        .eq("is_active", true)
-        .order("name", { ascending: true }),
-    ]);
+  const { data: products, count, error } = await query.range(from, to);
 
   return {
     products: products ?? [],
-    categories: categories ?? [],
     totalCount: count ?? 0,
     error,
   };
