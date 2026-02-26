@@ -7,15 +7,23 @@ import type { Product } from "@/lib/queries";
 import { formatCurrency, getEffectivePrice } from "@/lib/utils";
 
 export function ProductCard({ product }: { product: Product }) {
-  const effectivePrice = getEffectivePrice(product.price, product.discount_price);
+  const effectivePrice = getEffectivePrice(
+    product.price,
+    product.discount_price,
+  );
   const discountPercent =
     product.discount_price !== null && product.price > product.discount_price
-      ? Math.round(((product.price - product.discount_price) / product.price) * 100)
+      ? Math.round(
+          ((product.price - product.discount_price) / product.price) * 100,
+        )
       : 0;
 
   return (
     <article className="group glow-on-hover premium-card overflow-hidden rounded-3xl">
-      <Link href={`/products/${product.id}`} className="relative block h-48 overflow-hidden bg-zinc-100">
+      <Link
+        href={`/products/${product.id}`}
+        className="relative block h-48 overflow-hidden bg-zinc-100"
+      >
         <Image
           src={product.image_url}
           alt={product.name}
@@ -46,9 +54,16 @@ export function ProductCard({ product }: { product: Product }) {
           <p className="line-clamp-1 font-heading text-base font-bold text-text-main">
             {product.name}
           </p>
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.09em] text-text-subtle">
-            {product.category}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.09em] text-text-subtle">
+              {product.category}
+            </p>
+            {product.net_qty ? (
+              <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+                {product.net_qty}
+              </span>
+            ) : null}
+          </div>
         </div>
 
         <div className="flex items-end gap-2">

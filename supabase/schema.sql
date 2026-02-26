@@ -32,6 +32,9 @@ create table if not exists public.products (
   stock integer not null default 0 check (stock >= 0),
   category text not null,
   image_url text not null,
+  image_urls jsonb not null default '[]'::jsonb,
+  net_qty text,
+  product_highlights jsonb,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   constraint valid_discount check (discount_price is null or discount_price >= 0)

@@ -14,119 +14,140 @@ import { AddProductForm } from "@/components/admin/add-product-form";
 import type { Category, Product } from "@/lib/queries";
 
 interface ProductsClientProps {
-    products: Product[];
-    categories: Category[];
+  products: Product[];
+  categories: Category[];
 }
 
 export function ProductsClient({ products, categories }: ProductsClientProps) {
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-    const columns = [
-        {
-            header: "Product",
-            accessorKey: "name",
-            cell: (product: Product) => (
-                <div className="flex items-center gap-3">
-                    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-admin-border">
-                        <Image
-                            src={product.image_url || "/placeholder-product.svg"}
-                            alt={product.name}
-                            fill
-                            className="object-cover"
-                        />
-                    </div>
-                    <div className="min-w-0">
-                        <p className="truncate font-bold text-text-main">{product.name}</p>
-                        <p className="text-[10px] text-text-subtle uppercase tracking-wider">{product.category}</p>
-                    </div>
-                </div>
-            ),
-        },
-        {
-            header: "Price",
-            accessorKey: "price",
-            cell: (product: Product) => (
-                <div className="flex flex-col">
-                    <span className="font-bold text-text-main">{formatCurrency(product.price)}</span>
-                    {product.discount_price && (
-                        <span className="text-[10px] text-brand-red line-through">
-                            {formatCurrency(product.discount_price)}
-                        </span>
-                    )}
-                </div>
-            ),
-        },
-        {
-            header: "Stock",
-            accessorKey: "stock",
-            cell: (product: Product) => {
-                const isLow = product.stock <= 5;
-                return (
-                    <div className="flex flex-col gap-1">
-                        <span className={isLow ? "font-bold text-rose-400" : "font-medium text-text-main"}>
-                            {product.stock} units
-                        </span>
-                        <div className="h-1 w-16 overflow-hidden rounded-full bg-white/10">
-                            <div
-                                className={isLow ? "h-full bg-rose-500" : "h-full bg-emerald-500"}
-                                style={{ width: `${Math.min((product.stock / 20) * 100, 100)}%` }}
-                            />
-                        </div>
-                    </div>
-                );
-            },
-        },
-        {
-            header: "Status",
-            accessorKey: "is_active",
-            cell: (product: Product) => (
-                <Badge variant={product.is_active ? "success" : "outline"}>
-                    {product.is_active ? "Active" : "Inactive"}
-                </Badge>
-            ),
-        },
-    ];
-
-    return (
-        <div className="space-y-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="font-heading text-xl sm:text-2xl font-black text-text-main">Product Inventory</h1>
-                    <p className="text-xs sm:text-sm text-text-subtle">Manage your store products and stock levels.</p>
-                </div>
-                <Button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-brand-red px-4 py-2.5 font-bold text-white hover:bg-brand-red/90 w-full sm:w-auto"
-                >
-                    <Plus size={18} />
-                    <span>New Product</span>
-                </Button>
-            </div>
-
-            <DataTable
-                data={products}
-                columns={columns}
-                searchKey="name"
-                renderActions={(product) => (
-                    <div className="flex items-center justify-end gap-2">
-                        <Link href={`/admin/products/${product.id}`}>
-                            <button className="rounded-lg p-2 text-text-subtle hover:bg-white/10 hover:text-white transition-colors">
-                                <Edit2 size={16} />
-                            </button>
-                        </Link>
-                        <DeleteProductButton productId={product.id} />
-                    </div>
-                )}
+  const columns = [
+    {
+      header: "Product",
+      accessorKey: "name",
+      cell: (product: Product) => (
+        <div className="flex items-center gap-3">
+          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-admin-border">
+            <Image
+              src={product.image_url || "/placeholder-product.svg"}
+              alt={product.name}
+              fill
+              className="object-cover"
             />
-
-            <Modal
-                isOpen={isAddModalOpen}
-                onClose={() => setIsAddModalOpen(false)}
-                title="Add New Product"
-                description="Create a new item in your inventory."
-            >
-                <AddProductForm categories={categories} />
-            </Modal>
+          </div>
+          <div className="min-w-0">
+            <p className="truncate font-bold text-text-main">{product.name}</p>
+            <p className="text-[10px] text-text-subtle uppercase tracking-wider">
+              {product.category}
+            </p>
+          </div>
         </div>
-    );
+      ),
+    },
+    {
+      header: "Price",
+      accessorKey: "price",
+      cell: (product: Product) => (
+        <div className="flex flex-col">
+          <span className="font-bold text-text-main">
+            {formatCurrency(product.price)}
+          </span>
+          {product.discount_price && (
+            <span className="text-[10px] text-brand-red line-through">
+              {formatCurrency(product.discount_price)}
+            </span>
+          )}
+          {product.net_qty && (
+            <span className="text-[10px] text-text-subtle">
+              {product.net_qty}
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      header: "Stock",
+      accessorKey: "stock",
+      cell: (product: Product) => {
+        const isLow = product.stock <= 5;
+        return (
+          <div className="flex flex-col gap-1">
+            <span
+              className={
+                isLow ? "font-bold text-rose-400" : "font-medium text-text-main"
+              }
+            >
+              {product.stock} units
+            </span>
+            <div className="h-1 w-16 overflow-hidden rounded-full bg-white/10">
+              <div
+                className={
+                  isLow ? "h-full bg-rose-500" : "h-full bg-emerald-500"
+                }
+                style={{
+                  width: `${Math.min((product.stock / 20) * 100, 100)}%`,
+                }}
+              />
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      header: "Status",
+      accessorKey: "is_active",
+      cell: (product: Product) => (
+        <Badge variant={product.is_active ? "success" : "outline"}>
+          {product.is_active ? "Active" : "Inactive"}
+        </Badge>
+      ),
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-heading text-xl sm:text-2xl font-black text-text-main">
+            Product Inventory
+          </h1>
+          <p className="text-xs sm:text-sm text-text-subtle">
+            Manage your store products and stock levels.
+          </p>
+        </div>
+        <Button
+          onClick={() => setIsAddModalOpen(true)}
+          className="flex items-center justify-center gap-2 rounded-xl bg-brand-red px-4 py-2.5 font-bold text-white hover:bg-brand-red/90 w-full sm:w-auto"
+        >
+          <Plus size={18} />
+          <span>New Product</span>
+        </Button>
+      </div>
+
+      <DataTable
+        data={products}
+        columns={columns}
+        searchKey="name"
+        renderActions={(product) => (
+          <div className="flex items-center justify-end gap-2">
+            <Link href={`/admin/products/${product.id}`}>
+              <button className="rounded-lg p-2 text-text-subtle hover:bg-white/10 hover:text-white transition-colors">
+                <Edit2 size={16} />
+              </button>
+            </Link>
+            <DeleteProductButton productId={product.id} />
+          </div>
+        )}
+      />
+
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title="Add New Product"
+        description="Create a new item in your inventory."
+      >
+        <AddProductForm categories={categories} />
+      </Modal>
+    </div>
+  );
 }

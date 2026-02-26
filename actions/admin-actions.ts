@@ -6,10 +6,7 @@ import { z } from "zod";
 import { assertAdminForAction } from "@/lib/auth";
 import { createOrderStatusUpdateNotification } from "@/lib/notifications";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import {
-  ORDER_STATUS_OPTIONS,
-  PAYMENT_STATUS_OPTIONS,
-} from "@/lib/constants";
+import { ORDER_STATUS_OPTIONS, PAYMENT_STATUS_OPTIONS } from "@/lib/constants";
 import { toPublicErrorMessage } from "@/lib/security/errors";
 import { assertTrustedRequestOrigin } from "@/lib/security/request";
 import { validateImageFile } from "@/lib/security/upload";
@@ -28,6 +25,9 @@ const productSchema = z.object({
   stock: z.coerce.number().int().min(0),
   category: z.string().trim().min(2).max(60),
   image_url: z.string().trim().url().or(z.literal("")),
+  image_urls: z.string().optional(),
+  net_qty: z.string().trim().max(50).optional(),
+  product_highlights: z.string().optional(),
   is_active: z.enum(["on", "off"]).optional(),
 });
 
@@ -63,7 +63,10 @@ async function uploadProductImage(file: File) {
   return publicUrl;
 }
 
-export async function upsertCategoryAction(_prevState: unknown, formData: FormData) {
+export async function upsertCategoryAction(
+  _prevState: unknown,
+  formData: FormData,
+) {
   try {
     await assertTrustedRequestOrigin();
     await assertAdminForAction();
@@ -98,7 +101,10 @@ export async function upsertCategoryAction(_prevState: unknown, formData: FormDa
   }
 }
 
-export async function upsertProductAction(_prevState: unknown, formData: FormData) {
+export async function upsertProductAction(
+  _prevState: unknown,
+  formData: FormData,
+) {
   try {
     await assertTrustedRequestOrigin();
     await assertAdminForAction();
@@ -111,6 +117,9 @@ export async function upsertProductAction(_prevState: unknown, formData: FormDat
       stock: formData.get("stock"),
       category: formData.get("category"),
       image_url: formData.get("image_url") || "",
+      image_urls: formData.get("image_urls") || "",
+      net_qty: formData.get("net_qty") || "",
+      product_highlights: formData.get("product_highlights") || "",
       is_active: formData.get("is_active") === "on" ? "on" : "off",
     });
 
@@ -127,7 +136,10 @@ export async function upsertProductAction(_prevState: unknown, formData: FormDat
     }
 
     if (!imageUrl) {
-      return { ok: false, error: "Provide an image URL or upload an image file." };
+      return {
+        ok: false,
+        error: "Provide an image URL or upload an image file.",
+      };
     }
 
     const discountRaw = (parsed.data.discount_price || "").trim();
@@ -141,6 +153,31 @@ export async function upsertProductAction(_prevState: unknown, formData: FormDat
       return { ok: false, error: "Discount price must be a positive number." };
     }
 
+    // Parse image_urls JSON array
+    let imageUrlsArray: string[] = [];
+    const rawImageUrls = (parsed.data.image_urls || "").trim();
+    if (rawImageUrls) {
+      try {
+        imageUrlsArray = JSON.parse(rawImageUrls);
+      } catch {
+        imageUrlsArray = rawImageUrls
+          .split(",")
+          .map((u: string) => u.trim())
+          .filter(Boolean);
+      }
+    }
+
+    // Parse product_highlights JSON
+    let highlights: Record<string, string> | null = null;
+    const rawHighlights = (parsed.data.product_highlights || "").trim();
+    if (rawHighlights) {
+      try {
+        highlights = JSON.parse(rawHighlights);
+      } catch {
+        highlights = null;
+      }
+    }
+
     const payload = {
       name: parsed.data.name,
       description: parsed.data.description,
@@ -149,6 +186,9 @@ export async function upsertProductAction(_prevState: unknown, formData: FormDat
       stock: parsed.data.stock,
       category: parsed.data.category,
       image_url: imageUrl,
+      image_urls: imageUrlsArray,
+      net_qty: parsed.data.net_qty || null,
+      product_highlights: highlights,
       is_active: parsed.data.is_active === "on",
     };
 
@@ -187,7 +227,10 @@ export async function upsertProductAction(_prevState: unknown, formData: FormDat
   }
 }
 
-export async function deleteProductAction(_prevState: unknown, formData: FormData) {
+export async function deleteProductAction(
+  _prevState: unknown,
+  formData: FormData,
+) {
   try {
     await assertTrustedRequestOrigin();
     await assertAdminForAction();
@@ -197,7 +240,10 @@ export async function deleteProductAction(_prevState: unknown, formData: FormDat
     }
 
     const admin = createAdminSupabaseClient();
-    const { error } = await admin.from("products").delete().eq("id", idPayload.data);
+    const { error } = await admin
+      .from("products")
+      .delete()
+      .eq("id", idPayload.data);
 
     if (error) {
       return { ok: false, error: "Unable to delete product right now." };

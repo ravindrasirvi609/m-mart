@@ -205,6 +205,9 @@ export type Database = {
           discount_price: number | null;
           id: string;
           image_url: string;
+          image_urls: string[];
+          net_qty: string | null;
+          product_highlights: Record<string, string> | null;
           is_active: boolean;
           name: string;
           price: number;
@@ -217,6 +220,9 @@ export type Database = {
           discount_price?: number | null;
           id?: string;
           image_url: string;
+          image_urls?: string[];
+          net_qty?: string | null;
+          product_highlights?: Record<string, string> | null;
           is_active?: boolean;
           name: string;
           price: number;
@@ -229,6 +235,9 @@ export type Database = {
           discount_price?: number | null;
           id?: string;
           image_url?: string;
+          image_urls?: string[];
+          net_qty?: string | null;
+          product_highlights?: Record<string, string> | null;
           is_active?: boolean;
           name?: string;
           price?: number;

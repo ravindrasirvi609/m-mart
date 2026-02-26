@@ -4,6 +4,7 @@ import { InfiniteProductsList } from "@/components/store/infinite-products-list"
 import { ProductFilters } from "@/components/store/product-filters";
 import { Reveal } from "@/components/ui/reveal";
 import { getProductsPageData } from "@/lib/queries";
+import { ProductCard } from "@/components/store/product-card";
 
 export async function generateMetadata({
   searchParams,
