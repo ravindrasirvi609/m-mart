@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 
-import { PaginationControls } from "@/components/store/pagination-controls";
-import { ProductCard } from "@/components/store/product-card";
+import { InfiniteProductsList } from "@/components/store/infinite-products-list";
 import { ProductFilters } from "@/components/store/product-filters";
 import { Reveal } from "@/components/ui/reveal";
-import { PAGE_SIZE } from "@/lib/constants";
 import { getProductsPageData } from "@/lib/queries";
 
 export async function generateMetadata({
@@ -31,24 +29,12 @@ export default async function ProductsPage({
   const params = await searchParams;
   const search = String(params.search ?? "").trim();
   const category = String(params.category ?? "all");
-  const page = Math.max(1, Number(params.page ?? "1") || 1);
 
   const { products, categories, totalCount } = await getProductsPageData({
     search,
     category,
-    page,
+    page: 1,
   });
-
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-  const baseQuery = new URLSearchParams();
-
-  if (search) {
-    baseQuery.set("search", search);
-  }
-
-  if (category && category !== "all") {
-    baseQuery.set("category", category);
-  }
 
   return (
     <div className="space-y-5">
@@ -78,16 +64,13 @@ export default async function ProductsPage({
           No products found for current filters.
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {products.map((product, index) => (
-            <Reveal key={product.id} delay={index * 55}>
-              <ProductCard product={product} />
-            </Reveal>
-          ))}
-        </div>
+        <InfiniteProductsList
+          initialProducts={products}
+          search={search}
+          category={category}
+          totalCount={totalCount}
+        />
       )}
-
-      <PaginationControls page={page} totalPages={totalPages} baseQuery={baseQuery} />
     </div>
   );
 }
