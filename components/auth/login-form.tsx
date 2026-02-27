@@ -30,10 +30,7 @@ type LoginFormProps = {
   initialError?: string;
 };
 
-export function LoginForm({
-  nextPath = "/",
-  initialError,
-}: LoginFormProps) {
+export function LoginForm({ nextPath = "/", initialError }: LoginFormProps) {
   const safeNextPath = getSafeNextPath(nextPath);
   const [email, setEmail] = useState("");
   const [linkSent, setLinkSent] = useState(false);
@@ -47,7 +44,8 @@ export function LoginForm({
     toast.error(initialError);
   }, [initialError]);
 
-  const sendMagicLink = async () => {
+  const sendMagicLink = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     const normalizedEmail = email.trim().toLowerCase();
     if (!EMAIL_REGEX.test(normalizedEmail)) {
       toast.error("Please enter a valid email address.");
@@ -96,9 +94,17 @@ export function LoginForm({
         </div>
         <h1 className="font-heading text-2xl font-bold">Check your email</h1>
         <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-          We sent a magic link to <span className="font-semibold text-zinc-900 dark:text-zinc-100">{email}</span>.
+          We sent a magic link to{" "}
+          <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+            {email}
+          </span>
+          .
         </p>
-        <Button variant="outline" className="w-full" onClick={() => setLinkSent(false)}>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => setLinkSent(false)}
+        >
           Try another email
         </Button>
       </div>
@@ -106,19 +112,28 @@ export function LoginForm({
   }
 
   return (
-    <div className="premium-card mx-auto w-full max-w-md space-y-4 p-6">
-      <h1 className="font-heading text-2xl font-bold text-zinc-900 dark:text-zinc-100">Login to Mmart</h1>
+    <form
+      onSubmit={sendMagicLink}
+      className="premium-card mx-auto w-full max-w-md space-y-4 p-6"
+    >
+      <h1 className="font-heading text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+        Login to Mmart
+      </h1>
       <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
         Secure one-tap login with email magic link.
       </p>
 
       <label className="block space-y-2">
-        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Email</span>
+        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+          Email
+        </span>
         <Input
           type="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="you@example.com"
+          autoComplete="email"
+          autoFocus
         />
       </label>
 
@@ -127,10 +142,10 @@ export function LoginForm({
         We only use your email for secure authentication.
       </p>
 
-      <Button disabled={loading || !email} className="w-full" onClick={sendMagicLink}>
+      <Button type="submit" disabled={loading || !email} className="w-full">
         <Mail size={14} />
         {loading ? "Sending..." : "Send Magic Link"}
       </Button>
-    </div>
+    </form>
   );
 }

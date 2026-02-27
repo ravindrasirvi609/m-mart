@@ -12,7 +12,10 @@ import {
 } from "@/lib/security/auth-monitor";
 import { SecurityError, toPublicErrorMessage } from "@/lib/security/errors";
 import { consumeRateLimit } from "@/lib/security/rate-limit";
-import { assertTrustedRequestOrigin, getRequestMetadata } from "@/lib/security/request";
+import {
+  assertTrustedRequestOrigin,
+  getRequestMetadata,
+} from "@/lib/security/request";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAGIC_LINK_IP_RATE_LIMIT = { limit: 15, windowMs: 5 * 60_000 };
@@ -62,7 +65,10 @@ export async function sendMagicLinkAction(email: string, nextPath = "/") {
         userAgent: metadata.userAgent,
         email: normalizedEmail,
       });
-      return { ok: false, error: "Too many attempts. Please wait and try again." };
+      return {
+        ok: false,
+        error: "Too many attempts. Please wait and try again.",
+      };
     }
 
     const emailLimiter = consumeRateLimit({
@@ -78,7 +84,10 @@ export async function sendMagicLinkAction(email: string, nextPath = "/") {
         userAgent: metadata.userAgent,
         email: normalizedEmail,
       });
-      return { ok: false, error: "Too many attempts for this email. Please try later." };
+      return {
+        ok: false,
+        error: "Too many attempts for this email. Please try later.",
+      };
     }
 
     const lockState = getAuthLockState(`magiclink:${normalizedEmail}`);
@@ -109,8 +118,13 @@ export async function sendMagicLinkAction(email: string, nextPath = "/") {
     const resend = new Resend(env.RESEND_API_KEY);
     const host = (await headers()).get("host");
     const protocol = host?.includes("localhost") ? "http" : "https";
-    const fallbackOrigin = host ? `${protocol}://${host}` : "https://mmart4u.com";
-    const origin = env.NEXT_PUBLIC_BASE_URL ?? fallbackOrigin;
+    const fallbackOrigin = host
+      ? `${protocol}://${host}`
+      : "https://mmart4u.com";
+    const origin = (env.NEXT_PUBLIC_BASE_URL ?? fallbackOrigin).replace(
+      /\/+$/,
+      "",
+    );
 
     const { data, error } = await supabase.auth.admin.generateLink({
       type: "magiclink",
@@ -127,7 +141,10 @@ export async function sendMagicLinkAction(email: string, nextPath = "/") {
         userAgent: metadata.userAgent,
         email: normalizedEmail,
       });
-      return { ok: false, error: "Unable to send sign-in link right now. Please try again." };
+      return {
+        ok: false,
+        error: "Unable to send sign-in link right now. Please try again.",
+      };
     }
 
     const tokenHash = data.properties.hashed_token;
@@ -194,7 +211,10 @@ export async function sendMagicLinkAction(email: string, nextPath = "/") {
         userAgent: metadata.userAgent,
         email: normalizedEmail,
       });
-      return { ok: false, error: "Failed to send email. Please try again later." };
+      return {
+        ok: false,
+        error: "Failed to send email. Please try again later.",
+      };
     }
 
     registerAuthSuccess(`magiclink:${normalizedEmail}`);
@@ -218,6 +238,9 @@ export async function sendMagicLinkAction(email: string, nextPath = "/") {
       });
     }
 
-    return { ok: false, error: toPublicErrorMessage(err, "An unexpected error occurred.") };
+    return {
+      ok: false,
+      error: toPublicErrorMessage(err, "An unexpected error occurred."),
+    };
   }
 }

@@ -1,6 +1,11 @@
 "use client";
 
-import { useMemo, useState, type ButtonHTMLAttributes, type MouseEvent } from "react";
+import {
+  useMemo,
+  useState,
+  type ButtonHTMLAttributes,
+  type MouseEvent,
+} from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -69,6 +74,7 @@ export function Button({
         triggerRipple(event);
         onClick?.(event);
       }}
+      suppressHydrationWarning
       {...props}
     >
       {ripples.map((ripple) => (
@@ -83,7 +89,12 @@ export function Button({
           }}
         />
       ))}
-      <span className="relative z-10 inline-flex items-center justify-center gap-2">{children}</span>
+      <span
+        className="relative z-10 inline-flex items-center justify-center gap-2"
+        suppressHydrationWarning
+      >
+        {children}
+      </span>
     </button>
   );
 }

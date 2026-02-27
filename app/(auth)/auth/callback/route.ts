@@ -6,7 +6,10 @@ import { recordSecurityEvent } from "@/lib/security/audit";
 import { detectSuspiciousLogin } from "@/lib/security/auth-monitor";
 import { consumeRateLimit } from "@/lib/security/rate-limit";
 import { getRequestMetadata } from "@/lib/security/request";
-import { blacklistToken, isTokenBlacklisted } from "@/lib/security/token-blacklist";
+import {
+  blacklistToken,
+  isTokenBlacklisted,
+} from "@/lib/security/token-blacklist";
 import { normalizeSupabaseCookieOptions } from "@/lib/supabase/proxy";
 
 function getSafeNextPath(nextPath: string | null, fallback = "/") {
@@ -36,7 +39,10 @@ export async function GET(request: NextRequest) {
 
   if (!limiter.allowed) {
     return NextResponse.redirect(
-      new URL("/login?error=Too many authentication attempts. Try again shortly.", request.url),
+      new URL(
+        "/login?error=Too many authentication attempts. Try again shortly.",
+        request.url,
+      ),
     );
   }
 
@@ -44,7 +50,9 @@ export async function GET(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.redirect(new URL("/login?error=Server configuration error", request.url));
+    return NextResponse.redirect(
+      new URL("/login?error=Server configuration error", request.url),
+    );
   }
 
   // Use the same cookie pattern as middleware.ts so auth cookies are
@@ -61,7 +69,10 @@ export async function GET(request: NextRequest) {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
-          const cookieOptions = normalizeSupabaseCookieOptions(request, options);
+          const cookieOptions = normalizeSupabaseCookieOptions(
+            request,
+            options,
+          );
 
           // Keep request and redirect response cookies synchronized.
           request.cookies.set(name, value);
@@ -82,16 +93,39 @@ export async function GET(request: NextRequest) {
         userAgent: metadata.userAgent,
       });
       return NextResponse.redirect(
-        new URL("/login?error=This sign-in link has already been used.", request.url),
+        new URL(
+          "/login?error=This sign-in link has already been used.",
+          request.url,
+        ),
       );
     }
 
-    const { error } = await supabase.auth.verifyOtp({
-      token_hash: tokenHash,
-      type,
-    });
-    if (error) {
-      await blacklistToken(tokenHash, 3600);
+    // Attempt OTP verification with one retry for transient failures
+    let verifyError: Error | null = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type,
+      });
+      if (!error) {
+        verifyError = null;
+        break;
+      }
+      verifyError = error;
+      // Only retry on potentially transient errors, not on invalid/expired tokens
+      const message = error.message?.toLowerCase() ?? "";
+      const isTransient =
+        message.includes("network") ||
+        message.includes("timeout") ||
+        message.includes("fetch") ||
+        message.includes("socket") ||
+        message.includes("econnreset");
+      if (!isTransient) break;
+      // Brief delay before retry
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+
+    if (verifyError) {
       await recordSecurityEvent({
         eventType: "auth_callback_verify_failed",
         outcome: "failure",
@@ -103,10 +137,15 @@ export async function GET(request: NextRequest) {
         },
       });
       return NextResponse.redirect(
-        new URL("/login?error=Sign-in link is invalid or expired.", request.url),
+        new URL(
+          "/login?error=Sign-in link is invalid or expired.",
+          request.url,
+        ),
       );
     }
 
+    // Only blacklist AFTER successful verification to avoid locking out
+    // users when verification fails due to transient errors.
     await blacklistToken(tokenHash, 3600);
   } else if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -122,7 +161,10 @@ export async function GET(request: NextRequest) {
         },
       });
       return NextResponse.redirect(
-        new URL("/login?error=Sign-in session could not be created.", request.url),
+        new URL(
+          "/login?error=Sign-in session could not be created.",
+          request.url,
+        ),
       );
     }
   } else {
@@ -133,13 +175,24 @@ export async function GET(request: NextRequest) {
       ip: metadata.ip,
       userAgent: metadata.userAgent,
     });
-    return NextResponse.redirect(new URL("/login?error=Invalid login link", request.url));
+    return NextResponse.redirect(
+      new URL("/login?error=Invalid login link", request.url),
+    );
   }
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  // Retrieve user with a retry for transient failures (session may take a
+  // moment to propagate after OTP verification).
+  let user = null;
+  let userError = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const result = await supabase.auth.getUser();
+    user = result.data?.user ?? null;
+    userError = result.error;
+    if (user) break;
+    if (attempt === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+  }
 
   if (userError || !user) {
     await recordSecurityEvent({
@@ -149,29 +202,40 @@ export async function GET(request: NextRequest) {
       ip: metadata.ip,
       userAgent: metadata.userAgent,
     });
-    return NextResponse.redirect(new URL("/login?error=Session creation failed", request.url));
+    return NextResponse.redirect(
+      new URL("/login?error=Session creation failed", request.url),
+    );
   }
 
+  // Sync user profile — this is non-critical and should never block login.
+  // If the upsert fails, the user still has a valid session and can use the app.
   if (user.email) {
-    const { error: upsertError } = await supabase.from("users").upsert({
-      id: user.id,
-      email: user.email,
-      name: user.user_metadata?.name ?? null,
-    }, {
-      onConflict: "id",
-    });
+    try {
+      const { error: upsertError } = await supabase.from("users").upsert(
+        {
+          id: user.id,
+          email: user.email,
+          name: user.user_metadata?.name ?? null,
+        },
+        {
+          onConflict: "id",
+        },
+      );
 
-    if (upsertError) {
-      await recordSecurityEvent({
-        eventType: "auth_callback_profile_sync_failed",
-        outcome: "failure",
-        riskLevel: "medium",
-        ip: metadata.ip,
-        userAgent: metadata.userAgent,
-        email: user.email,
-        userId: user.id,
-      });
-      return NextResponse.redirect(new URL("/login?error=Account sync failed", request.url));
+      if (upsertError) {
+        await recordSecurityEvent({
+          eventType: "auth_callback_profile_sync_failed",
+          outcome: "failure",
+          riskLevel: "low",
+          ip: metadata.ip,
+          userAgent: metadata.userAgent,
+          email: user.email,
+          userId: user.id,
+        });
+        // Continue with login — profile sync can be retried later
+      }
+    } catch {
+      // Swallow profile sync errors — login must not be blocked by this
     }
   }
 
