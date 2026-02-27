@@ -103,12 +103,48 @@ export function BannerForm({ banner, onSuccess }: BannerFormProps) {
             Background Color
           </label>
           <Input
+            id="banner-bg-color"
             name="bg_color"
             defaultValue={banner?.bg_color ?? ""}
-            placeholder="#ff6a3f or bg-orange-600"
+            placeholder="#ff6a3f  or  orange-500"
             className="!bg-white/5 !text-text-main"
             disabled={isPending}
           />
+          {/* Quick-pick solid color swatches */}
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {[
+              { label: "Red", value: "#dc2626" },
+              { label: "Orange", value: "#ea580c" },
+              { label: "Amber", value: "#d97706" },
+              { label: "Green", value: "#16a34a" },
+              { label: "Teal", value: "#0d9488" },
+              { label: "Blue", value: "#2563eb" },
+              { label: "Violet", value: "#7c3aed" },
+              { label: "Pink", value: "#db2777" },
+              { label: "Warm", value: "#fff4ef" },
+              { label: "Slate", value: "#1e293b" },
+            ].map(({ label, value }) => (
+              <button
+                key={value}
+                type="button"
+                title={`${label} (${value})`}
+                disabled={isPending}
+                onClick={() => {
+                  const el = document.getElementById(
+                    "banner-bg-color",
+                  ) as HTMLInputElement | null;
+                  if (el) el.value = value;
+                }}
+                className="h-6 w-6 rounded-full border-2 border-admin-border hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-brand-red/50"
+                style={{ backgroundColor: value }}
+                aria-label={label}
+              />
+            ))}
+          </div>
+          <p className="text-[10px] text-text-subtle">
+            Hex (#ff6a3f) or Tailwind token (orange-500). Click a swatch for a
+            quick colour.
+          </p>
         </div>
       </div>
 

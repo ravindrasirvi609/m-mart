@@ -101,12 +101,48 @@ export function CollectionForm({ collection, onSuccess }: CollectionFormProps) {
             Background Color
           </label>
           <Input
+            id="collection-bg-color"
             name="bg_color"
             defaultValue={collection?.bg_color ?? ""}
-            placeholder="#f97316"
+            placeholder="#f97316  or  orange-500"
             className="!bg-white/5 !text-text-main"
             disabled={isPending}
           />
+          {/* Quick-pick solid color swatches */}
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {[
+              { label: "Red", value: "#dc2626" },
+              { label: "Orange", value: "#f97316" },
+              { label: "Amber", value: "#f59e0b" },
+              { label: "Green", value: "#22c55e" },
+              { label: "Teal", value: "#14b8a6" },
+              { label: "Blue", value: "#3b82f6" },
+              { label: "Violet", value: "#8b5cf6" },
+              { label: "Pink", value: "#ec4899" },
+              { label: "Rose", value: "#f43f5e" },
+              { label: "Emerald", value: "#10b981" },
+            ].map(({ label, value }) => (
+              <button
+                key={value}
+                type="button"
+                title={`${label} (${value})`}
+                disabled={isPending}
+                onClick={() => {
+                  const el = document.getElementById(
+                    "collection-bg-color",
+                  ) as HTMLInputElement | null;
+                  if (el) el.value = value;
+                }}
+                className="h-6 w-6 rounded-full border-2 border-admin-border hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-brand-red/50"
+                style={{ backgroundColor: value }}
+                aria-label={label}
+              />
+            ))}
+          </div>
+          <p className="text-[10px] text-text-subtle">
+            Hex (#f97316) or Tailwind token (orange-500). Used as a tinted card
+            gradient — pick a vibrant hue.
+          </p>
         </div>
 
         <div className="space-y-1.5">

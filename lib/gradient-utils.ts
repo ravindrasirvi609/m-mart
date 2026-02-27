@@ -179,6 +179,47 @@ function resolveColor(token: string): string {
 }
 
 /**
+ * Resolves a Tailwind solid color token OR raw CSS color value to a usable CSS string.
+ *
+ * Use this for `bg_color` fields that expect a single color (not a gradient).
+ *
+ * Examples:
+ *   "green-600"           → "#16a34a"
+ *   "orange-500"          → "#f97316"
+ *   "#ff6a3f"             → "#ff6a3f"             (raw CSS passthrough)
+ *   "rgb(255,100,80)"     → "rgb(255,100,80)"      (raw CSS passthrough)
+ *   "linear-gradient(…)"  → "linear-gradient(…)"   (gradient passthrough)
+ *
+ * Returns null for empty / undefined input.
+ */
+export function resolveSolidColor(
+  raw: string | null | undefined,
+): string | null {
+  if (!raw || !raw.trim()) return null;
+
+  const trimmed = raw.trim();
+
+  // Already a CSS value → pass through as-is
+  if (
+    trimmed.startsWith("#") ||
+    trimmed.startsWith("rgb") ||
+    trimmed.startsWith("hsl") ||
+    trimmed.startsWith("linear-gradient") ||
+    trimmed.startsWith("radial-gradient") ||
+    trimmed.startsWith("conic-gradient")
+  ) {
+    return trimmed;
+  }
+
+  // Try Tailwind color token map
+  const resolved = TAILWIND_COLORS[trimmed];
+  if (resolved) return resolved;
+
+  // Unknown → return as-is (CSS may handle it, e.g. "coral", "tomato")
+  return trimmed;
+}
+
+/**
  * Parses a Tailwind gradient string (e.g. "from-green-600 via-white to-yellow-500")
  * and returns an equivalent CSS `linear-gradient()` string.
  *

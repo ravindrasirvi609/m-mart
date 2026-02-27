@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { resolveSolidColor } from "@/lib/gradient-utils";
 
 type Banner = {
   id: string;
@@ -90,7 +91,8 @@ export function BannerCarousel({
             <div
               className="relative h-full w-full overflow-hidden rounded-2xl"
               style={{
-                backgroundColor: banner.bg_color ?? "#fff4ef",
+                backgroundColor:
+                  resolveSolidColor(banner.bg_color) ?? "#fff4ef",
               }}
             >
               <Image

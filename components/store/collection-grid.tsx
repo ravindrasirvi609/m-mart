@@ -2,7 +2,26 @@ import Link from "next/link";
 import { Sparkles } from "lucide-react";
 
 import { Reveal } from "@/components/ui/reveal";
+import { resolveSolidColor } from "@/lib/gradient-utils";
 import type { CollectionWithProducts } from "@/lib/home-queries";
+
+/**
+ * Converts a collection bg_color (Tailwind token, hex, or gradient) to a CSS
+ * `background` value for the subtle tinted card gradient.
+ */
+function toCollectionBg(
+  bgColor: string | null | undefined,
+): string | undefined {
+  const c = resolveSolidColor(bgColor);
+  if (!c) return undefined;
+  // Already a gradient — use directly
+  if (c.startsWith("linear-gradient") || c.startsWith("radial-gradient"))
+    return c;
+  // Hex with alpha stops (subtle light/dark fade)
+  if (c.startsWith("#")) return `linear-gradient(135deg, ${c}22, ${c}08)`;
+  // rgb/hsl/named colors — fallback to transparent fade
+  return `linear-gradient(135deg, ${c}22, transparent)`;
+}
 
 type CollectionGridProps = {
   collections: CollectionWithProducts[];
@@ -35,9 +54,7 @@ export function CollectionGrid({ collections }: CollectionGridProps) {
               href={`/products?collection=${collection.slug}`}
               className="glow-on-hover premium-card group flex flex-col items-start gap-3 rounded-2xl p-5 transition"
               style={{
-                background: collection.bg_color
-                  ? `linear-gradient(135deg, ${collection.bg_color}22, ${collection.bg_color}08)`
-                  : undefined,
+                background: toCollectionBg(collection.bg_color),
               }}
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fff1eb] text-[#c91510] dark:bg-zinc-800">
