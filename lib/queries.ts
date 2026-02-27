@@ -115,7 +115,11 @@ export async function getProductById(id: string) {
 
 export async function getUserProfile(userId: string) {
   const supabase = await createServerSupabaseClient();
-  const { data } = await supabase.from("users").select("*").eq("id", userId).single();
+  const { data } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", userId)
+    .single();
   return data;
 }
 
@@ -177,14 +181,16 @@ export async function getAdminDashboardData() {
     supabase.from("users").select("id", { head: true, count: "exact" }),
     supabase
       .from("orders")
-      .select(`
+      .select(
+        `
         id,
         created_at,
         total_amount,
         payment_status,
         order_status,
         users (name, email)
-      `)
+      `,
+      )
       .order("created_at", { ascending: false })
       .limit(5),
   ]);
@@ -200,9 +206,9 @@ export async function getAdminDashboardData() {
     totalRevenue,
     totalCustomers: totalCustomers ?? 0,
     lowStockProducts: lowStockProducts ?? [],
-    recentOrders: (recentOrders ?? []).map(o => ({
+    recentOrders: (recentOrders ?? []).map((o) => ({
       ...o,
-      user: Array.isArray(o.users) ? o.users[0] : o.users
+      user: Array.isArray(o.users) ? o.users[0] : o.users,
     })),
   };
 }
@@ -212,7 +218,10 @@ export async function getAdminProducts() {
   const supabase = createAdminSupabaseClient();
 
   const [{ data: products }, { data: categories }] = await Promise.all([
-    supabase.from("products").select("*").order("created_at", { ascending: false }),
+    supabase
+      .from("products")
+      .select("*")
+      .order("created_at", { ascending: false }),
     supabase.from("categories").select("*").order("name", { ascending: true }),
   ]);
 
@@ -232,7 +241,11 @@ export async function getAdminProductById(productId: string) {
   const supabase = createAdminSupabaseClient();
 
   const [{ data: product }, { data: categories }] = await Promise.all([
-    supabase.from("products").select("*").eq("id", parsedProductId.data).single(),
+    supabase
+      .from("products")
+      .select("*")
+      .eq("id", parsedProductId.data)
+      .single(),
     supabase.from("categories").select("*").eq("is_active", true).order("name"),
   ]);
 
@@ -309,7 +322,7 @@ export async function getCurrentUserNotifications({
     const missingNotificationsTable =
       error.code === "PGRST205" ||
       message.includes("public.notifications") ||
-      message.includes("relation \"notifications\" does not exist");
+      message.includes('relation "notifications" does not exist');
 
     if (missingNotificationsTable) {
       return {
@@ -360,6 +373,121 @@ export function assertNoQueryError(error: PostgrestError | null) {
   }
 }
 
+/* ──────────────── Campaign / Banner / Collection Queries ──────────────── */
+
+export async function getAdminCampaigns() {
+  await assertAdminForAction();
+  const supabase = createAdminSupabaseClient();
+
+  const [{ data: campaigns }, { data: products }] = await Promise.all([
+    supabase
+      .from("campaigns")
+      .select("*")
+      .order("priority", { ascending: false }),
+    supabase
+      .from("products")
+      .select("id,name,image_url,price,discount_price")
+      .eq("is_active", true)
+      .order("name", { ascending: true }),
+  ]);
+
+  return { campaigns: campaigns ?? [], products: products ?? [] };
+}
+
+export async function getAdminCampaignProducts(campaignId: string) {
+  await assertAdminForAction();
+  const supabase = createAdminSupabaseClient();
+
+  const { data } = await supabase
+    .from("campaign_products")
+    .select("product_id, sort_order")
+    .eq("campaign_id", campaignId)
+    .order("sort_order", { ascending: true });
+
+  return data ?? [];
+}
+
+export async function getAdminBanners() {
+  await assertAdminForAction();
+  const supabase = createAdminSupabaseClient();
+
+  const { data } = await supabase
+    .from("banners")
+    .select("*")
+    .order("sort_order", { ascending: true });
+
+  return data ?? [];
+}
+
+export async function getAdminCollections() {
+  await assertAdminForAction();
+  const supabase = createAdminSupabaseClient();
+
+  const [{ data: collections }, { data: products }] = await Promise.all([
+    supabase
+      .from("collections")
+      .select("*")
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("products")
+      .select("id,name,image_url,price,discount_price")
+      .eq("is_active", true)
+      .order("name", { ascending: true }),
+  ]);
+
+  return { collections: collections ?? [], products: products ?? [] };
+}
+
+export async function getAdminCollectionProducts(collectionId: string) {
+  await assertAdminForAction();
+  const supabase = createAdminSupabaseClient();
+
+  const { data } = await supabase
+    .from("collection_products")
+    .select("product_id, sort_order")
+    .eq("collection_id", collectionId)
+    .order("sort_order", { ascending: true });
+
+  return data ?? [];
+}
+
+export async function getAdminProductTags() {
+  await assertAdminForAction();
+  const supabase = createAdminSupabaseClient();
+
+  const [{ data: tags }, { data: products }] = await Promise.all([
+    supabase
+      .from("product_tags")
+      .select("id, product_id, tag")
+      .order("tag", { ascending: true }),
+    supabase
+      .from("products")
+      .select("id,name,image_url")
+      .eq("is_active", true)
+      .order("name", { ascending: true }),
+  ]);
+
+  return { tags: tags ?? [], products: products ?? [] };
+}
+
+export async function getAdminServiceAreas() {
+  await assertAdminForAction();
+  const supabase = createAdminSupabaseClient();
+
+  const { data } = await supabase
+    .from("service_areas")
+    .select("*")
+    .order("sort_order", { ascending: true });
+
+  return data ?? [];
+}
+
 export type Product = ProductRow;
 export type Category = CategoryLite;
 export type UserRow = Database["public"]["Tables"]["users"]["Row"];
+export type CampaignRow = Database["public"]["Tables"]["campaigns"]["Row"];
+export type BannerRow = Database["public"]["Tables"]["banners"]["Row"];
+export type CollectionRow = Database["public"]["Tables"]["collections"]["Row"];
+export type ProductTagRow = Database["public"]["Tables"]["product_tags"]["Row"];
+export type ServiceAreaRow =
+  Database["public"]["Tables"]["service_areas"]["Row"];

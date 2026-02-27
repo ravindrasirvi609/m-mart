@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   Apple,
@@ -10,23 +9,33 @@ import {
   Package,
   PhoneCall,
   ShieldCheck,
-  Sparkles,
   Truck,
   Utensils,
   Wallet,
   Waves,
 } from "lucide-react";
 
-import { TestimonialCarousel } from "@/components/site/testimonial-carousel";
+import { BannerCarousel } from "@/components/store/banner-carousel";
+import { CampaignHero } from "@/components/store/campaign-hero";
+import { CollectionGrid } from "@/components/store/collection-grid";
+import { DealsStrip } from "@/components/store/deals-strip";
+import { LocationPicker } from "@/components/store/location-picker";
 import { ProductCard } from "@/components/store/product-card";
+import { ProductRow } from "@/components/store/product-row";
+import { RecentlyViewed } from "@/components/store/recently-viewed";
+import { TestimonialCarousel } from "@/components/site/testimonial-carousel";
 import { Reveal } from "@/components/ui/reveal";
 import { Button } from "@/components/ui/button";
 import { STORE } from "@/lib/constants";
-import { getHomeData } from "@/lib/queries";
+import { getCurrentUser } from "@/lib/auth";
+import { getEnhancedHomeData } from "@/lib/home-queries";
 
 export const revalidate = 120;
 
-const fallbackCategories = [
+// ---------------------------------------------------------------------------
+// Fallback category icons (used when DB categories lack icon metadata)
+// ---------------------------------------------------------------------------
+const CATEGORY_ICONS = [
   { name: "Vegetables", icon: Carrot },
   { name: "Fruits", icon: Apple },
   { name: "Dairy", icon: Milk },
@@ -35,12 +44,15 @@ const fallbackCategories = [
   { name: "Household", icon: Utensils },
 ];
 
-const trustBadges = [
+const TRUST_BADGES = [
   { label: "Fast Delivery", icon: Truck },
   { label: "Fresh Products", icon: Leaf },
   { label: "Secure Payment", icon: ShieldCheck },
 ];
 
+// ---------------------------------------------------------------------------
+// JSON-LD Structured Data
+// ---------------------------------------------------------------------------
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "GroceryStore",
@@ -55,114 +67,102 @@ const jsonLd = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Home Page — Dynamic, Festival-Aware, Location-Aware
+// ---------------------------------------------------------------------------
 export default async function HomePage() {
-  const { categories, featured } = await getHomeData();
+  const user = await getCurrentUser();
+  const data = await getEnhancedHomeData(user?.id);
+
+  const {
+    categories,
+    featured,
+    activeCampaign,
+    banners,
+    bestSellers,
+    deals,
+    collections,
+    festival,
+    festivalProducts,
+    timeContext,
+    dayContext,
+    userLocation,
+    serviceAreas,
+    deliveryEta,
+  } = data;
+
+  // Map category names to fallback icons
   const displayCategories =
     categories.length > 0
       ? categories.slice(0, 6).map((category, index) => ({
-        name: category.name,
-        icon: fallbackCategories[index % fallbackCategories.length].icon,
-      }))
-      : fallbackCategories;
+          name: category.name,
+          icon: CATEGORY_ICONS[index % CATEGORY_ICONS.length].icon,
+        }))
+      : CATEGORY_ICONS;
 
   return (
-    <div className="space-y-14">
+    <div className="space-y-12">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <section className="hero-pattern relative overflow-hidden rounded-[2rem] px-5 py-8 text-white sm:px-10 sm:py-14">
-        <div className="pointer-events-none absolute -left-10 top-14 h-36 w-36 rounded-full bg-white/20 blur-2xl" />
-        <div className="pointer-events-none absolute -right-6 bottom-10 h-28 w-28 rounded-full bg-white/20 blur-2xl" />
-
-        <div className="grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-          <Reveal>
-            <div className="space-y-6">
-              <p className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em]">
-                <Sparkles size={14} />
-                Online Grocery. App-like Experience.
-              </p>
-
-              <h1 className="max-w-2xl font-display text-4xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-                Fresh Groceries Delivered with Speed and Clarity
-              </h1>
-
-              <p className="max-w-xl text-sm text-white/90 sm:text-base">
-                Shop daily essentials with smooth browsing, secure UPI verification, and fast local delivery in Pune.
-              </p>
-
-              <div className="flex flex-wrap gap-3">
-                <Link href="/products">
-                  <Button className="bg-white !text-[#c91510]">Start Shopping</Button>
-                </Link>
-                <a href={`tel:${STORE.phone}`}>
-                  <Button variant="outline" className="!text-white !ring-white/55 hover:!bg-white/15">
-                    Call Now
-                  </Button>
-                </a>
-              </div>
-
-              <form action="/products" className="flex w-full max-w-xl flex-col gap-2 sm:flex-row">
-                <input
-                  type="search"
-                  name="search"
-                  placeholder="Search fruits, vegetables, essentials..."
-                  className="h-11 flex-1 rounded-xl border border-white/35 bg-white/95 px-3 text-sm font-medium text-zinc-900 outline-none"
-                />
-                <Button type="submit" className="!bg-zinc-900">
-                  Search
-                </Button>
-              </form>
-
-              <div className="flex flex-wrap gap-2">
-                {trustBadges.map((item) => {
-                  const Icon = item.icon;
-
-                  return (
-                    <span
-                      key={item.label}
-                      className="inline-flex items-center gap-1 rounded-full bg-white/16 px-3 py-1.5 text-xs font-bold"
-                    >
-                      <Icon size={13} />
-                      {item.label}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          </Reveal>
-
-          <Reveal delay={180}>
-            <div className="relative">
-              <div className="relative mx-auto h-[360px] w-full max-w-md overflow-hidden rounded-[1.8rem] border border-white/30 bg-white/10 p-2 backdrop-blur">
-                <div className="relative h-full w-full overflow-hidden rounded-[1.4rem] bg-white">
-                  <Image
-                    src="https://images.unsplash.com/photo-1604719312566-8912e9227c6a?q=80&w=2148&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                    alt="Fresh groceries"
-                    fill
-                    className="object-cover"
-                    priority
-                  />
-                </div>
-              </div>
-
-              <div className="animate-float absolute -left-6 top-8 rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#c91510] shadow-lg">
-                10 min dispatch
-              </div>
-              <div className="animate-float absolute -right-4 bottom-8 rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#c91510] shadow-lg [animation-delay:0.8s]">
-                100% Fresh Pick
-              </div>
-            </div>
-          </Reveal>
+      {/* ── 0. Location Picker ──────────────────────────────────────── */}
+      {serviceAreas.length > 0 && (
+        <div className="flex items-center justify-end">
+          <LocationPicker
+            currentArea={userLocation.area}
+            currentCity={userLocation.city}
+            serviceAreas={serviceAreas}
+            userId={user?.id ?? null}
+          />
         </div>
-      </section>
+      )}
 
+      {/* ── 1. Dynamic Hero (Campaign / Festival / Default) ────────── */}
+      <CampaignHero
+        campaign={activeCampaign}
+        festival={festival}
+        userLocation={userLocation}
+        deliveryEta={deliveryEta}
+      />
+
+      {/* ── 2. Trust Badges ─────────────────────────────────────────── */}
+      <Reveal>
+        <div className="flex flex-wrap justify-center gap-3">
+          {TRUST_BADGES.map((item) => {
+            const Icon = item.icon;
+            return (
+              <span
+                key={item.label}
+                className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-bold text-zinc-700 shadow-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+              >
+                <Icon size={14} className="text-[#c91510]" />
+                {item.label}
+              </span>
+            );
+          })}
+        </div>
+      </Reveal>
+
+      {/* ── 3. Promotional Banners Carousel ─────────────────────────── */}
+      {banners.length > 0 && (
+        <Reveal>
+          <BannerCarousel banners={banners} />
+        </Reveal>
+      )}
+
+      {/* ── 4. Featured Categories ──────────────────────────────────── */}
       <section className="space-y-5">
         <Reveal>
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Featured Categories</h2>
-            <Link href="/products" className="text-sm font-black uppercase tracking-[0.1em] text-[#c91510]">
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+              Featured Categories
+            </h2>
+            <Link
+              href="/products"
+              className="text-sm font-black uppercase tracking-[0.1em] text-[#c91510]"
+            >
               Explore all
             </Link>
           </div>
@@ -171,7 +171,6 @@ export default async function HomePage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {displayCategories.map((category, index) => {
             const Icon = category.icon;
-
             return (
               <Reveal key={category.name} delay={index * 70}>
                 <Link
@@ -191,21 +190,76 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ── 5. Festival Special Products ─────────────────────────────── */}
+      {festival && festivalProducts.length > 0 && (
+        <ProductRow
+          title={`${festival.name} Specials`}
+          icon={festival.icon}
+          badge="FESTIVE"
+          products={festivalProducts}
+          viewAllHref={`/products?tags=${festival.tags.slice(0, 3).join(",")}`}
+          accentBg
+        />
+      )}
+
+      {/* ── 6. Campaign Products ─────────────────────────────────────── */}
+      {activeCampaign && activeCampaign.products.length > 0 && (
+        <ProductRow
+          title={activeCampaign.name}
+          badge={activeCampaign.badge_text ?? "PROMO"}
+          products={activeCampaign.products}
+          viewAllHref={`/products?campaign=${activeCampaign.slug}`}
+        />
+      )}
+
+      {/* ── 7. Time-of-Day Suggestions ───────────────────────────────── */}
+      <ProductRow
+        title={timeContext.label}
+        icon={timeContext.icon}
+        products={featured.slice(0, 6)}
+        viewAllHref={`/products?tags=${timeContext.tags.slice(0, 3).join(",")}`}
+      />
+
+      {/* ── 8. Today's Offer Banner ──────────────────────────────────── */}
+      <Reveal>
+        <div className="premium-card flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-[#fff4ef] to-[#ffede5] p-4 dark:from-[#2a1b1e] dark:to-[#24181c]">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#c91510]">
+              Today&apos;s Offer
+            </p>
+            <p className="font-heading text-xl font-bold text-text-main">
+              Free Delivery Above ₹500
+            </p>
+          </div>
+          <BadgeCheck className="text-[#c91510]" />
+        </div>
+      </Reveal>
+
+      {/* ── 9. Best Sellers ──────────────────────────────────────────── */}
+      {bestSellers.length > 0 && (
+        <ProductRow
+          title="Best Sellers"
+          icon="🔥"
+          badge="POPULAR"
+          products={bestSellers}
+          viewAllHref="/products?sort=popular"
+        />
+      )}
+
+      {/* ── 10. Deals Strip ──────────────────────────────────────────── */}
+      <DealsStrip deals={deals} />
+
+      {/* ── 11. Trending / Latest Products (Grid) ────────────────────── */}
       <section className="space-y-5">
         <Reveal>
-          <div className="premium-card flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-[#fff4ef] to-[#ffede5] p-4 dark:from-[#2a1b1e] dark:to-[#24181c]">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#c91510]">Today Offer</p>
-              <p className="font-heading text-xl font-bold text-text-main">Free Delivery Above ₹500</p>
-            </div>
-            <BadgeCheck className="text-[#c91510]" />
-          </div>
-        </Reveal>
-
-        <Reveal>
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Trending Products</h2>
-            <Link href="/products" className="text-sm font-black uppercase tracking-[0.1em] text-[#c91510]">
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+              Trending Products
+            </h2>
+            <Link
+              href="/products"
+              className="text-sm font-black uppercase tracking-[0.1em] text-[#c91510]"
+            >
               View all
             </Link>
           </div>
@@ -220,9 +274,26 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ── 12. Day-of-Week Picks ────────────────────────────────────── */}
+      <ProductRow
+        title={dayContext.label}
+        icon={dayContext.icon}
+        products={featured.slice(0, 5)}
+        viewAllHref={`/products?tags=${dayContext.tags.slice(0, 3).join(",")}`}
+      />
+
+      {/* ── 13. Curated Collections ──────────────────────────────────── */}
+      <CollectionGrid collections={collections} />
+
+      {/* ── 14. Recently Viewed (Client-side) ────────────────────────── */}
+      <RecentlyViewed />
+
+      {/* ── 15. Why Choose Mmart ─────────────────────────────────────── */}
       <section className="space-y-5">
         <Reveal>
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Why Choose Mmart</h2>
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            Why Choose Mmart
+          </h2>
         </Reveal>
 
         <div className="grid gap-4 md:grid-cols-3">
@@ -244,13 +315,16 @@ export default async function HomePage() {
             },
           ].map((feature, index) => {
             const Icon = feature.icon;
-
             return (
               <Reveal key={feature.title} delay={index * 90}>
                 <article className="glow-on-hover premium-card soft-red-panel rounded-2xl p-5">
                   <Icon className="text-[#c91510]" size={22} />
-                  <h3 className="mt-3 font-heading text-lg font-bold text-text-main">{feature.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-text-subtle">{feature.text}</p>
+                  <h3 className="mt-3 font-heading text-lg font-bold text-text-main">
+                    {feature.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-text-subtle">
+                    {feature.text}
+                  </p>
                 </article>
               </Reveal>
             );
@@ -258,9 +332,12 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ── 16. How It Works ─────────────────────────────────────────── */}
       <section className="space-y-5">
         <Reveal>
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">How It Works</h2>
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            How It Works
+          </h2>
         </Reveal>
 
         <div className="grid gap-4 md:grid-cols-3">
@@ -271,7 +348,9 @@ export default async function HomePage() {
           ].map((step, index) => (
             <Reveal key={step} delay={index * 100}>
               <article className="premium-card relative overflow-hidden p-5">
-                <p className="mb-3 text-3xl font-black text-[#c91510]">0{index + 1}</p>
+                <p className="mb-3 text-3xl font-black text-[#c91510]">
+                  0{index + 1}
+                </p>
                 <h3 className="text-lg font-bold text-text-main">{step}</h3>
                 {index < 2 ? (
                   <div className="absolute right-0 top-0 hidden h-full w-8 items-center justify-center md:flex">
@@ -284,22 +363,30 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ── 17. Testimonials ─────────────────────────────────────────── */}
       <section className="space-y-5">
         <Reveal>
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">What Customers Say</h2>
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            What Customers Say
+          </h2>
         </Reveal>
         <Reveal delay={100}>
           <TestimonialCarousel />
         </Reveal>
       </section>
 
+      {/* ── 18. Contact & Map ────────────────────────────────────────── */}
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <Reveal>
           <div className="premium-card p-6">
-            <h2 className="text-2xl font-bold text-text-main">Visit or Contact</h2>
+            <h2 className="text-2xl font-bold text-text-main">
+              Visit or Contact
+            </h2>
             <p className="mt-2 text-sm text-text-subtle">{STORE.name}</p>
             <p className="mt-1 text-sm text-text-subtle">{STORE.location}</p>
-            <p className="mt-1 text-sm font-semibold text-text-main">{STORE.phone}</p>
+            <p className="mt-1 text-sm font-semibold text-text-main">
+              {STORE.phone}
+            </p>
 
             <div className="mt-5 flex flex-wrap gap-3">
               <a href={`tel:${STORE.phone}`}>
@@ -308,7 +395,11 @@ export default async function HomePage() {
                   Call Now
                 </Button>
               </a>
-              <a href="https://wa.me/918955872627" target="_blank" rel="noreferrer">
+              <a
+                href="https://wa.me/918955872627"
+                target="_blank"
+                rel="noreferrer"
+              >
                 <Button variant="outline">WhatsApp</Button>
               </a>
             </div>
@@ -317,12 +408,15 @@ export default async function HomePage() {
 
         <Reveal delay={120}>
           <div className="premium-card soft-red-panel relative min-h-[220px] overflow-hidden p-6">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#c91510]">Map Preview</p>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#c91510]">
+              Map Preview
+            </p>
             <p className="mt-3 max-w-xs text-sm text-text-subtle">
-              Google Maps integration placeholder. Connect your live store pin in deployment.
+              Google Maps integration placeholder. Connect your live store pin
+              in deployment.
             </p>
             <div className="absolute bottom-5 right-5 rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#c91510] shadow dark:bg-zinc-900">
-              Hinjewadi Phase 1
+              {userLocation.area}
             </div>
           </div>
         </Reveal>

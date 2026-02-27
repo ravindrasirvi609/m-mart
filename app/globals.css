@@ -81,7 +81,11 @@ body {
   background:
     radial-gradient(circle at 8% -8%, rgba(255, 90, 61, 0.2), transparent 35%),
     radial-gradient(circle at 92% 0%, rgba(207, 20, 15, 0.12), transparent 28%),
-    radial-gradient(circle at 50% 120%, rgba(245, 158, 11, 0.08), transparent 45%),
+    radial-gradient(
+      circle at 50% 120%,
+      rgba(245, 158, 11, 0.08),
+      transparent 45%
+    ),
     var(--surface-muted);
   color: var(--text-main);
   font-family: var(--font-sans), sans-serif;
@@ -108,8 +112,14 @@ h6 {
     linear-gradient(rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.9)),
     linear-gradient(to right, rgba(207, 20, 15, 0.06) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(207, 20, 15, 0.06) 1px, transparent 1px);
-  background-size: auto, 24px 24px, 24px 24px;
-  background-position: 0 0, 0 0, 0 0;
+  background-size:
+    auto,
+    24px 24px,
+    24px 24px;
+  background-position:
+    0 0,
+    0 0,
+    0 0;
 }
 
 .dark .store-grid-bg {
@@ -122,14 +132,26 @@ h6 {
 .hero-pattern {
   background-image:
     linear-gradient(145deg, rgba(255, 255, 255, 0.2) 0%, transparent 42%),
-    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.2), transparent 36%),
-    radial-gradient(circle at 82% 84%, rgba(255, 220, 168, 0.2), transparent 36%),
+    radial-gradient(
+      circle at 18% 12%,
+      rgba(255, 255, 255, 0.2),
+      transparent 36%
+    ),
+    radial-gradient(
+      circle at 82% 84%,
+      rgba(255, 220, 168, 0.2),
+      transparent 36%
+    ),
     linear-gradient(105deg, #ff6a3f 0%, #e0341f 48%, #bc170f 100%);
 }
 
 .soft-red-panel {
   background:
-    linear-gradient(130deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.75)),
+    linear-gradient(
+      130deg,
+      rgba(255, 255, 255, 0.88),
+      rgba(255, 255, 255, 0.75)
+    ),
     linear-gradient(180deg, #fff5f1, #fff9f6);
 }
 
@@ -157,7 +179,10 @@ h6 {
 }
 
 .glow-on-hover {
-  transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+  transition:
+    transform 0.28s ease,
+    box-shadow 0.28s ease,
+    border-color 0.28s ease;
   will-change: transform;
 }
 
@@ -170,7 +195,9 @@ h6 {
 .reveal {
   opacity: 0;
   transform: translateY(18px);
-  transition: opacity 0.55s ease, transform 0.55s ease;
+  transition:
+    opacity 0.55s ease,
+    transform 0.55s ease;
 }
 
 .reveal.is-visible {
@@ -272,24 +299,42 @@ h6 {
 .skeleton-shimmer {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(90deg, rgba(233, 237, 243, 0.85), rgba(244, 247, 251, 0.95));
+  background: linear-gradient(
+    90deg,
+    rgba(233, 237, 243, 0.85),
+    rgba(244, 247, 251, 0.95)
+  );
 }
 
 .skeleton-shimmer::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.75),
+    transparent
+  );
   transform: translateX(-100%);
   animation: shimmer 1.25s ease-in-out infinite;
 }
 
 .dark .skeleton-shimmer {
-  background: linear-gradient(90deg, rgba(34, 43, 56, 0.8), rgba(26, 34, 46, 0.92));
+  background: linear-gradient(
+    90deg,
+    rgba(34, 43, 56, 0.8),
+    rgba(26, 34, 46, 0.92)
+  );
 }
 
 .dark .skeleton-shimmer::after {
-  background: linear-gradient(90deg, transparent, rgba(176, 189, 204, 0.16), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(176, 189, 204, 0.16),
+    transparent
+  );
 }
 
 @keyframes shimmer {
@@ -336,10 +381,82 @@ h6 {
   font-size: 0.72rem;
   font-weight: 700;
   pointer-events: none;
-  transition: transform 0.16s ease, opacity 0.2s ease;
+  transition:
+    transform 0.16s ease,
+    opacity 0.2s ease;
   box-shadow: 0 6px 20px rgba(207, 20, 15, 0.15);
 }
 
 .dark .mobile-refresh-indicator {
   background: rgba(21, 21, 24, 0.96);
+}
+
+/* ---------------------------------------------------------------------------
+   Scrollbar-hide utility for horizontal carousels
+   --------------------------------------------------------------------------- */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Festival particle float animation (extended)
+   --------------------------------------------------------------------------- */
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-12px) rotate(3deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(-2deg);
+  }
+  75% {
+    transform: translateY(-15px) rotate(1deg);
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 8s ease-in-out infinite;
+}
+
+/* ---------------------------------------------------------------------------
+   Countdown timer digit pulse
+   --------------------------------------------------------------------------- */
+@keyframes digit-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.animate-digit-pulse {
+  animation: digit-pulse 1s ease-in-out infinite;
+}
+
+/* ---------------------------------------------------------------------------
+   Banner slide transitions
+   --------------------------------------------------------------------------- */
+.banner-enter {
+  animation: banner-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes banner-enter {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }

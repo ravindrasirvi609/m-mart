@@ -15,6 +15,11 @@ import {
   LogOut,
   X,
   Upload,
+  Megaphone,
+  Image,
+  FolderOpen,
+  Tag,
+  MapPin,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -27,6 +32,11 @@ const navItems = [
   { href: "/admin/bulk-upload", label: "Bulk Upload", icon: Upload },
   { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
   { href: "/admin/categories", label: "Categories", icon: Layers },
+  { href: "/admin/campaigns", label: "Campaigns", icon: Megaphone },
+  { href: "/admin/banners", label: "Banners", icon: Image },
+  { href: "/admin/collections", label: "Collections", icon: FolderOpen },
+  { href: "/admin/product-tags", label: "Product Tags", icon: Tag },
+  { href: "/admin/service-areas", label: "Service Areas", icon: MapPin },
   { href: "/admin/users", label: "Customers", icon: Users },
   { href: "/admin/delivery", label: "Delivery", icon: Truck },
   { href: "/admin/settings", label: "Settings", icon: Settings },

@@ -24,6 +24,153 @@ export type Database = {
         };
         Relationships: [];
       };
+      banners: {
+        Row: {
+          id: string;
+          title: string;
+          subtitle: string | null;
+          image_url: string;
+          link_url: string | null;
+          bg_color: string | null;
+          location_area: string | null;
+          starts_at: string;
+          ends_at: string;
+          is_active: boolean;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          subtitle?: string | null;
+          image_url: string;
+          link_url?: string | null;
+          bg_color?: string | null;
+          location_area?: string | null;
+          starts_at?: string;
+          ends_at?: string;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          subtitle?: string | null;
+          image_url?: string;
+          link_url?: string | null;
+          bg_color?: string | null;
+          location_area?: string | null;
+          starts_at?: string;
+          ends_at?: string;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      campaign_products: {
+        Row: {
+          campaign_id: string;
+          product_id: string;
+          sort_order: number;
+        };
+        Insert: {
+          campaign_id: string;
+          product_id: string;
+          sort_order?: number;
+        };
+        Update: {
+          campaign_id?: string;
+          product_id?: string;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "campaign_products_campaign_id_fkey";
+            columns: ["campaign_id"];
+            isOneToOne: false;
+            referencedRelation: "campaigns";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "campaign_products_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      campaigns: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          campaign_type:
+            | "festival"
+            | "seasonal"
+            | "flash_sale"
+            | "weekly"
+            | "custom";
+          hero_title: string;
+          hero_subtitle: string | null;
+          hero_image_url: string | null;
+          hero_bg_gradient: string | null;
+          badge_text: string | null;
+          discount_label: string | null;
+          starts_at: string;
+          ends_at: string;
+          is_active: boolean;
+          priority: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          campaign_type:
+            | "festival"
+            | "seasonal"
+            | "flash_sale"
+            | "weekly"
+            | "custom";
+          hero_title: string;
+          hero_subtitle?: string | null;
+          hero_image_url?: string | null;
+          hero_bg_gradient?: string | null;
+          badge_text?: string | null;
+          discount_label?: string | null;
+          starts_at: string;
+          ends_at: string;
+          is_active?: boolean;
+          priority?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          slug?: string;
+          campaign_type?:
+            | "festival"
+            | "seasonal"
+            | "flash_sale"
+            | "weekly"
+            | "custom";
+          hero_title?: string;
+          hero_subtitle?: string | null;
+          hero_image_url?: string | null;
+          hero_bg_gradient?: string | null;
+          badge_text?: string | null;
+          discount_label?: string | null;
+          starts_at?: string;
+          ends_at?: string;
+          is_active?: boolean;
+          priority?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       categories: {
         Row: {
           created_at: string;
@@ -42,6 +189,75 @@ export type Database = {
           id?: string;
           is_active?: boolean;
           name?: string;
+        };
+        Relationships: [];
+      };
+      collection_products: {
+        Row: {
+          collection_id: string;
+          product_id: string;
+          sort_order: number;
+        };
+        Insert: {
+          collection_id: string;
+          product_id: string;
+          sort_order?: number;
+        };
+        Update: {
+          collection_id?: string;
+          product_id?: string;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "collection_products_collection_id_fkey";
+            columns: ["collection_id"];
+            isOneToOne: false;
+            referencedRelation: "collections";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "collection_products_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      collections: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          description: string | null;
+          icon_name: string | null;
+          bg_color: string | null;
+          is_active: boolean;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          description?: string | null;
+          icon_name?: string | null;
+          bg_color?: string | null;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          slug?: string;
+          description?: string | null;
+          icon_name?: string | null;
+          bg_color?: string | null;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -245,6 +461,103 @@ export type Database = {
         };
         Relationships: [];
       };
+      product_tags: {
+        Row: {
+          id: string;
+          product_id: string;
+          tag: string;
+        };
+        Insert: {
+          id?: string;
+          product_id: string;
+          tag: string;
+        };
+        Update: {
+          id?: string;
+          product_id?: string;
+          tag?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "product_tags_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      service_areas: {
+        Row: {
+          id: string;
+          area_name: string;
+          city: string;
+          pincode: string | null;
+          is_active: boolean;
+          delivery_eta_minutes: number;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          area_name: string;
+          city?: string;
+          pincode?: string | null;
+          is_active?: boolean;
+          delivery_eta_minutes?: number;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          area_name?: string;
+          city?: string;
+          pincode?: string | null;
+          is_active?: boolean;
+          delivery_eta_minutes?: number;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      user_locations: {
+        Row: {
+          user_id: string;
+          area: string;
+          city: string;
+          pincode: string | null;
+          latitude: number | null;
+          longitude: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          area: string;
+          city?: string;
+          pincode?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          area?: string;
+          city?: string;
+          pincode?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_locations_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       users: {
         Row: {
           address: string | null;
@@ -277,6 +590,19 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      get_active_deals: {
+        Args: {
+          result_limit?: number;
+        };
+        Returns: Database["public"]["Tables"]["products"]["Row"][];
+      };
+      get_best_sellers: {
+        Args: {
+          days_back?: number;
+          result_limit?: number;
+        };
+        Returns: Database["public"]["Tables"]["products"]["Row"][];
+      };
       is_admin: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
