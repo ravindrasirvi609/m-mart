@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal } from "lucide-react";
 
@@ -25,11 +25,19 @@ export function ProductFilters({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const baseParams = useMemo(() => new URLSearchParams(searchParams), [searchParams]);
+  // Track whether the search value was changed by the user (not by props/re-renders)
+  const userTypedRef = useRef(false);
+
+  // Stabilise searchParams — only rebuild when the serialised string changes
+  const currentParamsString = searchParams.toString();
 
   useEffect(() => {
+    // Only navigate when the user actually typed something
+    if (!userTypedRef.current) return;
+    userTypedRef.current = false;
+
     const timeout = setTimeout(() => {
-      const params = new URLSearchParams(baseParams);
+      const params = new URLSearchParams(currentParamsString);
 
       if (searchValue.trim()) {
         params.set("search", searchValue.trim());
@@ -38,11 +46,17 @@ export function ProductFilters({
       }
 
       params.delete("page");
-      router.push(`${pathname}?${params.toString()}`);
+
+      const nextUrl = `${pathname}?${params.toString()}`;
+      // Only push if the URL actually changed
+      const currentUrl = `${pathname}?${currentParamsString}`;
+      if (nextUrl !== currentUrl) {
+        router.push(nextUrl);
+      }
     }, 350);
 
     return () => clearTimeout(timeout);
-  }, [searchValue, baseParams, pathname, router]);
+  }, [searchValue, currentParamsString, pathname, router]);
 
   return (
     <section className="premium-card grid gap-3 p-4 sm:grid-cols-[1fr_0.65fr] sm:items-end">
@@ -55,7 +69,10 @@ export function ProductFilters({
           placeholder="Search fruits, dairy, daily essentials..."
           value={searchValue}
           className="pl-3"
-          onChange={(event) => setSearchValue(event.target.value)}
+          onChange={(event) => {
+            userTypedRef.current = true;
+            setSearchValue(event.target.value);
+          }}
         />
       </label>
 
@@ -70,7 +87,7 @@ export function ProductFilters({
             const value = event.target.value;
             setCategoryValue(value);
 
-            const params = new URLSearchParams(baseParams);
+            const params = new URLSearchParams(currentParamsString);
             if (value === "all") {
               params.delete("category");
             } else {
