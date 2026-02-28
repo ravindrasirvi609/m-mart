@@ -1,4 +1,14 @@
-const CACHE_VERSION = "mmart-pwa-v2";
+/**
+ * Mmart Service Worker — Production-hardened
+ *
+ * Handles:
+ * - Offline caching (static + runtime)
+ * - Web Push notifications (VAPID server-side push)
+ * - Notification click routing
+ * - Self-update lifecycle
+ */
+
+const CACHE_VERSION = "mmart-pwa-v3";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const OFFLINE_URL = "/offline";
@@ -20,20 +30,25 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE_URLS)),
   );
+  // Immediately activate new service worker when installed
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
+    (async () => {
+      // Clean up old caches
+      const keys = await caches.keys();
+      await Promise.all(
         keys
           .filter((key) => !key.startsWith(CACHE_VERSION))
           .map((key) => caches.delete(key)),
-      ),
-    ),
+      );
+
+      // Take control of all open clients immediately
+      await self.clients.claim();
+    })(),
   );
-  self.clients.claim();
 });
 
 /* ------------------------------------------------------------------ */
@@ -47,6 +62,9 @@ self.addEventListener("fetch", (event) => {
 
   const requestUrl = new URL(request.url);
   if (requestUrl.origin !== self.location.origin) return;
+
+  // Skip API routes — always network
+  if (requestUrl.pathname.startsWith("/api/")) return;
 
   // Navigation requests: network-first with offline fallback
   if (request.mode === "navigate") {
@@ -91,7 +109,7 @@ self.addEventListener("fetch", (event) => {
 });
 
 /* ------------------------------------------------------------------ */
-/*  Push Notifications                                                 */
+/*  Push Notifications (VAPID server-side push)                        */
 /* ------------------------------------------------------------------ */
 
 self.addEventListener("push", (event) => {
@@ -105,7 +123,7 @@ self.addEventListener("push", (event) => {
       parsed && typeof parsed === "object" && !Array.isArray(parsed)
         ? parsed
         : { body: String(parsed) };
-  } catch (_error) {
+  } catch {
     payload = { body: event.data.text() };
   }
 
@@ -117,7 +135,7 @@ self.addEventListener("push", (event) => {
   const tag =
     typeof payload.tag === "string" && payload.tag.trim()
       ? payload.tag
-      : undefined;
+      : `mmart-${Date.now()}`;
   const url =
     typeof payload.url === "string" && payload.url.startsWith("/")
       ? payload.url
@@ -140,6 +158,8 @@ self.addEventListener("push", (event) => {
       badge,
       vibrate: [200, 100, 200],
       data: { url },
+      // Require interaction so notification persists on mobile
+      requireInteraction: false,
     }),
   );
 });
@@ -161,7 +181,7 @@ self.addEventListener("notificationclick", (event) => {
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((windowClients) => {
-        // Try to focus an existing window
+        // Try to focus an existing window on the same path
         for (const client of windowClients) {
           if ("focus" in client) {
             try {
@@ -175,14 +195,14 @@ self.addEventListener("notificationclick", (event) => {
           }
         }
 
-        // If no matching window, try to focus any existing window and navigate
+        // Try to navigate an existing window
         for (const client of windowClients) {
           if ("focus" in client && "navigate" in client) {
             return client.focus().then(() => client.navigate(destination));
           }
         }
 
-        // Last resort: open a new window
+        // Open new window
         if (self.clients.openWindow) {
           return self.clients.openWindow(destination);
         }
@@ -190,4 +210,14 @@ self.addEventListener("notificationclick", (event) => {
         return Promise.resolve();
       }),
   );
+});
+
+/* ------------------------------------------------------------------ */
+/*  Message handler for update coordination                            */
+/* ------------------------------------------------------------------ */
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });

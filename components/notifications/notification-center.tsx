@@ -68,7 +68,8 @@ export function NotificationCenter({
     setMounted(true);
   }, []);
 
-  const { permission, requestPermission, sendPush } = usePushNotifications();
+  const { permission, subscribed, requestPermission, sendPush } =
+    usePushNotifications();
 
   const unreadCount = notifications.reduce(
     (count, n) => count + (n.is_read ? 0 : 1),
@@ -100,11 +101,13 @@ export function NotificationCenter({
           return [incoming, ...current].slice(0, 20);
         });
 
-        // Toast + push
+        // Toast in foreground + local notification sound
+        // (Server-side push handles background notifications via VAPID)
         toast(incoming.title, { description: incoming.message });
         void sendPush(incoming.title, incoming.message, {
           tag: `notif-${incoming.id}`,
           url: mode === "admin" ? "/admin/orders" : "/orders",
+          playSound: true,
         });
       }
 
@@ -117,7 +120,9 @@ export function NotificationCenter({
         );
       }
     },
-    [isRelevantNotification, mode, sendPush],
+    // sendPush is stable (useCallback with no deps)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isRelevantNotification, mode],
   );
 
   const { status: realtimeStatus, retry: realtimeRetry } = useRealtimeChannel({
@@ -155,12 +160,12 @@ export function NotificationCenter({
   }, [mode, supabase, userId]);
 
   /* ----- Polling backup: adaptive interval ----- */
-  /* Poll every 10s when realtime is disconnected, 30s when connected */
+  /* Poll every 15s when realtime is disconnected, 60s when connected */
   useEffect(() => {
     // Initial fetch after short delay
-    const kickoff = setTimeout(() => void fetchLatest(), 1500);
+    const kickoff = setTimeout(() => void fetchLatest(), 2000);
 
-    const pollInterval = realtimeStatus === "connected" ? 30000 : 10000;
+    const pollInterval = realtimeStatus === "connected" ? 60_000 : 15_000;
     const timer = setInterval(() => void fetchLatest(), pollInterval);
 
     return () => {
@@ -295,7 +300,7 @@ export function NotificationCenter({
                       : "text-zinc-600 dark:text-zinc-300",
                   )}
                 >
-                  ✓ Browser push notifications enabled.
+                  ✓ Push notifications {subscribed ? "active" : "enabled"}.
                 </p>
               ) : permission === "unsupported" ? (
                 <p
@@ -324,7 +329,7 @@ export function NotificationCenter({
           {/* Offline Debug Hint */}
           {mounted && realtimeStatus === "disconnected" && (
             <p className="mb-2 text-[9px] text-amber-600 dark:text-amber-400 text-center animate-pulse">
-              Realtime Offline. Polling active every 30s.
+              Realtime Offline. Polling active every 15s.
             </p>
           )}
 
@@ -403,4 +408,3 @@ export function NotificationCenter({
     </div>
   );
 }
-

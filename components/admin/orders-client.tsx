@@ -24,7 +24,8 @@ interface OrdersClientProps {
   orders: AdminOrder[];
 }
 
-type OrderAddress = Database["public"]["Tables"]["orders"]["Row"]["delivery_address"];
+type OrderAddress =
+  Database["public"]["Tables"]["orders"]["Row"]["delivery_address"];
 type OrderRow = Database["public"]["Tables"]["orders"]["Row"];
 
 interface OrderUser {
@@ -65,7 +66,7 @@ interface AdminOrder {
 /* ------------------------------------------------------------------ */
 
 function getOrderUser(users: AdminOrder["users"]) {
-  return Array.isArray(users) ? users[0] ?? null : users;
+  return Array.isArray(users) ? (users[0] ?? null) : users;
 }
 
 function getOrderItems(items: AdminOrder["order_items"]) {
@@ -73,12 +74,17 @@ function getOrderItems(items: AdminOrder["order_items"]) {
 }
 
 function getOrderProduct(products: OrderItem["products"]) {
-  return Array.isArray(products) ? products[0] ?? null : products;
+  return Array.isArray(products) ? (products[0] ?? null) : products;
 }
 
 function getAddressLabel(address: OrderAddress) {
   if (typeof address === "string") return address;
-  if (address && typeof address === "object" && !Array.isArray(address) && "address" in address) {
+  if (
+    address &&
+    typeof address === "object" &&
+    !Array.isArray(address) &&
+    "address" in address
+  ) {
     const value = address.address;
     return typeof value === "string" && value.trim().length > 0 ? value : "N/A";
   }
@@ -137,10 +143,16 @@ export function OrdersClient({ orders }: OrdersClientProps) {
           duration: 8000,
         });
 
-        void sendPush("New order received!", `Order #${orderId} was just placed.`, {
-          tag: `admin-new-order-${incoming.id}`,
-          url: "/admin/orders",
-        });
+        // Play local bell sound — server-side push handles background notifications
+        void sendPush(
+          "New order received!",
+          `Order #${orderId} was just placed.`,
+          {
+            tag: `admin-new-order-${incoming.id}`,
+            url: "/admin/orders",
+            playSound: true,
+          },
+        );
 
         // Refresh the page data to load full order details
         router.refresh();
@@ -157,7 +169,9 @@ export function OrdersClient({ orders }: OrdersClientProps) {
         }));
       }
     },
-    [router, sendPush],
+    // sendPush is stable (useCallback with no deps)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [router],
   );
 
   const { status: realtimeStatus } = useRealtimeChannel({
@@ -206,10 +220,10 @@ export function OrdersClient({ orders }: OrdersClientProps) {
     }
   }, [router, supabase]);
 
-  /* Poll every 10s when realtime is disconnected, 30s when connected */
+  /* Poll every 15s when realtime is disconnected, 60s when connected */
   useEffect(() => {
-    const kickoff = setTimeout(() => void syncOrders(), 2000);
-    const pollInterval = realtimeStatus === "connected" ? 30000 : 10000;
+    const kickoff = setTimeout(() => void syncOrders(), 3000);
+    const pollInterval = realtimeStatus === "connected" ? 60_000 : 15_000;
     const timer = setInterval(() => void syncOrders(), pollInterval);
     return () => {
       clearTimeout(kickoff);
@@ -250,20 +264,26 @@ export function OrdersClient({ orders }: OrdersClientProps) {
     {
       header: "Date",
       accessorKey: "created_at",
-      cell: (order: AdminOrder) => <span className="text-xs">{formatDate(order.created_at)}</span>,
+      cell: (order: AdminOrder) => (
+        <span className="text-xs">{formatDate(order.created_at)}</span>
+      ),
     },
     {
       header: "Total",
       accessorKey: "total_amount",
       cell: (order: AdminOrder) => (
-        <span className="font-bold text-text-main">{formatCurrency(order.total_amount)}</span>
+        <span className="font-bold text-text-main">
+          {formatCurrency(order.total_amount)}
+        </span>
       ),
     },
     {
       header: "Payment",
       accessorKey: "payment_status",
       cell: (order: AdminOrder) => (
-        <Badge variant={order.payment_status === "paid" ? "success" : "warning"}>
+        <Badge
+          variant={order.payment_status === "paid" ? "success" : "warning"}
+        >
           {order.payment_status.replace(/_/g, " ")}
         </Badge>
       ),
@@ -272,15 +292,21 @@ export function OrdersClient({ orders }: OrdersClientProps) {
       header: "Status",
       accessorKey: "order_status",
       cell: (order: AdminOrder) => (
-        <Badge variant={order.order_status === "delivered" ? "success" : "warning"}>
+        <Badge
+          variant={order.order_status === "delivered" ? "success" : "warning"}
+        >
           {order.order_status}
         </Badge>
       ),
     },
   ];
 
-  const orderItems = selectedOrder ? getOrderItems(selectedOrder.order_items) : [];
-  const selectedOrderUser = selectedOrder ? getOrderUser(selectedOrder.users) : null;
+  const orderItems = selectedOrder
+    ? getOrderItems(selectedOrder.order_items)
+    : [];
+  const selectedOrderUser = selectedOrder
+    ? getOrderUser(selectedOrder.users)
+    : null;
 
   /* ----- Render ----- */
   return (
@@ -315,9 +341,15 @@ export function OrdersClient({ orders }: OrdersClientProps) {
                 <p className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">
                   Customer Info
                 </p>
-                <p className="font-bold text-text-main">{selectedOrderUser?.name || "N/A"}</p>
-                <p className="text-xs text-text-subtle">{selectedOrderUser?.email}</p>
-                <p className="text-xs text-text-subtle">{selectedOrderUser?.phone}</p>
+                <p className="font-bold text-text-main">
+                  {selectedOrderUser?.name || "N/A"}
+                </p>
+                <p className="text-xs text-text-subtle">
+                  {selectedOrderUser?.email}
+                </p>
+                <p className="text-xs text-text-subtle">
+                  {selectedOrderUser?.phone}
+                </p>
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-text-subtle">
@@ -377,7 +409,10 @@ export function OrdersClient({ orders }: OrdersClientProps) {
               <div className="flex justify-between text-sm">
                 <span className="text-text-subtle">Subtotal</span>
                 <span className="font-bold text-text-main">
-                  {formatCurrency(selectedOrder.total_amount - (selectedOrder.delivery_charge || 0))}
+                  {formatCurrency(
+                    selectedOrder.total_amount -
+                      (selectedOrder.delivery_charge || 0),
+                  )}
                 </span>
               </div>
               <div className="mt-1 flex justify-between text-sm">

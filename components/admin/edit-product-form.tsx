@@ -131,7 +131,9 @@ export function EditProductForm({
           placeholder="Additional image URLs (JSON array)"
           rows={2}
           defaultValue={
-            product.image_urls?.length ? JSON.stringify(product.image_urls) : ""
+            Array.isArray(product.image_urls) && product.image_urls.length
+              ? JSON.stringify(product.image_urls)
+              : ""
           }
           className="!bg-white/5 !text-text-main font-mono text-xs"
           disabled={isPending}

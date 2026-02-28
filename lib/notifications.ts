@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/supabase/types";
 import { formatOrderStatus } from "@/lib/utils";
+import { sendPushToUser, sendPushToAdmins } from "@/lib/web-push";
 
 type AdminSupabaseClient = SupabaseClient<Database>;
 type NotificationInsert =
@@ -66,6 +67,11 @@ export async function createOrderPlacedNotifications(
   const orderCode = shortOrderId(orderId);
   const readableName = customerName.trim() || "Customer";
 
+  const customerTitle = "Order placed";
+  const customerMessage = `Order #${orderCode} has been placed successfully and is awaiting payment verification.`;
+  const adminTitle = "New order received";
+  const adminMessage = `${readableName} placed order #${orderCode}. Please verify payment and process it.`;
+
   await insertNotifications(
     [
       {
@@ -73,20 +79,36 @@ export async function createOrderPlacedNotifications(
         order_id: orderId,
         target_role: "customer",
         kind: "order_placed",
-        title: "Order placed",
-        message: `Order #${orderCode} has been placed successfully and is awaiting payment verification.`,
+        title: customerTitle,
+        message: customerMessage,
       },
       {
         user_id: null,
         order_id: orderId,
         target_role: "admin",
         kind: "new_order",
-        title: "New order received",
-        message: `${readableName} placed order #${orderCode}. Please verify payment and process it.`,
+        title: adminTitle,
+        message: adminMessage,
       },
     ],
     client,
   );
+
+  // Server-side Web Push (VAPID) — works in background/PWA
+  await Promise.allSettled([
+    sendPushToUser(customerId, {
+      title: customerTitle,
+      body: customerMessage,
+      tag: `order-placed-${orderId}`,
+      url: "/orders",
+    }),
+    sendPushToAdmins({
+      title: adminTitle,
+      body: adminMessage,
+      tag: `admin-new-order-${orderId}`,
+      url: "/admin/orders",
+    }),
+  ]);
 }
 
 export async function createOrderStatusUpdateNotification(
@@ -139,6 +161,16 @@ export async function createOrderStatusUpdateNotification(
     },
     client,
   );
+
+  // Server-side Web Push (VAPID) — works in background/PWA
+  await sendPushToUser(customerId, {
+    title,
+    body: message,
+    tag: `order-status-${orderId}-${orderStatus}`,
+    url: "/orders",
+  }).catch((err) => {
+    console.error("[Notifications] Push to user failed:", err);
+  });
 }
 
 export async function createDeliveryAgentAssignedNotification(
@@ -154,6 +186,8 @@ export async function createDeliveryAgentAssignedNotification(
   client?: AdminSupabaseClient,
 ) {
   const orderCode = shortOrderId(orderId);
+  const title = "Delivery agent assigned";
+  const message = `${agentName} will deliver your order #${orderCode}. Track your order for live updates.`;
 
   await insertNotifications(
     {
@@ -161,9 +195,19 @@ export async function createDeliveryAgentAssignedNotification(
       order_id: orderId,
       target_role: "customer",
       kind: "agent_assigned",
-      title: "Delivery agent assigned",
-      message: `${agentName} will deliver your order #${orderCode}. Track your order for live updates.`,
+      title,
+      message,
     },
     client,
   );
+
+  // Server-side Web Push
+  await sendPushToUser(customerId, {
+    title,
+    body: message,
+    tag: `agent-assigned-${orderId}`,
+    url: `/orders/${orderId}/track`,
+  }).catch((err) => {
+    console.error("[Notifications] Push for agent assign failed:", err);
+  });
 }

@@ -71,13 +71,19 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
           description: `Order #${incoming.id.slice(0, 8).toUpperCase()} is now in your history.`,
         });
 
+        // Play local notification sound only — server-side push handles background
         void sendPush(
           "Order placed!",
           `Order #${incoming.id.slice(0, 8).toUpperCase()} has been placed successfully.`,
-          { tag: `order-placed-${incoming.id}`, url: "/orders" },
+          {
+            tag: `order-placed-${incoming.id}`,
+            url: "/orders",
+            playSound: true,
+          },
         );
 
         router.refresh();
+        return;
       }
 
       if (payload.eventType === "UPDATE") {
@@ -102,9 +108,11 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
 
           toast("Order status updated", { description: statusMsg });
 
+          // Play local notification sound only — server-side push handles background
           void sendPush("Order status updated", statusMsg, {
             tag: `order-update-${updated.id}-${nextOrderStatus}`,
             url: "/orders",
+            playSound: true,
           });
         }
 
@@ -172,8 +180,8 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
   }, [router, supabase, userId]);
 
   useEffect(() => {
-    const kickoff = setTimeout(() => void syncOrders(), 2000);
-    const timer = setInterval(() => void syncOrders(), 30000);
+    const kickoff = setTimeout(() => void syncOrders(), 3000);
+    const timer = setInterval(() => void syncOrders(), 60_000);
     return () => {
       clearTimeout(kickoff);
       clearInterval(timer);

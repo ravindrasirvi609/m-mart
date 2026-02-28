@@ -4,13 +4,14 @@ import { Toaster } from "sonner";
 
 import { MobileRuntime } from "@/components/mobile/mobile-runtime";
 import { CartProvider } from "@/components/providers/cart-provider";
+import { PresenceProvider } from "@/components/providers/presence-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
       <CartProvider>
-        {children}
+        <PresenceProvider>{children}</PresenceProvider>
         <MobileRuntime />
         <Toaster
           richColors

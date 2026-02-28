@@ -36,5 +36,16 @@ export default async function ProductDetailsPage({
     notFound();
   }
 
-  return <ProductDetailView product={product} />;
+  return (
+    <ProductDetailView
+      product={{
+        ...product,
+        image_urls: product.image_urls as string[] | undefined,
+        product_highlights: product.product_highlights as
+          | Record<string, string>
+          | null
+          | undefined,
+      }}
+    />
+  );
 }
