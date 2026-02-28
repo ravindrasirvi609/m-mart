@@ -191,9 +191,7 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
   if (orders.length === 0) {
     return (
       <div className="premium-card border-dashed p-10 text-center">
-        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-          No orders yet.
-        </p>
+        <p className="text-sm font-medium text-text-subtle">No orders yet.</p>
       </div>
     );
   }
@@ -226,9 +224,9 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
             {order.order_items.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center gap-3 rounded-xl bg-[#fff4ef] p-2 dark:bg-zinc-800"
+                className="flex items-center gap-3 rounded-xl bg-[#fff4ef] p-2 dark:bg-[#1e1518]"
               >
-                <div className="relative h-14 w-14 overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-700">
+                <div className="relative h-14 w-14 overflow-hidden rounded-lg bg-zinc-100 dark:bg-[#2a1a1d]">
                   <Image
                     src={item.products?.image_url || "/placeholder-product.svg"}
                     alt={item.products?.name || "Product"}

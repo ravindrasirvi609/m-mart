@@ -187,7 +187,7 @@ export function LoginForm({ nextPath = "/", initialError }: LoginFormProps) {
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
         </div>
-        <span className="relative bg-white px-3 text-xs font-medium uppercase tracking-wider text-zinc-400 dark:bg-zinc-900 dark:text-zinc-500">
+        <span className="relative bg-background px-3 text-xs font-medium uppercase tracking-wider text-text-subtle">
           or
         </span>
       </div>

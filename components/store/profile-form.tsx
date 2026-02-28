@@ -50,24 +50,40 @@ export function ProfileForm({
       }}
     >
       <div className="space-y-1">
-        <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-300">Email</p>
-        <p className="rounded-xl bg-[#fff3ec] px-3 py-2 text-sm font-semibold text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
+        <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-text-subtle">
+          Email
+        </p>
+        <p className="rounded-xl bg-[#fff3ec] px-3 py-2 text-sm font-semibold text-text-main dark:bg-[#1e1518]">
           {email}
         </p>
       </div>
 
       <label className="block space-y-2">
-        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Full Name</span>
-        <Input required value={name} onChange={(event) => setName(event.target.value)} />
+        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+          Full Name
+        </span>
+        <Input
+          required
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+        />
       </label>
 
       <label className="block space-y-2">
-        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Phone</span>
-        <Input required value={phone} onChange={(event) => setPhone(event.target.value)} />
+        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+          Phone
+        </span>
+        <Input
+          required
+          value={phone}
+          onChange={(event) => setPhone(event.target.value)}
+        />
       </label>
 
       <label className="block space-y-2">
-        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Address</span>
+        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+          Address
+        </span>
         <Textarea
           required
           rows={4}
