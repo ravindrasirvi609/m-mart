@@ -7,7 +7,7 @@ import { assertUserForAction } from "@/lib/auth";
 import { LOW_STOCK_THRESHOLD } from "@/lib/constants";
 import { sendLowStockEmail, sendOrderEmails } from "@/lib/email";
 import { createOrderPlacedNotifications } from "@/lib/notifications";
-import { toPublicErrorMessage } from "@/lib/security/errors";
+import { toPublicErrorMessage, AuthError } from "@/lib/security/errors";
 import { assertTrustedRequestOrigin } from "@/lib/security/request";
 import { validateImageFile } from "@/lib/security/upload";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -56,15 +56,30 @@ async function uploadPaymentScreenshot(file: File, userId: string) {
 
   const admin = createAdminSupabaseClient();
   const filePath = `payments/${userId}/${Date.now()}-${sanitizeFileName(file.name)}`;
-  const { data, error } = await admin.storage
-    .from("payment-screenshots")
-    .upload(filePath, file, {
-      contentType: file.type,
-      upsert: false,
-    });
+
+  let data;
+  let error;
+  try {
+    const result = await admin.storage
+      .from("payment-screenshots")
+      .upload(filePath, file, {
+        contentType: file.type,
+        upsert: false,
+      });
+    data = result.data;
+    error = result.error;
+  } catch (uploadErr) {
+    throw new Error(
+      `Screenshot upload failed: ${uploadErr instanceof Error ? uploadErr.message : "Network error"}`,
+    );
+  }
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(`Screenshot upload failed: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new Error("Screenshot upload returned no data.");
   }
 
   const {
@@ -172,15 +187,40 @@ export async function placeOrderAction(
       rpcParams.p_lng = deliveryLng;
     }
 
-    const { data: rpcData, error: rpcError } = await admin.rpc(
-      "place_order_with_items",
-      rpcParams as never,
-    );
-
-    if (rpcError) {
+    let rpcData;
+    let rpcError;
+    try {
+      const rpcResult = await admin.rpc(
+        "place_order_with_items",
+        rpcParams as never,
+      );
+      rpcData = rpcResult.data;
+      rpcError = rpcResult.error;
+    } catch (rpcErr) {
       return {
         ok: false,
-        error: "Unable to place order right now. Please try again.",
+        error: `Unable to place order: ${rpcErr instanceof Error ? rpcErr.message : "network error"}. Please try again.`,
+      };
+    }
+
+    if (rpcError) {
+      // Surface the actual RPC error for common issues
+      const msg = rpcError.message ?? "";
+      if (msg.includes("Insufficient stock")) {
+        return { ok: false, error: msg };
+      }
+      if (msg.includes("Product not found")) {
+        return {
+          ok: false,
+          error: "One of the products is no longer available.",
+        };
+      }
+      if (msg.includes("Cart is empty")) {
+        return { ok: false, error: "Your cart is empty." };
+      }
+      return {
+        ok: false,
+        error: `Unable to place order right now. Please try again. (${msg})`,
       };
     }
 
@@ -188,7 +228,10 @@ export async function placeOrderAction(
     const orderId = orderResult?.order_id as string | undefined;
 
     if (!orderId) {
-      return { ok: false, error: "Order could not be placed." };
+      return {
+        ok: false,
+        error: "Order could not be placed. Please try again.",
+      };
     }
 
     // Record initial status in timeline
@@ -250,7 +293,7 @@ export async function placeOrderAction(
         customerName: profilePayload.data.name,
         deliveryAddress: profilePayload.data.address,
         items: emailItems,
-        total: Number(orderResult.total_amount ?? 0),
+        total: Number(orderResult?.total_amount ?? 0),
         paymentStatus: "Pending Verification",
       }),
       sendLowStockEmail(refreshedProducts ?? []),
@@ -264,11 +307,25 @@ export async function placeOrderAction(
 
     return { ok: true, orderId };
   } catch (error) {
+    // For auth errors, return the specific message so users know to log in
+    if (error instanceof AuthError) {
+      return { ok: false, error: error.message };
+    }
+
+    // For upload or known errors, include context
+    if (error instanceof Error && error.message.includes("Screenshot upload")) {
+      return {
+        ok: false,
+        error:
+          "Failed to upload payment screenshot. Please try a smaller image or different format.",
+      };
+    }
+
     return {
       ok: false,
       error: toPublicErrorMessage(
         error,
-        "Unexpected error while placing order.",
+        "Unexpected error while placing order. Please try again.",
       ),
     };
   }

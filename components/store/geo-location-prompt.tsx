@@ -95,6 +95,8 @@ export function GeoLocationPrompt({
   // Once position is acquired, reverse-geocode it
   useEffect(() => {
     if (!position || resolved) return;
+    // If already dismissed (e.g. after a reload), don't re-process
+    if (wasDismissed()) return;
 
     let cancelled = false;
     setResolving(true);

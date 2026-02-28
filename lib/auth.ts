@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { getServerEnv } from "@/lib/env";
 import { recordSecurityEvent } from "@/lib/security/audit";
+import { AuthError } from "@/lib/security/errors";
 import { logger } from "@/lib/security/logger";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -34,7 +35,9 @@ export function isAdminEmail(email: string | null | undefined) {
  * Checks if an email belongs to an admin, either via environment variable
  * or by checking the `admin_users` table in the database.
  */
-export async function checkIsAdmin(email: string | null | undefined): Promise<boolean> {
+export async function checkIsAdmin(
+  email: string | null | undefined,
+): Promise<boolean> {
   if (!email) return false;
 
   const normalizedEmail = email.toLowerCase().trim();
@@ -100,7 +103,9 @@ export async function assertUserForAction() {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new Error("You must be logged in to perform this action.");
+    throw new AuthError(
+      "Your session has expired. Please log in again to continue.",
+    );
   }
 
   return user;
