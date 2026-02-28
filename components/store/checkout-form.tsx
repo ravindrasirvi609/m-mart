@@ -269,7 +269,6 @@ export function CheckoutForm({
           <Input
             type="file"
             accept="image/png,image/jpeg,image/webp"
-            capture="environment"
             required
             onChange={(event) => {
               const file = event.target.files?.[0] ?? null;

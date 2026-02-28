@@ -33,7 +33,11 @@ export function normalizeSupabaseCookieOptions(
     normalizedOptions.domain = SHARED_PRODUCTION_COOKIE_DOMAIN;
   }
 
-  normalizedOptions.httpOnly = true;
+  // IMPORTANT: Do NOT set httpOnly to true. The @supabase/ssr browser client
+  // needs to read auth cookies via document.cookie to attach the JWT on
+  // client-side requests (RPC calls, realtime, etc.). Setting httpOnly would
+  // make all browser-side Supabase calls unauthenticated (auth.uid() → NULL).
+  normalizedOptions.httpOnly = false;
   normalizedOptions.secure = process.env.NODE_ENV === "production";
   normalizedOptions.sameSite = "lax";
   normalizedOptions.path = "/";
