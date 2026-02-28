@@ -169,7 +169,7 @@ export function CampaignHero({
                 type="search"
                 name="search"
                 placeholder="Search fruits, vegetables, essentials..."
-                className="h-11 flex-1 rounded-xl border border-white/35 bg-white/95 px-3 text-sm font-medium text-zinc-900 outline-none placeholder:text-zinc-400"
+                className="h-11 flex-1 rounded-xl border border-white/35 bg-white/95 px-3 text-sm font-medium text-zinc-900 outline-none placeholder:text-zinc-400 dark:bg-zinc-900/95 dark:text-zinc-100 dark:placeholder:text-zinc-500"
               />
               <Button type="submit" className="!bg-zinc-900">
                 Search
@@ -181,7 +181,7 @@ export function CampaignHero({
         <Reveal delay={180}>
           <div className="relative">
             <div className="relative mx-auto h-[360px] w-full max-w-md overflow-hidden rounded-[1.8rem] border border-white/30 bg-white/10 p-2 backdrop-blur">
-              <div className="relative h-full w-full overflow-hidden rounded-[1.4rem] bg-white">
+              <div className="relative h-full w-full overflow-hidden rounded-[1.4rem] bg-white dark:bg-zinc-900">
                 <Image
                   src={heroImageUrl}
                   alt={heroTitle}
@@ -193,10 +193,10 @@ export function CampaignHero({
             </div>
 
             {/* Floating badges */}
-            <div className="animate-float absolute -left-6 top-8 rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#c91510] shadow-lg">
+            <div className="animate-float absolute -left-6 top-8 rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#c91510] shadow-lg dark:bg-zinc-900 dark:text-[#ff8a6e]">
               {deliveryEta ? `${deliveryEta} min delivery` : "Fast dispatch"}
             </div>
-            <div className="animate-float absolute -right-4 bottom-8 rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#c91510] shadow-lg [animation-delay:0.8s]">
+            <div className="animate-float absolute -right-4 bottom-8 rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#c91510] shadow-lg [animation-delay:0.8s] dark:bg-zinc-900 dark:text-[#ff8a6e]">
               {festival
                 ? `${festival.icon} ${festival.name}`
                 : "100% Fresh Pick"}

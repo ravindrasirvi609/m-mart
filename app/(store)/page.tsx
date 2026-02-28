@@ -105,7 +105,7 @@ export default async function HomePage() {
       : CATEGORY_ICONS;
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-8 sm:space-y-12">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -148,15 +148,15 @@ export default async function HomePage() {
 
       {/* ── 2. Trust Badges ─────────────────────────────────────────── */}
       <Reveal>
-        <div className="flex flex-wrap justify-center gap-3">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
           {TRUST_BADGES.map((item) => {
             const Icon = item.icon;
             return (
               <span
                 key={item.label}
-                className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-bold text-zinc-700 shadow-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                className="inline-flex items-center gap-1.5 rounded-full border border-brand-red/10 bg-surface-elevated px-3 py-1.5 text-[11px] font-bold text-text-main shadow-sm sm:px-4 sm:py-2 sm:text-xs"
               >
-                <Icon size={14} className="text-[#c91510]" />
+                <Icon size={13} className="text-[#c91510]" />
                 {item.label}
               </span>
             );
@@ -172,34 +172,34 @@ export default async function HomePage() {
       )}
 
       {/* ── 4. Featured Categories ──────────────────────────────────── */}
-      <section className="space-y-5">
+      <section className="space-y-4">
         <Reveal>
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          <div className="section-header">
+            <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">
               Featured Categories
             </h2>
             <Link
               href="/products"
-              className="text-sm font-black uppercase tracking-[0.1em] text-[#c91510]"
+              className="text-xs font-extrabold uppercase tracking-wider text-[#c91510] sm:text-sm"
             >
-              Explore all
+              See all →
             </Link>
           </div>
         </Reveal>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="scrollbar-hide -mx-1 flex gap-3 overflow-x-auto px-1 pb-1 sm:grid sm:grid-cols-3 sm:overflow-visible lg:grid-cols-6">
           {displayCategories.map((category, index) => {
             const Icon = category.icon;
             return (
-              <Reveal key={category.name} delay={index * 70}>
+              <Reveal key={category.name} delay={index * 50}>
                 <Link
                   href={`/products?category=${encodeURIComponent(category.name)}`}
-                  className="glow-on-hover premium-card flex flex-col items-center gap-3 rounded-2xl p-4 text-center"
+                  className="category-pill min-w-[5rem] shrink-0 sm:min-w-0"
                 >
-                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#fff1eb] text-[#c91510] dark:bg-zinc-800">
-                    <Icon size={24} />
+                  <span className="category-pill-icon">
+                    <Icon size={22} />
                   </span>
-                  <span className="text-xs font-bold uppercase tracking-[0.08em] text-text-subtle">
+                  <span className="text-[11px] font-bold text-text-main sm:text-xs">
                     {category.name}
                   </span>
                 </Link>
@@ -243,14 +243,14 @@ export default async function HomePage() {
       <Reveal>
         <div className="premium-card flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-[#fff4ef] to-[#ffede5] p-4 dark:from-[#2a1b1e] dark:to-[#24181c]">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#c91510]">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#c91510] sm:text-xs">
               Today&apos;s Offer
             </p>
-            <p className="font-heading text-xl font-bold text-text-main">
+            <p className="font-heading text-lg font-bold text-text-main sm:text-xl">
               Free Delivery Above ₹500
             </p>
           </div>
-          <BadgeCheck className="text-[#c91510]" />
+          <BadgeCheck className="text-[#c91510]" size={22} />
         </div>
       </Reveal>
 
@@ -269,24 +269,24 @@ export default async function HomePage() {
       <DealsStrip deals={deals} />
 
       {/* ── 11. Trending / Latest Products (Grid) ────────────────────── */}
-      <section className="space-y-5">
+      <section className="space-y-4">
         <Reveal>
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          <div className="section-header">
+            <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">
               Trending Products
             </h2>
             <Link
               href="/products"
-              className="text-sm font-black uppercase tracking-[0.1em] text-[#c91510]"
+              className="text-xs font-extrabold uppercase tracking-wider text-[#c91510] sm:text-sm"
             >
-              View all
+              View all →
             </Link>
           </div>
         </Reveal>
 
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {featured.map((product, index) => (
-            <Reveal key={product.id} delay={index * 75}>
+            <Reveal key={product.id} delay={index * 60}>
               <ProductCard product={product} />
             </Reveal>
           ))}
@@ -308,14 +308,14 @@ export default async function HomePage() {
       <RecentlyViewed />
 
       {/* ── 15. Why Choose Mmart ─────────────────────────────────────── */}
-      <section className="space-y-5">
+      <section className="space-y-4">
         <Reveal>
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          <h2 className="text-xl font-extrabold tracking-tight text-text-main sm:text-2xl">
             Why Choose Mmart
           </h2>
         </Reveal>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
           {[
             {
               title: "Same Day Delivery",
@@ -335,13 +335,15 @@ export default async function HomePage() {
           ].map((feature, index) => {
             const Icon = feature.icon;
             return (
-              <Reveal key={feature.title} delay={index * 90}>
-                <article className="glow-on-hover premium-card soft-red-panel rounded-2xl p-5">
-                  <Icon className="text-[#c91510]" size={22} />
-                  <h3 className="mt-3 font-heading text-lg font-bold text-text-main">
+              <Reveal key={feature.title} delay={index * 80}>
+                <article className="premium-card soft-red-panel rounded-2xl p-4 sm:p-5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fff1eb] dark:bg-[#2a1a1d]">
+                    <Icon className="text-[#c91510]" size={20} />
+                  </div>
+                  <h3 className="mt-3 font-heading text-base font-bold text-text-main sm:text-lg">
                     {feature.title}
                   </h3>
-                  <p className="mt-2 text-sm leading-6 text-text-subtle">
+                  <p className="mt-1.5 text-sm leading-relaxed text-text-subtle">
                     {feature.text}
                   </p>
                 </article>
@@ -352,25 +354,27 @@ export default async function HomePage() {
       </section>
 
       {/* ── 16. How It Works ─────────────────────────────────────────── */}
-      <section className="space-y-5">
+      <section className="space-y-4">
         <Reveal>
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          <h2 className="text-xl font-extrabold tracking-tight text-text-main sm:text-2xl">
             How It Works
           </h2>
         </Reveal>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
           {[
             "Add Products to Cart",
             "Pay via UPI QR",
             "We Verify & Deliver",
           ].map((step, index) => (
-            <Reveal key={step} delay={index * 100}>
-              <article className="premium-card relative overflow-hidden p-5">
-                <p className="mb-3 text-3xl font-black text-[#c91510]">
+            <Reveal key={step} delay={index * 80}>
+              <article className="premium-card relative overflow-hidden p-4 sm:p-5">
+                <p className="mb-2 text-2xl font-black text-[#c91510] sm:text-3xl">
                   0{index + 1}
                 </p>
-                <h3 className="text-lg font-bold text-text-main">{step}</h3>
+                <h3 className="text-base font-bold text-text-main sm:text-lg">
+                  {step}
+                </h3>
                 {index < 2 ? (
                   <div className="absolute right-0 top-0 hidden h-full w-8 items-center justify-center md:flex">
                     <span className="h-0.5 w-7 bg-[#c91510]/25" />
@@ -383,22 +387,22 @@ export default async function HomePage() {
       </section>
 
       {/* ── 17. Testimonials ─────────────────────────────────────────── */}
-      <section className="space-y-5">
+      <section className="space-y-4">
         <Reveal>
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          <h2 className="text-xl font-extrabold tracking-tight text-text-main sm:text-2xl">
             What Customers Say
           </h2>
         </Reveal>
-        <Reveal delay={100}>
+        <Reveal delay={80}>
           <TestimonialCarousel />
         </Reveal>
       </section>
 
       {/* ── 18. Contact & Map ────────────────────────────────────────── */}
-      <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+      <section className="grid gap-4 sm:gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <Reveal>
-          <div className="premium-card p-6">
-            <h2 className="text-2xl font-bold text-text-main">
+          <div className="premium-card p-5 sm:p-6">
+            <h2 className="text-xl font-extrabold text-text-main sm:text-2xl">
               Visit or Contact
             </h2>
             <p className="mt-2 text-sm text-text-subtle">{STORE.name}</p>
@@ -407,7 +411,7 @@ export default async function HomePage() {
               {STORE.phone}
             </p>
 
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="mt-4 flex flex-wrap gap-3 sm:mt-5">
               <a href={`tel:${STORE.phone}`}>
                 <Button>
                   <PhoneCall size={14} />
@@ -425,16 +429,16 @@ export default async function HomePage() {
           </div>
         </Reveal>
 
-        <Reveal delay={120}>
-          <div className="premium-card soft-red-panel relative min-h-[220px] overflow-hidden p-6">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#c91510]">
+        <Reveal delay={100}>
+          <div className="premium-card soft-red-panel relative min-h-[200px] overflow-hidden p-5 sm:min-h-[220px] sm:p-6">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#c91510] sm:text-xs">
               Map Preview
             </p>
             <p className="mt-3 max-w-xs text-sm text-text-subtle">
               Google Maps integration placeholder. Connect your live store pin
               in deployment.
             </p>
-            <div className="absolute bottom-5 right-5 rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#c91510] shadow dark:bg-zinc-900">
+            <div className="absolute bottom-4 right-4 rounded-xl bg-surface-elevated px-3 py-2 text-xs font-bold text-[#c91510] shadow sm:bottom-5 sm:right-5">
               {userLocation.area}
             </div>
           </div>

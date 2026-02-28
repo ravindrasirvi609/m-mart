@@ -172,42 +172,71 @@ export function CheckoutForm({
         });
       }}
     >
-      <section className="premium-card space-y-4 p-5">
-        <h2 className="font-heading text-xl font-bold">Delivery & Payment</h2>
+      <section className="premium-card space-y-5 p-4 sm:p-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#ff6a3f] to-[#c91510] text-sm font-bold text-white">
+            1
+          </div>
+          <h2 className="font-heading text-lg font-extrabold text-text-main sm:text-xl">
+            Delivery Details
+          </h2>
+        </div>
 
-        <Input
-          required
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          placeholder="Full name"
-        />
+        <div className="space-y-1">
+          <label className="text-xs font-bold uppercase tracking-wider text-text-subtle">
+            Full Name
+          </label>
+          <Input
+            required
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="Full name"
+          />
+        </div>
 
-        <Input
-          required
-          value={phone}
-          onChange={(event) => setPhone(event.target.value)}
-          placeholder="Phone number"
-        />
+        <div className="space-y-1">
+          <label className="text-xs font-bold uppercase tracking-wider text-text-subtle">
+            Phone Number
+          </label>
+          <Input
+            required
+            value={phone}
+            onChange={(event) => setPhone(event.target.value)}
+            placeholder="Phone number"
+          />
+        </div>
 
-        <Textarea
-          required
-          rows={4}
-          value={address}
-          onChange={(event) => setAddress(event.target.value)}
-          placeholder="Complete delivery address"
-        />
+        <div className="space-y-1">
+          <label className="text-xs font-bold uppercase tracking-wider text-text-subtle">
+            Delivery Address
+          </label>
+          <Textarea
+            required
+            rows={3}
+            value={address}
+            onChange={(event) => setAddress(event.target.value)}
+            placeholder="Complete delivery address"
+          />
+        </div>
 
-        <div className="rounded-xl bg-[#fff3ec] p-4 text-sm text-text-subtle dark:bg-zinc-800 dark:text-text-subtle">
-          <p className="font-bold text-[#c91510]">Payment Instructions</p>
-          <p className="mt-1">
+        <div className="rounded-xl bg-[#fff3ec] p-4 text-sm text-text-subtle dark:bg-[#1e1518]">
+          <div className="flex items-center gap-3 border-b border-[#c91510]/10 pb-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#ff6a3f] to-[#c91510] text-sm font-bold text-white">
+              2
+            </div>
+            <p className="font-heading text-base font-extrabold text-[#c91510]">
+              Pay via UPI
+            </p>
+          </div>
+          <p className="mt-3 text-sm text-text-subtle">
             Pay via UPI QR and upload a screenshot for manual admin
             verification.
           </p>
-          <p className="mt-2 text-xs font-semibold text-text-subtle">
+          <p className="mt-2 text-xs font-bold text-text-main">
             Amount: {formatCurrency(total)}
           </p>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <p className="rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-text-main dark:bg-zinc-900 dark:text-text-main">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <p className="rounded-lg bg-surface-elevated px-2.5 py-1 text-xs font-bold text-text-main">
               UPI ID: {configuredUpiId}
             </p>
             <Button
@@ -263,9 +292,14 @@ export function CheckoutForm({
         </div>
 
         <label className="block space-y-2">
-          <span className="text-sm font-semibold text-text-subtle">
-            Upload Payment Screenshot
-          </span>
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#ff6a3f] to-[#c91510] text-sm font-bold text-white">
+              3
+            </div>
+            <span className="font-heading text-base font-extrabold text-text-main">
+              Upload Screenshot
+            </span>
+          </div>
           <Input
             type="file"
             accept="image/png,image/jpeg,image/webp"
@@ -329,7 +363,7 @@ export function CheckoutForm({
           </div>
         )}
 
-        <div className="grid gap-2 rounded-xl border border-[#c91510]/16 bg-white p-3 text-xs font-semibold text-text-subtle dark:bg-zinc-900 dark:text-text-subtle">
+        <div className="grid gap-2 rounded-xl border border-[#c91510]/16 bg-surface-elevated p-3 text-xs font-semibold text-text-subtle">
           <p className="inline-flex items-center gap-2">
             <ShieldCheck size={14} className="text-emerald-600" /> Secure
             checkout flow
@@ -341,8 +375,10 @@ export function CheckoutForm({
         </div>
       </section>
 
-      <aside className="premium-card h-fit space-y-4 p-5 lg:sticky lg:top-24">
-        <h2 className="font-heading text-xl font-bold">Order Summary</h2>
+      <aside className="premium-card h-fit space-y-4 p-4 sm:p-5 lg:sticky lg:top-24">
+        <h2 className="font-heading text-lg font-extrabold text-text-main sm:text-xl">
+          Order Summary
+        </h2>
 
         <div className="mx-auto w-fit rounded-2xl border border-[#c91510]/18 bg-white p-2 shadow-[0_0_0_4px_rgba(201,21,16,0.08)]">
           <div className="relative h-52 w-52 overflow-hidden rounded-xl border border-[#c91510]/18 bg-white">
@@ -387,8 +423,11 @@ export function CheckoutForm({
           </div>
         </div>
 
-        <p className="rounded-xl bg-zinc-100 p-3 text-xs font-semibold text-text-subtle dark:bg-zinc-800 dark:text-text-subtle">
-          Initial status: <strong>Payment Pending Verification</strong>
+        <p className="rounded-xl bg-badge-bg p-3 text-xs font-semibold text-text-subtle">
+          Initial status:{" "}
+          <strong className="text-text-main">
+            Payment Pending Verification
+          </strong>
         </p>
 
         <Button type="submit" className="w-full" disabled={isPending}>

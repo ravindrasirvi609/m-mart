@@ -41,14 +41,16 @@ export default async function ProductsPage({
     <div className="space-y-5">
       <Reveal>
         <section className="premium-card soft-red-panel p-5 sm:p-6">
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#c91510]">Mmart Store</p>
-          <h1 className="mt-2 font-display text-3xl font-black tracking-tight text-text-main">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#c91510] sm:text-xs">
+            Mmart Store
+          </p>
+          <h1 className="mt-2 font-display text-2xl font-black tracking-tight text-text-main sm:text-3xl">
             Discover Fresh Grocery Picks
           </h1>
-          <p className="mt-2 text-sm font-medium text-text-subtle">
+          <p className="mt-1.5 text-sm font-medium text-text-subtle">
             Search products, filter categories, and add to cart in seconds.
           </p>
-          <p className="mt-3 text-xs font-bold uppercase tracking-[0.08em] text-text-subtle">
+          <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-text-subtle sm:text-xs">
             {totalCount} products found
           </p>
         </section>

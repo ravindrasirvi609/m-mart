@@ -59,10 +59,10 @@ export function ProductFilters({
   }, [searchValue, currentParamsString, pathname, router]);
 
   return (
-    <section className="premium-card grid gap-3 p-4 sm:grid-cols-[1fr_0.65fr] sm:items-end">
-      <label className="block space-y-2">
-        <span className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.1em] text-text-subtle">
-          <Search size={14} />
+    <section className="premium-card grid gap-3 p-3 sm:grid-cols-[1fr_0.65fr] sm:items-end sm:p-4">
+      <label className="block space-y-1.5">
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-subtle sm:text-xs">
+          <Search size={13} />
           Search Products
         </span>
         <Input
@@ -76,9 +76,9 @@ export function ProductFilters({
         />
       </label>
 
-      <label className="block space-y-2">
-        <span className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.1em] text-text-subtle">
-          <SlidersHorizontal size={14} />
+      <label className="block space-y-1.5">
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-subtle sm:text-xs">
+          <SlidersHorizontal size={13} />
           Category
         </span>
         <Select

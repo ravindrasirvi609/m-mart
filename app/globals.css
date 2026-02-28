@@ -16,6 +16,7 @@
   --text-main: #12141a;
   --text-subtle: #4a5463;
   --text-muted: #6f7885;
+  --text-on-surface: #1a1d24;
 
   --success: #1f9a57;
   --warning: #e37d11;
@@ -24,6 +25,10 @@
   --sidebar-bg: #ffffff;
   --card-bg: #ffffff;
   --border-subtle: #d9e1eb;
+
+  --input-bg: #ffffff;
+  --badge-bg: #f1f5f9;
+  --badge-text: #475569;
 }
 
 .dark {
@@ -35,6 +40,7 @@
   --text-main: #edf1f7;
   --text-subtle: #c7d0dc;
   --text-muted: #9ca8b7;
+  --text-on-surface: #f0f4f8;
 
   --brand-red-soft: #29191a;
 
@@ -42,6 +48,10 @@
   --sidebar-bg: #0f1117;
   --card-bg: #14161f;
   --border-subtle: rgba(255, 255, 255, 0.12);
+
+  --input-bg: #1a2030;
+  --badge-bg: #1e293b;
+  --badge-text: #cbd5e1;
 }
 
 @theme inline {
@@ -58,6 +68,7 @@
 
   --color-text-main: var(--text-main);
   --color-text-subtle: var(--text-subtle);
+  --color-text-on-surface: var(--text-on-surface);
 
   --color-brand-red: var(--brand-red);
   --color-brand-red-light: var(--brand-red-light);
@@ -65,6 +76,11 @@
 
   --color-success: var(--success);
   --color-warning: var(--warning);
+
+  --color-input-bg: var(--input-bg);
+  --color-badge-bg: var(--badge-bg);
+  --color-badge-text: var(--badge-text);
+  --color-surface-elevated: var(--surface-elevated);
 }
 
 * {
@@ -168,14 +184,16 @@ h6 {
   box-shadow:
     0 10px 30px rgba(17, 22, 32, 0.08),
     0 2px 8px rgba(17, 22, 32, 0.04);
+  color: var(--text-main);
 }
 
 .dark .premium-card {
-  border-color: rgba(255, 95, 74, 0.25);
+  border-color: rgba(255, 95, 74, 0.18);
   background: color-mix(in oklab, var(--surface-elevated) 96%, #fff 4%);
   box-shadow:
     0 18px 32px rgba(0, 0, 0, 0.28),
     0 4px 12px rgba(0, 0, 0, 0.22);
+  color: var(--text-main);
 }
 
 .glow-on-hover {
@@ -475,4 +493,190 @@ h6 {
 
 .animate-slide-up {
   animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ---------------------------------------------------------------------------
+   Mobile-first product card enhancements
+   --------------------------------------------------------------------------- */
+.product-card-compact {
+  border: 1px solid rgba(207, 20, 15, 0.1);
+  background: var(--surface-elevated);
+  border-radius: 1rem;
+  overflow: hidden;
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+  color: var(--text-main);
+}
+
+.product-card-compact:active {
+  transform: scale(0.98);
+}
+
+@media (hover: hover) {
+  .product-card-compact:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(207, 20, 15, 0.12);
+    border-color: rgba(207, 20, 15, 0.28);
+  }
+}
+
+.dark .product-card-compact {
+  border-color: rgba(255, 95, 74, 0.15);
+  background: var(--surface-elevated);
+}
+
+/* ---------------------------------------------------------------------------
+   Floating cart bar for mobile
+   --------------------------------------------------------------------------- */
+.floating-cart-bar {
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(20px) saturate(1.4);
+  border-top: 1px solid rgba(207, 20, 15, 0.12);
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.1);
+}
+
+.dark .floating-cart-bar {
+  background: rgba(15, 20, 29, 0.97);
+  border-top-color: rgba(255, 95, 74, 0.15);
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------------------------------------------------------------------------
+   Quick-add button on product card
+   --------------------------------------------------------------------------- */
+.quick-add-btn {
+  background: linear-gradient(135deg, #ff6a3f, #c91510);
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.quick-add-btn:active {
+  transform: scale(0.95);
+}
+
+.quick-add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------------------
+   Category pill (Blinkit-style circular icon)
+   --------------------------------------------------------------------------- */
+.category-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.category-pill:active {
+  transform: scale(0.95);
+}
+
+.category-pill-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fff1eb, #ffe4d9);
+  color: #c91510;
+  transition: box-shadow 0.2s ease;
+}
+
+.dark .category-pill-icon {
+  background: linear-gradient(135deg, #2a1a1d, #1e1215);
+}
+
+@media (hover: hover) {
+  .category-pill:hover .category-pill-icon {
+    box-shadow: 0 6px 20px rgba(207, 20, 15, 0.2);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Bottom nav enhancement
+   --------------------------------------------------------------------------- */
+.bottom-nav-container {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid rgba(207, 20, 15, 0.1);
+  box-shadow: 0 -6px 30px rgba(16, 20, 30, 0.1);
+}
+
+.dark .bottom-nav-container {
+  background: rgba(15, 19, 26, 0.96);
+  border-color: rgba(255, 95, 74, 0.12);
+  box-shadow: 0 -6px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* ---------------------------------------------------------------------------
+   Smooth counter animation
+   --------------------------------------------------------------------------- */
+@keyframes count-pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-count-pop {
+  animation: count-pop 0.25s ease;
+}
+
+/* ---------------------------------------------------------------------------
+   Section header bar (Blinkit-style)
+   --------------------------------------------------------------------------- */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.25rem;
+}
+
+.section-header h2 {
+  font-family: var(--font-heading), sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text-main);
+}
+
+/* ---------------------------------------------------------------------------
+   Checkout step indicator
+   --------------------------------------------------------------------------- */
+.checkout-step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--surface-elevated);
+  border: 1px solid rgba(207, 20, 15, 0.08);
+  color: var(--text-main);
+}
+
+.checkout-step-active {
+  border-color: rgba(207, 20, 15, 0.35);
+  background: linear-gradient(135deg, #fff4ef, #ffede5);
+}
+
+.dark .checkout-step-active {
+  background: linear-gradient(135deg, #2a1b1e, #24181c);
 }

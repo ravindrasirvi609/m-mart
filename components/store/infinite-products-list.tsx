@@ -31,7 +31,10 @@ export function InfiniteProductsList({
     setHasError(false);
   }, [initialProducts, search, category, totalCount]);
 
-  const hasMore = useMemo(() => products.length < totalCount, [products.length, totalCount]);
+  const hasMore = useMemo(
+    () => products.length < totalCount,
+    [products.length, totalCount],
+  );
 
   const loadMore = useCallback(async () => {
     if (isLoading || !hasMore) {
@@ -63,7 +66,10 @@ export function InfiniteProductsList({
         products: Product[];
       };
 
-      setProducts((currentProducts) => [...currentProducts, ...payload.products]);
+      setProducts((currentProducts) => [
+        ...currentProducts,
+        ...payload.products,
+      ]);
       setPage((currentPage) => currentPage + 1);
     } catch {
       setHasError(true);
@@ -97,9 +103,9 @@ export function InfiniteProductsList({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {products.map((product, index) => (
-          <Reveal key={`${product.id}-${index}`} delay={(index % 8) * 45}>
+          <Reveal key={`${product.id}-${index}`} delay={(index % 8) * 35}>
             <ProductCard product={product} />
           </Reveal>
         ))}

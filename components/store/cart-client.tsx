@@ -38,19 +38,19 @@ export function CartClient() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_350px]">
-      <div className="space-y-4">
+    <div className="grid gap-5 lg:grid-cols-[1fr_350px] lg:gap-6">
+      <div className="space-y-3">
         {items.map((item, index) => {
           const unitPrice = getEffectivePrice(item.price, item.discount_price);
 
           return (
             <div
               key={item.id}
-              className="animate-slide-in premium-card p-4"
-              style={{ animationDelay: `${index * 80}ms` }}
+              className="animate-slide-in premium-card p-3 sm:p-4"
+              style={{ animationDelay: `${index * 60}ms` }}
             >
               <div className="flex gap-3">
-                <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-zinc-100">
+                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-surface-elevated sm:h-24 sm:w-24">
                   <Image
                     src={item.image_url}
                     alt={item.name}
@@ -60,45 +60,49 @@ export function CartClient() {
                   />
                 </div>
 
-                <div className="flex flex-1 flex-col justify-between gap-2">
+                <div className="flex flex-1 flex-col justify-between gap-1.5">
                   <div>
-                    <p className="font-heading text-base font-bold text-text-main">
+                    <p className="font-heading text-sm font-bold text-text-main sm:text-base">
                       {item.name}
                     </p>
-                    <p className="text-xs font-semibold uppercase tracking-[0.06em] text-text-subtle">
+                    <p className="text-xs font-semibold text-text-subtle">
                       {formatCurrency(unitPrice)} each
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="inline-flex items-center rounded-xl border border-[#c91510]/20 bg-white dark:bg-zinc-900">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="inline-flex items-center rounded-xl border border-[#c91510]/20 bg-surface-elevated">
                       <button
                         type="button"
-                        className="h-9 w-9 text-lg font-semibold text-text-main"
+                        className="flex h-8 w-8 items-center justify-center text-base font-semibold text-text-main transition active:scale-90 sm:h-9 sm:w-9"
                         onClick={() => setQuantity(item.id, item.quantity - 1)}
                       >
-                        -
+                        −
                       </button>
-                      <span className="w-8 text-center text-sm font-bold text-text-main">
+                      <span className="w-7 text-center text-sm font-bold text-text-main sm:w-8">
                         {item.quantity}
                       </span>
                       <button
                         type="button"
-                        className="h-9 w-9 text-lg font-semibold text-text-main"
+                        className="flex h-8 w-8 items-center justify-center text-base font-semibold text-text-main transition active:scale-90 sm:h-9 sm:w-9"
                         onClick={() => setQuantity(item.id, item.quantity + 1)}
                       >
                         +
                       </button>
                     </div>
 
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[0.08em] text-text-subtle transition hover:text-rose-600"
-                      onClick={() => removeItem(item.id)}
-                    >
-                      <Trash2 size={14} />
-                      Remove
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <p className="text-sm font-extrabold text-brand-red">
+                        {formatCurrency(unitPrice * item.quantity)}
+                      </p>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 text-xs font-bold text-text-subtle transition hover:text-rose-600"
+                        onClick={() => removeItem(item.id)}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -107,8 +111,8 @@ export function CartClient() {
         })}
       </div>
 
-      <aside className="premium-card sticky top-24 h-fit space-y-4 p-5">
-        <h2 className="font-heading text-lg font-bold text-text-main">
+      <aside className="premium-card sticky top-24 h-fit space-y-4 p-4 sm:p-5">
+        <h2 className="font-heading text-lg font-extrabold text-text-main">
           Pricing Summary
         </h2>
 
@@ -129,15 +133,15 @@ export function CartClient() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-dashed border-[#c91510]/30 p-3">
-          <label className="mb-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-text-subtle">
-            <TicketPercent size={14} />
+        <div className="rounded-2xl border border-dashed border-[#c91510]/20 p-3">
+          <label className="mb-2 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-text-subtle sm:text-xs">
+            <TicketPercent size={13} />
             Coupon (Coming Soon)
           </label>
           <Input placeholder="Enter coupon code" disabled />
         </div>
 
-        <p className="rounded-xl bg-[#fff2ec] p-3 text-xs font-bold text-[#c91510] dark:bg-zinc-800 dark:text-[#ff8a6e]">
+        <p className="rounded-xl bg-[#fff2ec] p-3 text-xs font-bold text-[#c91510] dark:bg-[#1e1518] dark:text-[#ff8a6e]">
           {deliveryZone ? (
             <>
               <MapPin size={12} className="mr-1 inline-block" />
@@ -176,14 +180,18 @@ export function CartClient() {
         </Button>
       </aside>
 
-      <div className="fixed inset-x-0 bottom-20 z-30 border-t border-[#c91510]/16 bg-white/96 p-3 backdrop-blur md:hidden dark:border-zinc-700 dark:bg-[#0f141d]/95">
+      <div className="floating-cart-bar fixed inset-x-0 bottom-[4.5rem] z-30 p-3 md:hidden">
         <div className="mx-auto flex max-w-md items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-medium text-text-subtle">Total</p>
-            <p className="font-bold text-[#c91510]">{formatCurrency(total)}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-subtle">
+              Total
+            </p>
+            <p className="text-lg font-extrabold text-[#c91510]">
+              {formatCurrency(total)}
+            </p>
           </div>
           <Link href="/checkout">
-            <Button>Checkout</Button>
+            <Button>Checkout →</Button>
           </Link>
         </div>
       </div>

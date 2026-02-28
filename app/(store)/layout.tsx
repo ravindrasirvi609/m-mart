@@ -28,9 +28,9 @@ export default async function StoreLayout({
   return (
     <div className="store-grid-bg relative flex min-h-screen flex-col">
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-[#ff7a51]/20 blur-3xl" />
-        <div className="absolute -right-20 top-44 h-80 w-80 rounded-full bg-[#d61912]/18 blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-[#f59e0b]/10 blur-3xl" />
+        <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-[#ff7a51]/15 blur-3xl dark:bg-[#ff7a51]/8" />
+        <div className="absolute -right-20 top-44 h-80 w-80 rounded-full bg-[#d61912]/12 blur-3xl dark:bg-[#d61912]/6" />
+        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-[#f59e0b]/8 blur-3xl dark:bg-[#f59e0b]/4" />
       </div>
 
       <MainHeader
@@ -43,7 +43,7 @@ export default async function StoreLayout({
         deliveryCity={userLocation.city}
       />
 
-      <main className="mobile-safe-padding mx-auto w-full max-w-[1180px] flex-1 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+      <main className="mobile-safe-padding mx-auto w-full max-w-[1180px] flex-1 px-3 py-4 sm:px-6 sm:py-8 lg:px-8">
         <PageFade>{children}</PageFade>
       </main>
 

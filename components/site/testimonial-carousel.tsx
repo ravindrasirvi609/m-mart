@@ -43,8 +43,12 @@ export function TestimonialCarousel() {
                   <Star key={idx} size={15} fill="currentColor" />
                 ))}
               </div>
-              <p className="text-sm leading-7 text-zinc-700 dark:text-zinc-200">“{item.text}”</p>
-              <p className="mt-4 text-sm font-black text-[#c91510]">{item.name}</p>
+              <p className="text-sm leading-7 text-text-subtle">
+                "​{item.text}"
+              </p>
+              <p className="mt-4 text-sm font-black text-[#c91510]">
+                {item.name}
+              </p>
             </div>
           </article>
         ))}
@@ -55,8 +59,8 @@ export function TestimonialCarousel() {
           <button
             key={item.name}
             onClick={() => setIndex(dotIndex)}
-            className={`h-2.5 rounded-full transition-all ${
-              dotIndex === index ? "w-8 bg-[#c91510]" : "w-2.5 bg-[#e9b2a6]"
+            className={`h-2 rounded-full transition-all ${
+              dotIndex === index ? "w-7 bg-[#c91510]" : "w-2 bg-text-subtle/30"
             }`}
             aria-label={`Go to testimonial ${dotIndex + 1}`}
           />

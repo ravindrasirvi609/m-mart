@@ -41,13 +41,13 @@ export function CollectionGrid({ collections }: CollectionGridProps) {
           <span className="text-xl" aria-hidden="true">
             📦
           </span>
-          <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+          <h2 className="text-xl font-extrabold tracking-tight text-text-main sm:text-2xl">
             Curated Collections
           </h2>
         </div>
       </Reveal>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
         {collections.map((collection, index) => (
           <Reveal key={collection.id} delay={index * 80}>
             <Link
@@ -57,12 +57,12 @@ export function CollectionGrid({ collections }: CollectionGridProps) {
                 background: toCollectionBg(collection.bg_color),
               }}
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fff1eb] text-[#c91510] dark:bg-zinc-800">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fff1eb] text-[#c91510] dark:bg-[#2a1a1d]">
                 <Sparkles size={18} />
               </span>
 
               <div>
-                <h3 className="font-heading text-base font-bold text-text-main">
+                <h3 className="font-heading text-sm font-bold text-text-main sm:text-base">
                   {collection.name}
                 </h3>
                 {collection.description && (

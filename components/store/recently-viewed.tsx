@@ -95,11 +95,11 @@ export function RecentlyViewed() {
         </div>
       </Reveal>
 
-      <div className="scrollbar-hide -mx-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2">
+      <div className="scrollbar-hide -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
         {products.map((product, index) => (
           <div
             key={product.id}
-            className="w-[180px] flex-shrink-0 snap-start sm:w-[210px] lg:w-[240px]"
+            className="w-[155px] flex-shrink-0 snap-start sm:w-[190px] lg:w-[220px]"
           >
             <Reveal delay={index * 50}>
               <ProductCard product={product} />

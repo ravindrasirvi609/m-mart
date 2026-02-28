@@ -121,8 +121,8 @@ function ProductHighlights({
   if (entries.length === 0) return null;
 
   return (
-    <div className="rounded-2xl bg-[#fff4ef] p-4 dark:bg-zinc-800">
-      <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.08em] text-text-subtle">
+    <div className="rounded-2xl bg-[#fff4ef] p-4 dark:bg-[#1e1518]">
+      <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-text-subtle">
         Product Highlights
       </h3>
       <dl className="grid gap-2 sm:grid-cols-2">
@@ -180,10 +180,10 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_0.96fr]">
+    <div className="grid gap-5 lg:grid-cols-[1fr_0.96fr] lg:gap-6">
       <ImageGallery images={allImages} name={product.name} />
 
-      <article className="premium-card space-y-5 p-6 lg:sticky lg:top-24 lg:h-fit">
+      <article className="premium-card space-y-4 p-4 sm:space-y-5 sm:p-6 lg:sticky lg:top-24 lg:h-fit">
         <div className="flex flex-wrap items-center gap-2">
           <p className="inline-flex rounded-full bg-[#fff0ea] px-3 py-1 text-xs font-bold uppercase tracking-[0.08em] text-[#c91510] dark:bg-[#2a1a1d] dark:text-[#ff8a6e]">
             {product.category}
@@ -196,10 +196,10 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
         </div>
 
         <div>
-          <h1 className="font-display text-3xl font-black tracking-tight text-text-main sm:text-4xl">
+          <h1 className="font-display text-2xl font-black tracking-tight text-text-main sm:text-3xl lg:text-4xl">
             {product.name}
           </h1>
-          <p className="mt-2 text-sm leading-7 text-text-subtle">
+          <p className="mt-1.5 text-sm leading-relaxed text-text-subtle sm:mt-2">
             {product.description}
           </p>
         </div>
@@ -226,20 +226,20 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
         </p>
 
         <div className="flex items-center gap-3">
-          <div className="inline-flex items-center rounded-xl border border-[#c91510]/20 bg-white dark:bg-zinc-900">
+          <div className="inline-flex items-center rounded-xl border border-[#c91510]/20 bg-surface-elevated">
             <button
               type="button"
-              className="h-10 w-10 text-lg font-semibold text-text-main"
+              className="flex h-9 w-9 items-center justify-center text-lg font-semibold text-text-main transition active:scale-90 sm:h-10 sm:w-10"
               onClick={() => setQuantity((value) => Math.max(1, value - 1))}
             >
-              -
+              −
             </button>
-            <span className="w-8 text-center text-sm font-bold text-text-main">
+            <span className="w-7 text-center text-sm font-bold text-text-main sm:w-8">
               {quantity}
             </span>
             <button
               type="button"
-              className="h-10 w-10 text-lg font-semibold text-text-main"
+              className="flex h-9 w-9 items-center justify-center text-lg font-semibold text-text-main transition active:scale-90 sm:h-10 sm:w-10"
               onClick={() =>
                 setQuantity((value) => Math.min(product.stock, value + 1))
               }
@@ -253,7 +253,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
           </Button>
         </div>
 
-        <div className="grid gap-2 rounded-2xl bg-[#fff4ef] p-4 text-sm text-text-subtle dark:bg-zinc-800 dark:text-text-subtle">
+        <div className="grid gap-2 rounded-2xl bg-[#fff4ef] p-4 text-sm text-text-subtle dark:bg-[#1e1518]">
           <p className="flex items-center gap-2">
             <Truck size={14} /> Delivery in 30-45 mins
           </p>
@@ -332,16 +332,18 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
         </div>
       </article>
 
-      <div className="fixed inset-x-0 bottom-20 z-30 border-t border-[#c91510]/16 bg-white/96 p-3 backdrop-blur md:hidden dark:border-zinc-700 dark:bg-[#0f141d]/95">
+      <div className="floating-cart-bar fixed inset-x-0 bottom-[4.5rem] z-30 p-3 md:hidden">
         <div className="mx-auto flex max-w-md items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-medium text-text-subtle">Total</p>
-            <p className="font-bold text-[#c91510]">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-subtle">
+              Total
+            </p>
+            <p className="text-lg font-extrabold text-[#c91510]">
               {formatCurrency(effectivePrice * quantity)}
             </p>
           </div>
           <Button
-            className="min-w-40"
+            className="min-w-36 sm:min-w-40"
             disabled={product.stock <= 0}
             onClick={addWithQuantity}
           >

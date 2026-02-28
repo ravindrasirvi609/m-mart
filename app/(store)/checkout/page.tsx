@@ -21,7 +21,9 @@ export default async function CheckoutPage() {
     <div className="space-y-5">
       <Reveal>
         <section className="premium-card soft-red-panel p-5 sm:p-6">
-          <h1 className="font-display text-3xl font-black tracking-tight text-text-main">Secure Checkout</h1>
+          <h1 className="font-display text-2xl font-black tracking-tight text-text-main sm:text-3xl">
+            Secure Checkout
+          </h1>
           <p className="mt-1 text-sm font-medium text-text-subtle">
             Confirm delivery details, pay via UPI, and upload screenshot.
           </p>
