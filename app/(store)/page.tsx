@@ -19,6 +19,8 @@ import { BannerCarousel } from "@/components/store/banner-carousel";
 import { CampaignHero } from "@/components/store/campaign-hero";
 import { CollectionGrid } from "@/components/store/collection-grid";
 import { DealsStrip } from "@/components/store/deals-strip";
+import { DeliveryInfoBanner } from "@/components/store/delivery-info-banner";
+import { GeoLocationPrompt } from "@/components/store/geo-location-prompt";
 import { LocationPicker } from "@/components/store/location-picker";
 import { ProductCard } from "@/components/store/product-card";
 import { ProductRow } from "@/components/store/product-row";
@@ -88,7 +90,9 @@ export default async function HomePage() {
     dayContext,
     userLocation,
     serviceAreas,
+    nearestServiceArea,
     deliveryEta,
+    deliveryDistanceKm,
   } = data;
 
   // Map category names to fallback icons
@@ -107,15 +111,30 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* ── 0. Location Picker ──────────────────────────────────────── */}
+      {/* ── 0. Location Picker + Delivery Info ────────────────────── */}
       {serviceAreas.length > 0 && (
-        <div className="flex items-center justify-end">
-          <LocationPicker
-            currentArea={userLocation.area}
-            currentCity={userLocation.city}
-            serviceAreas={serviceAreas}
-            userId={user?.id ?? null}
-          />
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-end">
+            <LocationPicker
+              currentArea={userLocation.area}
+              currentCity={userLocation.city}
+              serviceAreas={serviceAreas}
+              userId={user?.id ?? null}
+            />
+          </div>
+
+          {/* Delivery info strip — visible when ETA or distance is known */}
+          {(deliveryEta != null || deliveryDistanceKm != null) && (
+            <DeliveryInfoBanner
+              area={userLocation.area}
+              deliveryEta={deliveryEta}
+              distanceKm={deliveryDistanceKm}
+              deliveryFee={nearestServiceArea?.delivery_fee ?? null}
+              minOrderFreeDelivery={
+                nearestServiceArea?.min_order_free_delivery ?? null
+              }
+            />
+          )}
         </div>
       )}
 
@@ -421,6 +440,9 @@ export default async function HomePage() {
           </div>
         </Reveal>
       </section>
+
+      {/* ── Geo-Location Prompt (first-visit GPS banner) ────────────── */}
+      <GeoLocationPrompt userId={user?.id ?? null} />
     </div>
   );
 }

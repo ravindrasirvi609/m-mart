@@ -33,6 +33,9 @@ export type Database = {
           link_url: string | null;
           bg_color: string | null;
           location_area: string | null;
+          target_lat: number | null;
+          target_lng: number | null;
+          target_radius_km: number | null;
           starts_at: string;
           ends_at: string;
           is_active: boolean;
@@ -47,6 +50,9 @@ export type Database = {
           link_url?: string | null;
           bg_color?: string | null;
           location_area?: string | null;
+          target_lat?: number | null;
+          target_lng?: number | null;
+          target_radius_km?: number | null;
           starts_at?: string;
           ends_at?: string;
           is_active?: boolean;
@@ -61,6 +67,9 @@ export type Database = {
           link_url?: string | null;
           bg_color?: string | null;
           location_area?: string | null;
+          target_lat?: number | null;
+          target_lng?: number | null;
+          target_radius_km?: number | null;
           starts_at?: string;
           ends_at?: string;
           is_active?: boolean;
@@ -121,6 +130,9 @@ export type Database = {
           discount_label: string | null;
           starts_at: string;
           ends_at: string;
+          target_lat: number | null;
+          target_lng: number | null;
+          target_radius_km: number | null;
           is_active: boolean;
           priority: number;
           created_at: string;
@@ -143,6 +155,9 @@ export type Database = {
           discount_label?: string | null;
           starts_at: string;
           ends_at: string;
+          target_lat?: number | null;
+          target_lng?: number | null;
+          target_radius_km?: number | null;
           is_active?: boolean;
           priority?: number;
           created_at?: string;
@@ -165,6 +180,9 @@ export type Database = {
           discount_label?: string | null;
           starts_at?: string;
           ends_at?: string;
+          target_lat?: number | null;
+          target_lng?: number | null;
+          target_radius_km?: number | null;
           is_active?: boolean;
           priority?: number;
           created_at?: string;
@@ -191,6 +209,119 @@ export type Database = {
           name?: string;
         };
         Relationships: [];
+      };
+      delivery_agents: {
+        Row: {
+          id: string;
+          name: string;
+          phone: string;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          phone: string;
+          is_active?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          phone?: string;
+          is_active?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      delivery_tracking: {
+        Row: {
+          id: string;
+          order_id: string;
+          agent_id: string | null;
+          latitude: number;
+          longitude: number;
+          heading: number | null;
+          speed: number | null;
+          estimated_arrival: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          agent_id?: string | null;
+          latitude: number;
+          longitude: number;
+          heading?: number | null;
+          speed?: number | null;
+          estimated_arrival?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          order_id?: string;
+          agent_id?: string | null;
+          latitude?: number;
+          longitude?: number;
+          heading?: number | null;
+          speed?: number | null;
+          estimated_arrival?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "delivery_tracking_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: true;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "delivery_tracking_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "delivery_agents";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      order_status_history: {
+        Row: {
+          id: string;
+          order_id: string;
+          order_status: string;
+          payment_status: string;
+          changed_by: string | null;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          order_status: string;
+          payment_status: string;
+          changed_by?: string | null;
+          note?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          order_id?: string;
+          order_status?: string;
+          payment_status?: string;
+          changed_by?: string | null;
+          note?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "order_status_history_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       collection_products: {
         Row: {
@@ -356,6 +487,14 @@ export type Database = {
           created_at: string;
           delivery_address: Json;
           delivery_charge: number;
+          delivery_area: string | null;
+          delivery_distance_km: number | null;
+          delivery_lat: number | null;
+          delivery_lng: number | null;
+          service_area_id: string | null;
+          assigned_agent_id: string | null;
+          delivered_at: string | null;
+          out_for_delivery_at: string | null;
           id: string;
           order_status:
             | "pending"
@@ -373,6 +512,14 @@ export type Database = {
           created_at?: string;
           delivery_address: Json;
           delivery_charge: number;
+          delivery_area?: string | null;
+          delivery_distance_km?: number | null;
+          delivery_lat?: number | null;
+          delivery_lng?: number | null;
+          service_area_id?: string | null;
+          assigned_agent_id?: string | null;
+          delivered_at?: string | null;
+          out_for_delivery_at?: string | null;
           id?: string;
           order_status?:
             | "pending"
@@ -390,6 +537,14 @@ export type Database = {
           created_at?: string;
           delivery_address?: Json;
           delivery_charge?: number;
+          delivery_area?: string | null;
+          delivery_distance_km?: number | null;
+          delivery_lat?: number | null;
+          delivery_lng?: number | null;
+          service_area_id?: string | null;
+          assigned_agent_id?: string | null;
+          delivered_at?: string | null;
+          out_for_delivery_at?: string | null;
           id?: string;
           order_status?:
             | "pending"
@@ -493,6 +648,11 @@ export type Database = {
           area_name: string;
           city: string;
           pincode: string | null;
+          latitude: number | null;
+          longitude: number | null;
+          radius_km: number | null;
+          delivery_fee: number | null;
+          min_order_free_delivery: number | null;
           is_active: boolean;
           delivery_eta_minutes: number;
           sort_order: number;
@@ -503,6 +663,11 @@ export type Database = {
           area_name: string;
           city?: string;
           pincode?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
+          radius_km?: number | null;
+          delivery_fee?: number | null;
+          min_order_free_delivery?: number | null;
           is_active?: boolean;
           delivery_eta_minutes?: number;
           sort_order?: number;
@@ -513,6 +678,11 @@ export type Database = {
           area_name?: string;
           city?: string;
           pincode?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
+          radius_km?: number | null;
+          delivery_fee?: number | null;
+          min_order_free_delivery?: number | null;
           is_active?: boolean;
           delivery_eta_minutes?: number;
           sort_order?: number;
@@ -528,6 +698,11 @@ export type Database = {
           pincode: string | null;
           latitude: number | null;
           longitude: number | null;
+          location_source: string | null;
+          accuracy_metres: number | null;
+          last_latitude: number | null;
+          last_longitude: number | null;
+          last_location_updated_at: string | null;
           updated_at: string;
         };
         Insert: {
@@ -537,6 +712,11 @@ export type Database = {
           pincode?: string | null;
           latitude?: number | null;
           longitude?: number | null;
+          location_source?: string | null;
+          accuracy_metres?: number | null;
+          last_latitude?: number | null;
+          last_longitude?: number | null;
+          last_location_updated_at?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -546,6 +726,11 @@ export type Database = {
           pincode?: string | null;
           latitude?: number | null;
           longitude?: number | null;
+          location_source?: string | null;
+          accuracy_metres?: number | null;
+          last_latitude?: number | null;
+          last_longitude?: number | null;
+          last_location_updated_at?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -613,11 +798,110 @@ export type Database = {
           p_payment_screenshot_url: string;
           p_delivery_address: Json;
           p_items: Json;
+          p_lat?: number;
+          p_lng?: number;
         };
         Returns: {
           order_id: string;
           total_amount: number;
           delivery_charge: number;
+        }[];
+      };
+      check_delivery_coverage: {
+        Args: {
+          p_lat: number;
+          p_lng: number;
+        };
+        Returns: {
+          covered: boolean;
+          service_area_id: string | null;
+          area_name: string | null;
+          delivery_fee: number;
+          min_order_free_delivery: number;
+          delivery_eta_minutes: number | null;
+          distance_km: number;
+        }[];
+      };
+      find_nearest_service_area: {
+        Args: {
+          p_lat: number;
+          p_lng: number;
+          p_max_distance_km?: number;
+        };
+        Returns: {
+          id: string;
+          area_name: string;
+          city: string;
+          pincode: string;
+          delivery_eta_minutes: number | null;
+          delivery_fee: number | null;
+          min_order_free_delivery: number | null;
+          distance_km: number;
+        }[];
+      };
+      get_geo_targeted_banners: {
+        Args: {
+          p_lat: number;
+          p_lng: number;
+        };
+        Returns: Database["public"]["Tables"]["banners"]["Row"][];
+      };
+      get_geo_targeted_campaign: {
+        Args: {
+          p_lat: number;
+          p_lng: number;
+          p_slug: string;
+        };
+        Returns: Database["public"]["Tables"]["campaigns"]["Row"][];
+      };
+      update_delivery_location: {
+        Args: {
+          p_order_id: string;
+          p_lat: number;
+          p_lng: number;
+          p_heading?: number;
+          p_speed?: number;
+          p_eta_minutes?: number;
+        };
+        Returns: boolean;
+      };
+      get_order_tracking: {
+        Args: {
+          p_order_id: string;
+        };
+        Returns: {
+          order_id: string;
+          order_status: string;
+          payment_status: string;
+          delivery_area: string | null;
+          store_lat: number;
+          store_lng: number;
+          customer_lat: number | null;
+          customer_lng: number | null;
+          driver_lat: number | null;
+          driver_lng: number | null;
+          driver_heading: number | null;
+          driver_speed: number | null;
+          estimated_arrival: string | null;
+          agent_name: string | null;
+          agent_phone: string | null;
+          assigned_at: string | null;
+          out_for_delivery_at: string | null;
+          delivered_at: string | null;
+          tracking_updated_at: string | null;
+        }[];
+      };
+      get_order_timeline: {
+        Args: {
+          p_order_id: string;
+        };
+        Returns: {
+          id: string;
+          order_status: string;
+          payment_status: string;
+          changed_by: string | null;
+          note: string | null;
+          created_at: string;
         }[];
       };
     };

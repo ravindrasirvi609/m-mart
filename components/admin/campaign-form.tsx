@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { upsertCampaignAction } from "@/actions/campaign-actions";
@@ -8,6 +9,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ActionFeedback } from "@/components/admin/ui/action-feedback";
 import type { CampaignRow } from "@/lib/queries";
+import type { GeoValue } from "@/components/admin/zone-map-picker";
+
+const ZoneMapPicker = dynamic(
+  () =>
+    import("@/components/admin/zone-map-picker").then(
+      (mod) => mod.ZoneMapPicker,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[300px] rounded-xl border border-admin-border bg-white/5 animate-pulse" />
+    ),
+  },
+);
 
 const CAMPAIGN_TYPES = [
   { value: "festival", label: "Festival" },
@@ -25,6 +40,14 @@ interface CampaignFormProps {
 export function CampaignForm({ campaign, onSuccess }: CampaignFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, action, isPending] = useActionState(upsertCampaignAction, null);
+  const [geoEnabled, setGeoEnabled] = useState(
+    !!(campaign?.target_lat && campaign?.target_lng),
+  );
+  const [geo, setGeo] = useState<GeoValue>({
+    latitude: campaign?.target_lat ?? 18.5912,
+    longitude: campaign?.target_lng ?? 73.7388,
+    radius_km: campaign?.target_radius_km ?? 10,
+  });
 
   useEffect(() => {
     if (state?.ok) {
@@ -46,6 +69,15 @@ export function CampaignForm({ campaign, onSuccess }: CampaignFormProps) {
   return (
     <form ref={formRef} action={action} className="space-y-4">
       {campaign && <input type="hidden" name="id" value={campaign.id} />}
+
+      {/* Hidden geo fields */}
+      {geoEnabled && (
+        <>
+          <input type="hidden" name="target_lat" value={geo.latitude} />
+          <input type="hidden" name="target_lng" value={geo.longitude} />
+          <input type="hidden" name="target_radius_km" value={geo.radius_km} />
+        </>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
@@ -301,6 +333,37 @@ export function CampaignForm({ campaign, onSuccess }: CampaignFormProps) {
         >
           Campaign is active
         </label>
+      </div>
+
+      {/* Geo-targeting section */}
+      <div className="space-y-2 rounded-xl border border-admin-border bg-white/[0.02] p-4">
+        <div className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            id="campaign-geo-toggle"
+            checked={geoEnabled}
+            onChange={(e) => setGeoEnabled(e.target.checked)}
+            disabled={isPending}
+            className="h-4 w-4 rounded border-admin-border accent-brand-red"
+          />
+          <label
+            htmlFor="campaign-geo-toggle"
+            className="text-sm font-medium text-text-main"
+          >
+            Enable geo-targeting (show only to users near a location)
+          </label>
+        </div>
+
+        {geoEnabled && (
+          <div className="mt-2">
+            <ZoneMapPicker
+              defaultLat={campaign?.target_lat ?? 18.5912}
+              defaultLng={campaign?.target_lng ?? 73.7388}
+              defaultRadiusKm={campaign?.target_radius_km ?? 10}
+              onChange={setGeo}
+            />
+          </div>
+        )}
       </div>
 
       <ActionFeedback

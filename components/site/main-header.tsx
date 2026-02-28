@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Moon, Phone, ShoppingCart, Sparkles, Sun, X } from "lucide-react";
+import {
+  MapPin,
+  Menu,
+  Moon,
+  Phone,
+  ShoppingCart,
+  Sparkles,
+  Sun,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "next-themes";
 
@@ -21,6 +30,10 @@ type MainHeaderProps = {
   userId: string | null;
   initialNotifications: NotificationRow[];
   notificationsAvailable: boolean;
+  /** User's current delivery area name */
+  deliveryArea?: string;
+  /** User's current delivery city */
+  deliveryCity?: string;
 };
 
 const baseLinks = [
@@ -31,7 +44,9 @@ const baseLinks = [
 ];
 
 function linkIsActive(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+  return href === "/"
+    ? pathname === "/"
+    : pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function MainHeader({
@@ -40,6 +55,8 @@ export function MainHeader({
   userId,
   initialNotifications,
   notificationsAvailable,
+  deliveryArea,
+  deliveryCity,
 }: MainHeaderProps) {
   const pathname = usePathname();
   const { totalItems } = useCart();
@@ -61,9 +78,24 @@ export function MainHeader({
             <p className="font-heading text-base font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
               {STORE.name}
             </p>
-            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-300">Quick grocery delivery</p>
+            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-300">
+              Quick grocery delivery
+            </p>
           </div>
         </Link>
+
+        {/* Delivery area indicator */}
+        {deliveryArea && (
+          <div className="hidden items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50/70 px-2.5 py-1 text-[11px] font-bold text-emerald-700 sm:flex dark:border-emerald-900/30 dark:bg-emerald-950/30 dark:text-emerald-400">
+            <MapPin size={11} />
+            <span className="max-w-[100px] truncate">{deliveryArea}</span>
+            {deliveryCity && (
+              <span className="text-[10px] font-medium text-emerald-600/70 dark:text-emerald-500/60">
+                , {deliveryCity}
+              </span>
+            )}
+          </div>
+        )}
 
         <nav className="hidden items-center gap-1 rounded-full border border-[#d71b15]/12 bg-white/80 p-1 shadow-sm md:flex dark:border-zinc-700 dark:bg-zinc-900/70">
           {links.map((link) => {
@@ -96,7 +128,9 @@ export function MainHeader({
           </a>
 
           <button
-            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            onClick={() =>
+              setTheme(resolvedTheme === "dark" ? "light" : "dark")
+            }
             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#d71b15]/15 bg-white/85 text-zinc-700 transition hover:bg-[#fff2ee] dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-zinc-100 dark:hover:bg-zinc-800"
             aria-label="Toggle theme"
           >
@@ -134,7 +168,11 @@ export function MainHeader({
           </button>
 
           {isLoggedIn ? (
-            <form action="/auth/logout" method="post" className="hidden md:block">
+            <form
+              action="/auth/logout"
+              method="post"
+              className="hidden md:block"
+            >
               <Button variant="outline" type="submit">
                 Logout
               </Button>

@@ -2,7 +2,15 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Check, Copy, ExternalLink, Lock, ShieldCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  Copy,
+  ExternalLink,
+  Lock,
+  MapPin,
+  ShieldCheck,
+} from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { placeOrderAction } from "@/actions/order-actions";
@@ -12,7 +20,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { getPublicEnv } from "@/lib/env";
 import { showAppToast, triggerHaptic } from "@/lib/mobile/feedback";
-import { buildUpiPaymentUrl, buildUpiQrCodeUrl, canAttemptUpiLaunch, openUpiPayment } from "@/lib/mobile/payments";
+import {
+  buildUpiPaymentUrl,
+  buildUpiQrCodeUrl,
+  canAttemptUpiLaunch,
+  openUpiPayment,
+} from "@/lib/mobile/payments";
 import { formatCurrency } from "@/lib/utils";
 import { STORE } from "@/lib/constants";
 
@@ -37,7 +50,17 @@ export function CheckoutForm({
 }: CheckoutFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const { items, subtotal, deliveryCharge, total, clearCart } = useCart();
+  const {
+    items,
+    subtotal,
+    deliveryCharge,
+    total,
+    baseDeliveryFee,
+    freeDeliveryThreshold,
+    deliveryZone,
+    outOfCoverage,
+    clearCart,
+  } = useCart();
   const configuredUpiId = getPublicEnv().NEXT_PUBLIC_UPI_ID ?? STORE.upiId;
   const upiPaymentUrl = buildUpiPaymentUrl({
     upiId: configuredUpiId,
@@ -78,7 +101,10 @@ export function CheckoutForm({
       window.setTimeout(() => setCopied(false), 1600);
       await showAppToast("UPI ID copied.", "success");
     } catch {
-      await showAppToast("Unable to copy UPI ID. Please copy it manually.", "error");
+      await showAppToast(
+        "Unable to copy UPI ID. Please copy it manually.",
+        "error",
+      );
     }
   };
 
@@ -88,7 +114,9 @@ export function CheckoutForm({
         <p className="text-sm font-medium text-text-subtle">
           Add items to cart before checkout.
         </p>
-        <Button className="mt-4" onClick={() => router.push("/products")}>Browse Products</Button>
+        <Button className="mt-4" onClick={() => router.push("/products")}>
+          Browse Products
+        </Button>
       </div>
     );
   }
@@ -100,9 +128,10 @@ export function CheckoutForm({
         event.preventDefault();
 
         if (!screenshot) {
-          showAppToast("Upload payment screenshot before placing the order.", "error").catch(
-            () => undefined,
-          );
+          showAppToast(
+            "Upload payment screenshot before placing the order.",
+            "error",
+          ).catch(() => undefined);
           triggerHaptic("warning").catch(() => undefined);
           return;
         }
@@ -119,6 +148,11 @@ export function CheckoutForm({
         formData.append("payment_screenshot", screenshot);
         formData.append("cart_payload", JSON.stringify(cartPayload));
 
+        if (deliveryZone) {
+          formData.append("delivery_lat", String(deliveryZone.lat ?? ""));
+          formData.append("delivery_lng", String(deliveryZone.lng ?? ""));
+        }
+
         startTransition(async () => {
           const result = await placeOrderAction(formData);
 
@@ -129,7 +163,10 @@ export function CheckoutForm({
           }
 
           clearCart();
-          await showAppToast(`Order ${result.orderId.slice(0, 8)} placed successfully`, "success");
+          await showAppToast(
+            `Order ${result.orderId.slice(0, 8)} placed successfully`,
+            "success",
+          );
           await triggerHaptic("success");
           router.push("/orders");
         });
@@ -162,7 +199,10 @@ export function CheckoutForm({
 
         <div className="rounded-xl bg-[#fff3ec] p-4 text-sm text-text-subtle dark:bg-zinc-800 dark:text-text-subtle">
           <p className="font-bold text-[#c91510]">Payment Instructions</p>
-          <p className="mt-1">Pay via UPI QR and upload a screenshot for manual admin verification.</p>
+          <p className="mt-1">
+            Pay via UPI QR and upload a screenshot for manual admin
+            verification.
+          </p>
           <p className="mt-2 text-xs font-semibold text-text-subtle">
             Amount: {formatCurrency(total)}
           </p>
@@ -170,7 +210,12 @@ export function CheckoutForm({
             <p className="rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-text-main dark:bg-zinc-900 dark:text-text-main">
               UPI ID: {configuredUpiId}
             </p>
-            <Button type="button" variant="ghost" className="!px-2.5 !py-1.5 text-xs" onClick={copyUpiId}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="!px-2.5 !py-1.5 text-xs"
+              onClick={copyUpiId}
+            >
               {copied ? <Check size={13} /> : <Copy size={13} />}
               {copied ? "Copied" : "Copy UPI ID"}
             </Button>
@@ -182,28 +227,33 @@ export function CheckoutForm({
               className="w-full sm:w-auto"
               onClick={() => {
                 if (!upiPaymentUrl) {
-                  showAppToast("UPI deep link is not configured yet.", "error").catch(
-                    () => undefined,
-                  );
+                  showAppToast(
+                    "UPI deep link is not configured yet.",
+                    "error",
+                  ).catch(() => undefined);
                   return;
                 }
 
                 if (!canAttemptUpiLaunch()) {
-                  showAppToast("Use your phone to open UPI app, or pay by scanning QR.", "info").catch(
-                    () => undefined,
-                  );
+                  showAppToast(
+                    "Use your phone to open UPI app, or pay by scanning QR.",
+                    "info",
+                  ).catch(() => undefined);
                   return;
                 }
 
                 const opened = openUpiPayment(upiPaymentUrl);
                 if (!opened) {
-                  showAppToast("Could not open UPI app. Use QR or copy UPI ID.", "error").catch(
-                    () => undefined,
-                  );
+                  showAppToast(
+                    "Could not open UPI app. Use QR or copy UPI ID.",
+                    "error",
+                  ).catch(() => undefined);
                   return;
                 }
 
-                showAppToast("Opening UPI app...", "info").catch(() => undefined);
+                showAppToast("Opening UPI app...", "info").catch(
+                  () => undefined,
+                );
               }}
             >
               <ExternalLink size={14} />
@@ -213,7 +263,9 @@ export function CheckoutForm({
         </div>
 
         <label className="block space-y-2">
-          <span className="text-sm font-semibold text-text-subtle">Upload Payment Screenshot</span>
+          <span className="text-sm font-semibold text-text-subtle">
+            Upload Payment Screenshot
+          </span>
           <Input
             type="file"
             accept="image/png,image/jpeg,image/webp"
@@ -227,14 +279,19 @@ export function CheckoutForm({
               }
 
               if (!allowedScreenshotTypes.has(file.type)) {
-                showAppToast("Use PNG, JPG, or WEBP screenshot.", "error").catch(() => undefined);
+                showAppToast(
+                  "Use PNG, JPG, or WEBP screenshot.",
+                  "error",
+                ).catch(() => undefined);
                 event.currentTarget.value = "";
                 setScreenshot(null);
                 return;
               }
 
               if (file.size > maxScreenshotSizeBytes) {
-                showAppToast("Screenshot must be below 5MB.", "error").catch(() => undefined);
+                showAppToast("Screenshot must be below 5MB.", "error").catch(
+                  () => undefined,
+                );
                 event.currentTarget.value = "";
                 setScreenshot(null);
                 return;
@@ -249,9 +306,39 @@ export function CheckoutForm({
           </p>
         </label>
 
+        {outOfCoverage && (
+          <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/30 dark:bg-amber-950/20">
+            <AlertTriangle
+              size={14}
+              className="mt-0.5 shrink-0 text-amber-600"
+            />
+            <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+              Your location may be outside our delivery area. You can still
+              place an order, but delivery may take longer or incur additional
+              charges.
+            </p>
+          </div>
+        )}
+
+        {deliveryZone && (
+          <div className="flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-300">
+            <MapPin size={14} className="shrink-0" />
+            Delivering to {deliveryZone.areaName}
+            {deliveryZone.deliveryEtaMinutes
+              ? ` · ETA ${deliveryZone.deliveryEtaMinutes} min`
+              : ""}
+          </div>
+        )}
+
         <div className="grid gap-2 rounded-xl border border-[#c91510]/16 bg-white p-3 text-xs font-semibold text-text-subtle dark:bg-zinc-900 dark:text-text-subtle">
-          <p className="inline-flex items-center gap-2"><ShieldCheck size={14} className="text-emerald-600" /> Secure checkout flow</p>
-          <p className="inline-flex items-center gap-2"><Lock size={14} className="text-emerald-600" /> Manual payment verification</p>
+          <p className="inline-flex items-center gap-2">
+            <ShieldCheck size={14} className="text-emerald-600" /> Secure
+            checkout flow
+          </p>
+          <p className="inline-flex items-center gap-2">
+            <Lock size={14} className="text-emerald-600" /> Manual payment
+            verification
+          </p>
         </div>
       </section>
 
@@ -261,9 +348,20 @@ export function CheckoutForm({
         <div className="mx-auto w-fit rounded-2xl border border-[#c91510]/18 bg-white p-2 shadow-[0_0_0_4px_rgba(201,21,16,0.08)]">
           <div className="relative h-52 w-52 overflow-hidden rounded-xl border border-[#c91510]/18 bg-white">
             {upiQrCodeUrl ? (
-              <Image src={upiQrCodeUrl} alt="UPI QR Code" fill className="object-contain p-3" unoptimized />
+              <Image
+                src={upiQrCodeUrl}
+                alt="UPI QR Code"
+                fill
+                className="object-contain p-3"
+                unoptimized
+              />
             ) : (
-              <Image src="/upi-qr.svg" alt="UPI QR placeholder" fill className="object-contain p-3" />
+              <Image
+                src="/upi-qr.svg"
+                alt="UPI QR placeholder"
+                fill
+                className="object-contain p-3"
+              />
             )}
           </div>
         </div>
@@ -275,8 +373,15 @@ export function CheckoutForm({
           </div>
           <div className="flex justify-between">
             <span>Delivery</span>
-            <span>{deliveryCharge === 0 ? "Free" : formatCurrency(deliveryCharge)}</span>
+            <span>
+              {deliveryCharge === 0 ? "Free" : formatCurrency(deliveryCharge)}
+            </span>
           </div>
+          {deliveryCharge === 0 && subtotal >= freeDeliveryThreshold && (
+            <p className="text-xs text-emerald-600">
+              Free delivery applied (order above ₹{freeDeliveryThreshold})
+            </p>
+          )}
           <div className="flex justify-between border-t border-[#c91510]/14 pt-3 text-lg font-black text-[#c91510]">
             <span>Total</span>
             <span>{formatCurrency(total)}</span>

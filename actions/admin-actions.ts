@@ -305,16 +305,44 @@ export async function updateOrderStatusAction(
       return { ok: true, message: "No changes detected." };
     }
 
+    const updatePayload: Record<string, unknown> = {
+      payment_status: parsed.data.paymentStatus,
+      order_status: parsed.data.orderStatus,
+    };
+
+    // Set timestamps for tracking milestones
+    if (
+      parsed.data.orderStatus === "out_for_delivery" &&
+      order.order_status !== "out_for_delivery"
+    ) {
+      updatePayload.out_for_delivery_at = new Date().toISOString();
+    }
+    if (
+      parsed.data.orderStatus === "delivered" &&
+      order.order_status !== "delivered"
+    ) {
+      updatePayload.delivered_at = new Date().toISOString();
+    }
+
     const { error } = await admin
       .from("orders")
-      .update({
-        payment_status: parsed.data.paymentStatus,
-        order_status: parsed.data.orderStatus,
-      })
+      .update(updatePayload as never)
       .eq("id", parsed.data.orderId);
 
     if (error) {
       return { ok: false, error: "Unable to update order status right now." };
+    }
+
+    // Record status change in history
+    try {
+      await admin.from("order_status_history").insert({
+        order_id: parsed.data.orderId,
+        order_status: parsed.data.orderStatus,
+        payment_status: parsed.data.paymentStatus,
+        changed_by: (await admin.auth.getUser()).data.user?.id ?? null,
+      } as never);
+    } catch {
+      // ignore — history table may not exist yet
     }
 
     await createOrderStatusUpdateNotification(
@@ -338,6 +366,218 @@ export async function updateOrderStatusAction(
     return {
       ok: false,
       error: toPublicErrorMessage(error, "Failed to update status."),
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Delivery Agents CRUD
+// ---------------------------------------------------------------------------
+
+const deliveryAgentSchema = z.object({
+  name: z.string().trim().min(2).max(100),
+  phone: z
+    .string()
+    .trim()
+    .min(10)
+    .max(15)
+    .regex(/^[0-9+\-\s]+$/),
+});
+
+export async function createDeliveryAgentAction(
+  _prevState: unknown,
+  formData: FormData,
+) {
+  try {
+    await assertTrustedRequestOrigin();
+    await assertAdminForAction();
+
+    const parsed = deliveryAgentSchema.safeParse({
+      name: formData.get("name"),
+      phone: formData.get("phone"),
+    });
+
+    if (!parsed.success) {
+      return { ok: false, error: "Invalid agent details." };
+    }
+
+    const admin = createAdminSupabaseClient();
+    const { error } = await admin.from("delivery_agents").insert({
+      name: parsed.data.name,
+      phone: parsed.data.phone,
+    } as never);
+
+    if (error) {
+      return { ok: false, error: "Failed to create delivery agent." };
+    }
+
+    revalidatePath("/admin/delivery");
+    return { ok: true, message: "Delivery agent created." };
+  } catch (error) {
+    return {
+      ok: false,
+      error: toPublicErrorMessage(error, "Failed to create agent."),
+    };
+  }
+}
+
+export async function updateDeliveryAgentAction(
+  _prevState: unknown,
+  formData: FormData,
+) {
+  try {
+    await assertTrustedRequestOrigin();
+    await assertAdminForAction();
+
+    const id = formData.get("id") as string;
+    if (!id) return { ok: false, error: "Agent ID is required." };
+
+    const parsed = deliveryAgentSchema.safeParse({
+      name: formData.get("name"),
+      phone: formData.get("phone"),
+    });
+
+    if (!parsed.success) {
+      return { ok: false, error: "Invalid agent details." };
+    }
+
+    const isActive = formData.get("is_active") === "true";
+
+    const admin = createAdminSupabaseClient();
+    const { error } = await admin
+      .from("delivery_agents")
+      .update({
+        name: parsed.data.name,
+        phone: parsed.data.phone,
+        is_active: isActive,
+      } as never)
+      .eq("id", id);
+
+    if (error) {
+      return { ok: false, error: "Failed to update delivery agent." };
+    }
+
+    revalidatePath("/admin/delivery");
+    return { ok: true, message: "Agent updated." };
+  } catch (error) {
+    return {
+      ok: false,
+      error: toPublicErrorMessage(error, "Failed to update agent."),
+    };
+  }
+}
+
+export async function deleteDeliveryAgentAction(
+  _prevState: unknown,
+  formData: FormData,
+) {
+  try {
+    await assertTrustedRequestOrigin();
+    await assertAdminForAction();
+
+    const id = formData.get("id") as string;
+    if (!id) return { ok: false, error: "Agent ID is required." };
+
+    const admin = createAdminSupabaseClient();
+    const { error } = await admin.from("delivery_agents").delete().eq("id", id);
+
+    if (error) {
+      return { ok: false, error: "Failed to delete agent." };
+    }
+
+    revalidatePath("/admin/delivery");
+    return { ok: true, message: "Agent deleted." };
+  } catch (error) {
+    return {
+      ok: false,
+      error: toPublicErrorMessage(error, "Failed to delete agent."),
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Assign delivery agent to order
+// ---------------------------------------------------------------------------
+export async function assignDeliveryAgentAction(
+  _prevState: unknown,
+  formData: FormData,
+) {
+  try {
+    await assertTrustedRequestOrigin();
+    await assertAdminForAction();
+
+    const orderId = formData.get("order_id") as string;
+    const agentId = formData.get("agent_id") as string;
+
+    if (!orderId || !agentId) {
+      return { ok: false, error: "Order and agent are required." };
+    }
+
+    const admin = createAdminSupabaseClient();
+    const { error } = await admin
+      .from("orders")
+      .update({ assigned_agent_id: agentId } as never)
+      .eq("id", orderId);
+
+    if (error) {
+      return { ok: false, error: "Failed to assign agent." };
+    }
+
+    revalidatePath("/admin/delivery");
+    revalidatePath("/admin/orders");
+    return { ok: true, message: "Delivery agent assigned." };
+  } catch (error) {
+    return {
+      ok: false,
+      error: toPublicErrorMessage(error, "Failed to assign agent."),
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Update driver location (admin broadcasts from delivery interface)
+// ---------------------------------------------------------------------------
+export async function updateDriverLocationAction(formData: FormData) {
+  try {
+    await assertTrustedRequestOrigin();
+    await assertAdminForAction();
+
+    const orderId = formData.get("order_id") as string;
+    const lat = Number(formData.get("lat"));
+    const lng = Number(formData.get("lng"));
+    const heading = formData.get("heading")
+      ? Number(formData.get("heading"))
+      : undefined;
+    const speed = formData.get("speed")
+      ? Number(formData.get("speed"))
+      : undefined;
+    const etaMinutes = formData.get("eta_minutes")
+      ? Number(formData.get("eta_minutes"))
+      : undefined;
+
+    if (!orderId || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return { ok: false, error: "Invalid location data." };
+    }
+
+    const admin = createAdminSupabaseClient();
+    const { data, error } = await admin.rpc("update_delivery_location", {
+      p_order_id: orderId,
+      p_lat: lat,
+      p_lng: lng,
+      p_heading: heading,
+      p_speed: speed,
+      p_eta_minutes: etaMinutes,
+    } as never);
+
+    if (error || !data) {
+      return { ok: false, error: "Failed to update location." };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      error: toPublicErrorMessage(error, "Failed to update location."),
     };
   }
 }

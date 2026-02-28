@@ -9,7 +9,12 @@ import {
   type ReactNode,
 } from "react";
 
-import { calculateDeliveryCharge, getEffectivePrice } from "@/lib/utils";
+import {
+  useDeliveryZone,
+  type DeliveryZone,
+} from "@/lib/hooks/use-delivery-zone";
+import { getEffectivePrice } from "@/lib/utils";
+import { STORE } from "@/lib/constants";
 
 type CartItem = {
   id: string;
@@ -29,6 +34,14 @@ type CartContextValue = {
   deliveryCharge: number;
   total: number;
   totalItems: number;
+  /** Per-area delivery fee (from geo zone or fallback) */
+  baseDeliveryFee: number;
+  /** Per-area free-delivery threshold (from geo zone or fallback) */
+  freeDeliveryThreshold: number;
+  /** Resolved delivery zone info (null if unknown) */
+  deliveryZone: DeliveryZone | null;
+  /** Whether user is outside all service areas */
+  outOfCoverage: boolean;
   addItem: (item: AddCartItem) => void;
   removeItem: (id: string) => void;
   setQuantity: (id: string, quantity: number) => void;
@@ -58,6 +71,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   });
 
+  const { zone, outOfCoverage } = useDeliveryZone();
+
   useEffect(() => {
     window.localStorage.setItem(storageKey, JSON.stringify(items));
   }, [items]);
@@ -68,7 +83,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return acc + unitPrice * item.quantity;
     }, 0);
 
-    const deliveryCharge = calculateDeliveryCharge(subtotal);
+    // Use geo-aware fees when available, otherwise fall back to store defaults
+    const baseDeliveryFee = zone?.deliveryFee ?? STORE.baseDeliveryCharge;
+    const freeDeliveryThreshold =
+      zone?.minOrderFreeDelivery ?? STORE.freeDeliveryThreshold;
+
+    const deliveryCharge =
+      subtotal >= freeDeliveryThreshold ? 0 : baseDeliveryFee;
 
     return {
       items,
@@ -76,6 +97,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       deliveryCharge,
       total: subtotal + deliveryCharge,
       totalItems: items.reduce((acc, item) => acc + item.quantity, 0),
+      baseDeliveryFee,
+      freeDeliveryThreshold,
+      deliveryZone: zone,
+      outOfCoverage,
       addItem(item) {
         setItems((previous) => {
           const existing = previous.find((entry) => entry.id === item.id);
@@ -105,7 +130,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 return item;
               }
 
-              return { ...item, quantity: Math.min(Math.max(quantity, 1), item.stock) };
+              return {
+                ...item,
+                quantity: Math.min(Math.max(quantity, 1), item.stock),
+              };
             })
             .filter((item) => item.quantity > 0),
         );
@@ -114,7 +142,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setItems([]);
       },
     };
-  }, [items]);
+  }, [items, zone, outOfCoverage]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

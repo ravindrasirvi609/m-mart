@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { upsertBannerAction } from "@/actions/campaign-actions";
@@ -8,6 +9,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ActionFeedback } from "@/components/admin/ui/action-feedback";
 import type { BannerRow } from "@/lib/queries";
+import type { GeoValue } from "@/components/admin/zone-map-picker";
+
+const ZoneMapPicker = dynamic(
+  () =>
+    import("@/components/admin/zone-map-picker").then(
+      (mod) => mod.ZoneMapPicker,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[300px] rounded-xl border border-admin-border bg-white/5 animate-pulse" />
+    ),
+  },
+);
 
 interface BannerFormProps {
   banner?: BannerRow;
@@ -17,6 +32,14 @@ interface BannerFormProps {
 export function BannerForm({ banner, onSuccess }: BannerFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, action, isPending] = useActionState(upsertBannerAction, null);
+  const [geoEnabled, setGeoEnabled] = useState(
+    !!(banner?.target_lat && banner?.target_lng),
+  );
+  const [geo, setGeo] = useState<GeoValue>({
+    latitude: banner?.target_lat ?? 18.5912,
+    longitude: banner?.target_lng ?? 73.7388,
+    radius_km: banner?.target_radius_km ?? 5,
+  });
 
   useEffect(() => {
     if (state?.ok) {
@@ -38,6 +61,15 @@ export function BannerForm({ banner, onSuccess }: BannerFormProps) {
   return (
     <form ref={formRef} action={action} className="space-y-4">
       {banner && <input type="hidden" name="id" value={banner.id} />}
+
+      {/* Hidden geo fields — only sent when geo-targeting is on */}
+      {geoEnabled && (
+        <>
+          <input type="hidden" name="target_lat" value={geo.latitude} />
+          <input type="hidden" name="target_lng" value={geo.longitude} />
+          <input type="hidden" name="target_radius_km" value={geo.radius_km} />
+        </>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
@@ -151,7 +183,7 @@ export function BannerForm({ banner, onSuccess }: BannerFormProps) {
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-1.5">
           <label className="text-xs font-bold uppercase tracking-wider text-text-subtle">
-            Location Area
+            Location Area (legacy)
           </label>
           <Input
             name="location_area"
@@ -160,6 +192,9 @@ export function BannerForm({ banner, onSuccess }: BannerFormProps) {
             className="!bg-white/5 !text-text-main"
             disabled={isPending}
           />
+          <p className="text-[10px] text-text-subtle">
+            Text fallback. Prefer geo-targeting below.
+          </p>
         </div>
 
         <div className="space-y-1.5">
@@ -195,6 +230,37 @@ export function BannerForm({ banner, onSuccess }: BannerFormProps) {
             </label>
           </div>
         </div>
+      </div>
+
+      {/* Geo-targeting section */}
+      <div className="space-y-2 rounded-xl border border-admin-border bg-white/[0.02] p-4">
+        <div className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            id="banner-geo-toggle"
+            checked={geoEnabled}
+            onChange={(e) => setGeoEnabled(e.target.checked)}
+            disabled={isPending}
+            className="h-4 w-4 rounded border-admin-border accent-brand-red"
+          />
+          <label
+            htmlFor="banner-geo-toggle"
+            className="text-sm font-medium text-text-main"
+          >
+            Enable geo-targeting (show only to users near a location)
+          </label>
+        </div>
+
+        {geoEnabled && (
+          <div className="mt-2">
+            <ZoneMapPicker
+              defaultLat={banner?.target_lat ?? 18.5912}
+              defaultLng={banner?.target_lng ?? 73.7388}
+              defaultRadiusKm={banner?.target_radius_km ?? 5}
+              onChange={setGeo}
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

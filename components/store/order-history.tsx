@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { MapPin, Truck } from "lucide-react";
 import { toast } from "sonner";
 
 import { useRealtimeChannel } from "@/lib/hooks/use-realtime";
@@ -109,7 +111,11 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
         setOrders((current) =>
           current.map((o) =>
             o.id === updated.id
-              ? { ...o, payment_status: nextPaymentStatus, order_status: nextOrderStatus }
+              ? {
+                  ...o,
+                  payment_status: nextPaymentStatus,
+                  order_status: nextOrderStatus,
+                }
               : o,
           ),
         );
@@ -177,7 +183,9 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
   if (orders.length === 0) {
     return (
       <div className="premium-card border-dashed p-10 text-center">
-        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">No orders yet.</p>
+        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+          No orders yet.
+        </p>
       </div>
     );
   }
@@ -208,7 +216,10 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
 
           <div className="grid gap-3 sm:grid-cols-2">
             {order.order_items.map((item) => (
-              <div key={item.id} className="flex items-center gap-3 rounded-xl bg-[#fff4ef] p-2 dark:bg-zinc-800">
+              <div
+                key={item.id}
+                className="flex items-center gap-3 rounded-xl bg-[#fff4ef] p-2 dark:bg-zinc-800"
+              >
                 <div className="relative h-14 w-14 overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-700">
                   <Image
                     src={item.products?.image_url || "/placeholder-product.svg"}
@@ -223,20 +234,53 @@ export function OrderHistory({ userId, initialOrders }: OrderHistoryProps) {
                     {item.products?.name || "Unknown Product"}
                   </p>
                   <p className="text-xs text-zinc-600 dark:text-zinc-300">
-                    Qty {item.quantity} • {formatCurrency(item.price * item.quantity)}
+                    Qty {item.quantity} •{" "}
+                    {formatCurrency(item.price * item.quantity)}
                   </p>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="flex justify-between border-t border-[#c91510]/16 pt-3 text-sm font-bold text-zinc-700 dark:text-zinc-200">
+          <div className="flex items-center justify-between border-t border-[#c91510]/16 pt-3 text-sm font-bold text-zinc-700 dark:text-zinc-200">
             <span>Status: {formatOrderStatus(order.order_status)}</span>
-            <span className="text-[#c91510]">Total: {formatCurrency(order.total_amount)}</span>
+            <div className="flex items-center gap-3">
+              {(order.order_status === "out_for_delivery" ||
+                order.order_status === "preparing" ||
+                order.order_status === "delivered") && (
+                <Link
+                  href={`/orders/${order.id}/track`}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#c91510] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#a8110d]"
+                >
+                  {order.order_status === "out_for_delivery" ? (
+                    <>
+                      <span className="relative flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                      </span>
+                      <Truck size={12} />
+                      Track Live
+                    </>
+                  ) : order.order_status === "delivered" ? (
+                    <>
+                      <MapPin size={12} />
+                      View Details
+                    </>
+                  ) : (
+                    <>
+                      <Truck size={12} />
+                      Track Order
+                    </>
+                  )}
+                </Link>
+              )}
+              <span className="text-[#c91510]">
+                Total: {formatCurrency(order.total_amount)}
+              </span>
+            </div>
           </div>
         </article>
       ))}
-
     </div>
   );
 }

@@ -74,7 +74,9 @@ async function uploadPaymentScreenshot(file: File, userId: string) {
   return publicUrl;
 }
 
-export async function placeOrderAction(formData: FormData): Promise<PlaceOrderResult> {
+export async function placeOrderAction(
+  formData: FormData,
+): Promise<PlaceOrderResult> {
   try {
     await assertTrustedRequestOrigin();
     const user = await assertUserForAction();
@@ -118,7 +120,10 @@ export async function placeOrderAction(formData: FormData): Promise<PlaceOrderRe
       .in("id", productIds);
 
     if (productError) {
-      return { ok: false, error: "Unable to validate cart items at this time." };
+      return {
+        ok: false,
+        error: "Unable to validate cart items at this time.",
+      };
     }
 
     const productMap = new Map(products?.map((item) => [item.id, item]));
@@ -145,18 +150,38 @@ export async function placeOrderAction(formData: FormData): Promise<PlaceOrderRe
       address: profilePayload.data.address,
     };
 
+    const rawLat = formData.get("delivery_lat");
+    const rawLng = formData.get("delivery_lng");
+    const deliveryLat = rawLat ? Number(rawLat) : null;
+    const deliveryLng = rawLng ? Number(rawLng) : null;
+
+    const rpcParams: Record<string, unknown> = {
+      p_user_id: user.id,
+      p_payment_screenshot_url: screenshotUrl,
+      p_delivery_address: deliveryAddress,
+      p_items: cartValidation.data,
+    };
+
+    if (
+      deliveryLat !== null &&
+      deliveryLng !== null &&
+      Number.isFinite(deliveryLat) &&
+      Number.isFinite(deliveryLng)
+    ) {
+      rpcParams.p_lat = deliveryLat;
+      rpcParams.p_lng = deliveryLng;
+    }
+
     const { data: rpcData, error: rpcError } = await admin.rpc(
       "place_order_with_items",
-      {
-        p_user_id: user.id,
-        p_payment_screenshot_url: screenshotUrl,
-        p_delivery_address: deliveryAddress,
-        p_items: cartValidation.data,
-      },
+      rpcParams as never,
     );
 
     if (rpcError) {
-      return { ok: false, error: "Unable to place order right now. Please try again." };
+      return {
+        ok: false,
+        error: "Unable to place order right now. Please try again.",
+      };
     }
 
     const orderResult = Array.isArray(rpcData) ? rpcData[0] : rpcData;
@@ -164,6 +189,19 @@ export async function placeOrderAction(formData: FormData): Promise<PlaceOrderRe
 
     if (!orderId) {
       return { ok: false, error: "Order could not be placed." };
+    }
+
+    // Record initial status in timeline
+    try {
+      await admin.from("order_status_history").insert({
+        order_id: orderId,
+        order_status: "pending",
+        payment_status: "pending_verification",
+        changed_by: user.id,
+        note: "Order placed",
+      } as never);
+    } catch {
+      // ignore — table may not exist yet
     }
 
     await admin.from("users").upsert({
@@ -228,7 +266,10 @@ export async function placeOrderAction(formData: FormData): Promise<PlaceOrderRe
   } catch (error) {
     return {
       ok: false,
-      error: toPublicErrorMessage(error, "Unexpected error while placing order."),
+      error: toPublicErrorMessage(
+        error,
+        "Unexpected error while placing order.",
+      ),
     };
   }
 }

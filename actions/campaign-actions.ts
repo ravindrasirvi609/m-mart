@@ -29,6 +29,9 @@ const campaignSchema = z.object({
   hero_bg_gradient: z.string().trim().max(300).optional(),
   badge_text: z.string().trim().max(60).optional(),
   discount_label: z.string().trim().max(60).optional(),
+  target_lat: z.coerce.number().min(-90).max(90).nullable().optional(),
+  target_lng: z.coerce.number().min(-180).max(180).nullable().optional(),
+  target_radius_km: z.coerce.number().min(0.1).max(100).nullable().optional(),
   starts_at: z.string().min(1, "Start date is required"),
   ends_at: z.string().min(1, "End date is required"),
   is_active: z.boolean(),
@@ -43,6 +46,9 @@ const bannerSchema = z.object({
   link_url: z.string().trim().url().or(z.literal("")).optional(),
   bg_color: z.string().trim().max(60).optional(),
   location_area: z.string().trim().max(120).optional(),
+  target_lat: z.coerce.number().min(-90).max(90).nullable().optional(),
+  target_lng: z.coerce.number().min(-180).max(180).nullable().optional(),
+  target_radius_km: z.coerce.number().min(0.1).max(100).nullable().optional(),
   starts_at: z.string().min(1),
   ends_at: z.string().min(1),
   is_active: z.boolean(),
@@ -65,6 +71,11 @@ const serviceAreaSchema = z.object({
   area_name: z.string().trim().min(2).max(120),
   city: z.string().trim().min(2).max(80),
   pincode: z.string().trim().max(10).optional(),
+  latitude: z.coerce.number().min(-90).max(90).nullable().optional(),
+  longitude: z.coerce.number().min(-180).max(180).nullable().optional(),
+  radius_km: z.coerce.number().min(0.1).max(100).nullable().optional(),
+  delivery_fee: z.coerce.number().min(0).nullable().optional(),
+  min_order_free_delivery: z.coerce.number().min(0).nullable().optional(),
   is_active: z.boolean(),
   delivery_eta_minutes: z.coerce.number().int().min(5).max(300),
   sort_order: z.coerce.number().int().min(0),
@@ -88,6 +99,13 @@ function parseOptionalString(
   return str.length > 0 ? str : undefined;
 }
 
+function parseOptionalNumber(value: FormDataEntryValue | null): number | null {
+  const str = typeof value === "string" ? value.trim() : "";
+  if (str.length === 0) return null;
+  const num = parseFloat(str);
+  return Number.isFinite(num) ? num : null;
+}
+
 /* ─────────────────── Campaign Actions ────────────────── */
 
 export async function upsertCampaignAction(
@@ -109,6 +127,9 @@ export async function upsertCampaignAction(
       hero_bg_gradient: parseOptionalString(formData.get("hero_bg_gradient")),
       badge_text: parseOptionalString(formData.get("badge_text")),
       discount_label: parseOptionalString(formData.get("discount_label")),
+      target_lat: parseOptionalNumber(formData.get("target_lat")),
+      target_lng: parseOptionalNumber(formData.get("target_lng")),
+      target_radius_km: parseOptionalNumber(formData.get("target_radius_km")),
       starts_at: formData.get("starts_at"),
       ends_at: formData.get("ends_at"),
       is_active: parseFormBoolean(formData.get("is_active")),
@@ -132,6 +153,9 @@ export async function upsertCampaignAction(
       hero_bg_gradient: parsed.data.hero_bg_gradient ?? null,
       badge_text: parsed.data.badge_text ?? null,
       discount_label: parsed.data.discount_label ?? null,
+      target_lat: parsed.data.target_lat ?? null,
+      target_lng: parsed.data.target_lng ?? null,
+      target_radius_km: parsed.data.target_radius_km ?? null,
       starts_at: parsed.data.starts_at,
       ends_at: parsed.data.ends_at,
       is_active: parsed.data.is_active,
@@ -279,6 +303,9 @@ export async function upsertBannerAction(
       link_url: parseOptionalString(formData.get("link_url")),
       bg_color: parseOptionalString(formData.get("bg_color")),
       location_area: parseOptionalString(formData.get("location_area")),
+      target_lat: parseOptionalNumber(formData.get("target_lat")),
+      target_lng: parseOptionalNumber(formData.get("target_lng")),
+      target_radius_km: parseOptionalNumber(formData.get("target_radius_km")),
       starts_at: formData.get("starts_at"),
       ends_at: formData.get("ends_at"),
       is_active: parseFormBoolean(formData.get("is_active")),
@@ -299,6 +326,9 @@ export async function upsertBannerAction(
       link_url: parsed.data.link_url ?? null,
       bg_color: parsed.data.bg_color ?? null,
       location_area: parsed.data.location_area ?? null,
+      target_lat: parsed.data.target_lat ?? null,
+      target_lng: parsed.data.target_lng ?? null,
+      target_radius_km: parsed.data.target_radius_km ?? null,
       starts_at: parsed.data.starts_at,
       ends_at: parsed.data.ends_at,
       is_active: parsed.data.is_active,
@@ -670,6 +700,13 @@ export async function upsertServiceAreaAction(
       area_name: formData.get("area_name"),
       city: formData.get("city") || "Pune",
       pincode: parseOptionalString(formData.get("pincode")),
+      latitude: parseOptionalNumber(formData.get("latitude")),
+      longitude: parseOptionalNumber(formData.get("longitude")),
+      radius_km: parseOptionalNumber(formData.get("radius_km")),
+      delivery_fee: parseOptionalNumber(formData.get("delivery_fee")),
+      min_order_free_delivery: parseOptionalNumber(
+        formData.get("min_order_free_delivery"),
+      ),
       is_active: parseFormBoolean(formData.get("is_active")),
       delivery_eta_minutes: formData.get("delivery_eta_minutes") || "30",
       sort_order: formData.get("sort_order") || "0",
@@ -686,6 +723,11 @@ export async function upsertServiceAreaAction(
       area_name: parsed.data.area_name,
       city: parsed.data.city,
       pincode: parsed.data.pincode ?? null,
+      latitude: parsed.data.latitude ?? null,
+      longitude: parsed.data.longitude ?? null,
+      radius_km: parsed.data.radius_km ?? null,
+      delivery_fee: parsed.data.delivery_fee ?? null,
+      min_order_free_delivery: parsed.data.min_order_free_delivery ?? null,
       is_active: parsed.data.is_active,
       delivery_eta_minutes: parsed.data.delivery_eta_minutes,
       sort_order: parsed.data.sort_order,

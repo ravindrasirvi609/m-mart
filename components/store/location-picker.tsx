@@ -1,16 +1,31 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { ChevronDown, MapPin, Navigation } from "lucide-react";
+import { ChevronDown, Locate, Loader2, MapPin, Navigation } from "lucide-react";
 
+import { useGeolocation } from "@/lib/hooks/use-geolocation";
 import { cn } from "@/lib/utils";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 type ServiceArea = {
   id: string;
   area_name: string;
   city: string;
   pincode: string | null;
-  delivery_eta_minutes: number;
+  latitude: number | null;
+  longitude: number | null;
+  delivery_eta_minutes: number | null;
+};
+
+type ResolvedGeoArea = {
+  area_name: string;
+  city: string;
+  pincode: string;
+  delivery_eta_minutes: number | null;
+  distance_km: number;
 };
 
 type LocationPickerProps = {
@@ -27,9 +42,18 @@ type LocationPickerProps = {
 
 const LOCATION_COOKIE = "mmart_location";
 
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 /**
- * Location picker dropdown that appears in the header / hero area.
- * Saves selection to cookie (all users) and DB (authenticated users).
+ * Location picker dropdown with GPS detection.
+ *
+ * Features:
+ *   - "Use my location" button that triggers browser geolocation
+ *   - Reverse-geocodes GPS position to nearest service area
+ *   - Manual area search fallback
+ *   - Saves to cookie (with lat/lng) + DB for authenticated users
  */
 export function LocationPicker({
   currentArea,
@@ -42,6 +66,9 @@ export function LocationPicker({
   const [area, setArea] = useState(currentArea);
   const [search, setSearch] = useState("");
   const [, startTransition] = useTransition();
+  const [geoResolving, setGeoResolving] = useState(false);
+
+  const { position, status, requestPosition, isSupported } = useGeolocation();
 
   // Close on outside click
   useEffect(() => {
@@ -70,36 +97,98 @@ export function LocationPicker({
     return () => document.removeEventListener("keydown", handleEsc);
   }, [open]);
 
-  const selectArea = useCallback(
-    (selectedArea: ServiceArea) => {
-      setArea(selectedArea.area_name);
+  // Handle GPS position once acquired
+  useEffect(() => {
+    if (!position || !geoResolving) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/reverse-geocode?lat=${position.latitude}&lng=${position.longitude}`,
+        );
+        const data = await res.json();
+
+        if (cancelled) return;
+
+        if (!data.matched) {
+          setGeoResolving(false);
+          return;
+        }
+
+        const resolved = data.area as ResolvedGeoArea;
+        persistLocation(
+          {
+            area: resolved.area_name,
+            city: resolved.city,
+            pincode: resolved.pincode,
+            latitude: position.latitude,
+            longitude: position.longitude,
+            location_source: "gps",
+            accuracy_metres: position.accuracy,
+          },
+          resolved.area_name,
+        );
+      } catch {
+        if (!cancelled) {
+          setGeoResolving(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [position, geoResolving]);
+
+  /**
+   * Persists location to cookie + optionally DB, then reloads.
+   */
+  const persistLocation = useCallback(
+    (
+      payload: {
+        area: string;
+        city: string;
+        pincode: string | null;
+        latitude?: number | null;
+        longitude?: number | null;
+        location_source?: string;
+        accuracy_metres?: number;
+      },
+      displayArea: string,
+    ) => {
+      setArea(displayArea);
       setOpen(false);
       setSearch("");
+      setGeoResolving(false);
 
-      // Save to cookie
-      const locationData = JSON.stringify({
-        area: selectedArea.area_name,
-        city: selectedArea.city,
-        pincode: selectedArea.pincode,
+      // Cookie (with coordinates if available)
+      const cookiePayload = JSON.stringify({
+        area: payload.area,
+        city: payload.city,
+        pincode: payload.pincode,
+        ...(payload.latitude != null && { latitude: payload.latitude }),
+        ...(payload.longitude != null && { longitude: payload.longitude }),
+        ...(payload.location_source && {
+          location_source: payload.location_source,
+        }),
       });
 
-      document.cookie = `${LOCATION_COOKIE}=${encodeURIComponent(locationData)};path=/;max-age=${60 * 60 * 24 * 365};samesite=lax`;
+      document.cookie = `${LOCATION_COOKIE}=${encodeURIComponent(cookiePayload)};path=/;max-age=${60 * 60 * 24 * 365};samesite=lax`;
 
-      // Persist to DB for authenticated users
+      // DB persist for authenticated users
       if (userId) {
         startTransition(async () => {
           try {
             await fetch("/api/user-location", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                area: selectedArea.area_name,
-                city: selectedArea.city,
-                pincode: selectedArea.pincode,
-              }),
+              body: JSON.stringify(payload),
             });
           } catch {
-            // Silently fail — cookie is already set
+            // Non-critical — cookie is already set
           }
         });
       }
@@ -110,9 +199,39 @@ export function LocationPicker({
     [userId],
   );
 
+  /**
+   * Manual select from dropdown
+   */
+  const selectArea = useCallback(
+    (selectedArea: ServiceArea) => {
+      persistLocation(
+        {
+          area: selectedArea.area_name,
+          city: selectedArea.city,
+          pincode: selectedArea.pincode,
+          latitude: selectedArea.latitude,
+          longitude: selectedArea.longitude,
+          location_source: "manual",
+        },
+        selectedArea.area_name,
+      );
+    },
+    [persistLocation],
+  );
+
+  /**
+   * GPS detect button handler
+   */
+  const handleUseMyLocation = useCallback(() => {
+    setGeoResolving(true);
+    requestPosition();
+  }, [requestPosition]);
+
   const filtered = serviceAreas.filter((sa) =>
     sa.area_name.toLowerCase().includes(search.toLowerCase()),
   );
+
+  const isDetecting = geoResolving || status === "requesting";
 
   return (
     <div className={cn("relative", className)} data-location-picker>
@@ -137,7 +256,35 @@ export function LocationPicker({
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-72 rounded-xl border border-zinc-200 bg-white p-2 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="absolute left-0 top-full z-50 mt-2 w-80 rounded-xl border border-zinc-200 bg-white p-2 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+          {/* GPS detect button */}
+          {isSupported && (
+            <button
+              type="button"
+              onClick={handleUseMyLocation}
+              disabled={isDetecting}
+              className="mb-2 flex w-full items-center gap-2 rounded-lg border border-[#c91510]/15 bg-[#fff6f1] px-3 py-2.5 text-left text-sm font-semibold text-[#c91510] transition hover:bg-[#ffede5] disabled:cursor-wait disabled:opacity-60 dark:border-[#c91510]/25 dark:bg-[#c91510]/10 dark:hover:bg-[#c91510]/15"
+            >
+              {isDetecting ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <Locate size={15} />
+              )}
+              <span>
+                {isDetecting ? "Detecting location…" : "Use my location"}
+              </span>
+            </button>
+          )}
+
+          {/* Separator */}
+          <div className="mb-2 flex items-center gap-2">
+            <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-700" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+              or pick manually
+            </span>
+            <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-700" />
+          </div>
+
           {/* Search input */}
           <div className="relative mb-2">
             <input
@@ -189,7 +336,7 @@ export function LocationPicker({
                     </div>
 
                     <span className="whitespace-nowrap rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                      ~{sa.delivery_eta_minutes} min
+                      ~{sa.delivery_eta_minutes ?? 30} min
                     </span>
                   </button>
                 </li>

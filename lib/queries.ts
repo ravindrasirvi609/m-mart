@@ -482,6 +482,62 @@ export async function getAdminServiceAreas() {
   return data ?? [];
 }
 
+export async function getDeliveryAgents() {
+  await assertAdminForAction();
+  const supabase = createAdminSupabaseClient();
+
+  const { data } = await supabase
+    .from("delivery_agents")
+    .select("*")
+    .order("name", { ascending: true });
+
+  return (data ?? []) as DeliveryAgentRow[];
+}
+
+export async function getDeliveryDashboardData() {
+  await assertAdminForAction();
+  const supabase = createAdminSupabaseClient();
+
+  const [{ data: orders }, { data: agents }] = await Promise.all([
+    supabase
+      .from("orders")
+      .select(
+        "id,created_at,order_status,payment_status,delivery_address,delivery_area,assigned_agent_id,out_for_delivery_at,delivered_at,delivery_lat,delivery_lng,users(name,phone)",
+      )
+      .in("order_status", ["preparing", "out_for_delivery", "delivered"])
+      .order("created_at", { ascending: false })
+      .limit(100),
+    supabase
+      .from("delivery_agents")
+      .select("*")
+      .eq("is_active", true)
+      .order("name", { ascending: true }),
+  ]);
+
+  return {
+    orders: (orders ?? []) as unknown as DeliveryDashboardOrder[],
+    agents: (agents ?? []) as DeliveryAgentRow[],
+  };
+}
+
+export type DeliveryDashboardOrder = {
+  id: string;
+  created_at: string;
+  order_status: string;
+  payment_status: string;
+  delivery_address: Database["public"]["Tables"]["orders"]["Row"]["delivery_address"];
+  delivery_area: string | null;
+  assigned_agent_id: string | null;
+  out_for_delivery_at: string | null;
+  delivered_at: string | null;
+  delivery_lat: number | null;
+  delivery_lng: number | null;
+  users:
+    | { name?: string | null; phone?: string | null }
+    | { name?: string | null; phone?: string | null }[]
+    | null;
+};
+
 export type Product = ProductRow;
 export type Category = CategoryLite;
 export type UserRow = Database["public"]["Tables"]["users"]["Row"];
@@ -491,3 +547,5 @@ export type CollectionRow = Database["public"]["Tables"]["collections"]["Row"];
 export type ProductTagRow = Database["public"]["Tables"]["product_tags"]["Row"];
 export type ServiceAreaRow =
   Database["public"]["Tables"]["service_areas"]["Row"];
+export type DeliveryAgentRow =
+  Database["public"]["Tables"]["delivery_agents"]["Row"];

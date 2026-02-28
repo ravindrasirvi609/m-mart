@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { TicketPercent, Trash2 } from "lucide-react";
+import { AlertTriangle, MapPin, TicketPercent, Trash2 } from "lucide-react";
 
 import { useCart } from "@/components/providers/cart-provider";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,10 @@ export function CartClient() {
     subtotal,
     deliveryCharge,
     total,
+    baseDeliveryFee,
+    freeDeliveryThreshold,
+    deliveryZone,
+    outOfCoverage,
     removeItem,
     setQuantity,
     clearCart,
@@ -23,7 +27,9 @@ export function CartClient() {
   if (items.length === 0) {
     return (
       <div className="premium-card border-dashed p-10 text-center">
-        <p className="text-sm font-medium text-text-subtle">Your cart is empty.</p>
+        <p className="text-sm font-medium text-text-subtle">
+          Your cart is empty.
+        </p>
         <Link href="/products" className="mt-4 inline-flex">
           <Button>Browse Products</Button>
         </Link>
@@ -73,7 +79,9 @@ export function CartClient() {
                       >
                         -
                       </button>
-                      <span className="w-8 text-center text-sm font-bold text-text-main">{item.quantity}</span>
+                      <span className="w-8 text-center text-sm font-bold text-text-main">
+                        {item.quantity}
+                      </span>
                       <button
                         type="button"
                         className="h-9 w-9 text-lg font-semibold text-text-main"
@@ -100,7 +108,9 @@ export function CartClient() {
       </div>
 
       <aside className="premium-card sticky top-24 h-fit space-y-4 p-5">
-        <h2 className="font-heading text-lg font-bold text-text-main">Pricing Summary</h2>
+        <h2 className="font-heading text-lg font-bold text-text-main">
+          Pricing Summary
+        </h2>
 
         <div className="space-y-2 text-sm font-medium text-text-subtle">
           <div className="flex justify-between">
@@ -109,7 +119,9 @@ export function CartClient() {
           </div>
           <div className="flex justify-between">
             <span>Delivery</span>
-            <span>{deliveryCharge === 0 ? "Free" : formatCurrency(deliveryCharge)}</span>
+            <span>
+              {deliveryCharge === 0 ? "Free" : formatCurrency(deliveryCharge)}
+            </span>
           </div>
           <div className="flex justify-between border-t border-[#c91510]/16 pt-3 text-base font-black text-[#c91510]">
             <span>Total</span>
@@ -126,8 +138,34 @@ export function CartClient() {
         </div>
 
         <p className="rounded-xl bg-[#fff2ec] p-3 text-xs font-bold text-[#c91510] dark:bg-zinc-800 dark:text-[#ff8a6e]">
-          Free delivery above ₹500. Below ₹500, delivery charge ₹30.
+          {deliveryZone ? (
+            <>
+              <MapPin size={12} className="mr-1 inline-block" />
+              {deliveryZone.areaName} &middot; Free delivery above ₹
+              {freeDeliveryThreshold}.
+              {subtotal < freeDeliveryThreshold &&
+                ` Below ₹${freeDeliveryThreshold}, delivery ₹${baseDeliveryFee}.`}
+            </>
+          ) : (
+            <>
+              Free delivery above ₹{freeDeliveryThreshold}. Below ₹
+              {freeDeliveryThreshold}, delivery charge ₹{baseDeliveryFee}.
+            </>
+          )}
         </p>
+
+        {outOfCoverage && (
+          <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/30 dark:bg-amber-950/20">
+            <AlertTriangle
+              size={14}
+              className="mt-0.5 shrink-0 text-amber-600"
+            />
+            <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+              Your location may be outside our delivery area. You can still
+              place an order, but delivery may take longer.
+            </p>
+          </div>
+        )}
 
         <Link href="/checkout" className="block">
           <Button className="w-full">Proceed to Checkout</Button>

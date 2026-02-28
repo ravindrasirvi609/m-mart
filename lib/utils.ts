@@ -1,8 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-import { STORE } from "@/lib/constants";
-
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -21,10 +19,6 @@ export function getEffectivePrice(price: number, discountPrice: number | null) {
   }
 
   return Math.min(price, discountPrice);
-}
-
-export function calculateDeliveryCharge(subtotal: number) {
-  return subtotal >= STORE.freeDeliveryThreshold ? 0 : STORE.baseDeliveryCharge;
 }
 
 export function formatOrderStatus(status: string) {
@@ -53,6 +47,6 @@ export function escapeHtml(value: string) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
-    .replaceAll("\"", "&quot;")
+    .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 }
