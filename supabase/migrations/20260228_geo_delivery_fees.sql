@@ -29,6 +29,9 @@ alter table public.orders
 -- it looks up the nearest service area's delivery_fee and
 -- min_order_free_delivery. Falls back to ₹30/₹500 when no geo context.
 
+drop function if exists public.place_order_with_items(uuid, text, jsonb, jsonb);
+drop function if exists public.place_order_with_items(uuid, text, jsonb, jsonb, double precision, double precision);
+
 create or replace function public.place_order_with_items(
   p_user_id uuid,
   p_payment_screenshot_url text,
